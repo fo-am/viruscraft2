@@ -1,0 +1,8 @@
+attiny84 *50
+120uF caps *50
+100 Ohm smd resistors
+assorted smd LEDs 
+10 servos
+
+fallback power breakout for servos
+30 servos

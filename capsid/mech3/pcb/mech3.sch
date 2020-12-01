@@ -1,0 +1,419 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L MCU_Microchip_ATtiny:ATtiny84A-SSU U1
+U 1 1 5F92D015
+P 3300 2600
+F 0 "U1" H 2770 2646 50  0000 R CNN
+F 1 "ATtiny84A-SSU" H 2770 2555 50  0000 R CNN
+F 2 "Package_SO:SOIC-14_3.9x8.7mm_P1.27mm" H 3300 2600 50  0001 C CIN
+F 3 "http://ww1.microchip.com/downloads/en/DeviceDoc/doc8183.pdf" H 3300 2600 50  0001 C CNN
+	1    3300 2600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3900 2100 4450 2100
+Wire Wire Line
+	4450 2100 4450 2350
+Wire Wire Line
+	4450 2350 4850 2350
+Wire Wire Line
+	3900 2200 4350 2200
+Wire Wire Line
+	4350 2200 4350 2700
+Wire Wire Line
+	4350 2700 4850 2700
+Wire Wire Line
+	3900 2300 4250 2300
+Wire Wire Line
+	4250 2300 4250 3050
+Wire Wire Line
+	4250 3050 4850 3050
+$Comp
+L Device:R R2
+U 1 1 5F937A55
+P 4950 3300
+F 0 "R2" V 4743 3300 50  0000 C CNN
+F 1 "100" V 4834 3300 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4880 3300 50  0001 C CNN
+F 3 "~" H 4950 3300 50  0001 C CNN
+	1    4950 3300
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:LED D1
+U 1 1 5F9381A7
+P 5400 3300
+F 0 "D1" H 5393 3045 50  0000 C CNN
+F 1 "LED" H 5393 3136 50  0000 C CNN
+F 2 "LED_SMD:LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder" H 5400 3300 50  0001 C CNN
+F 3 "~" H 5400 3300 50  0001 C CNN
+	1    5400 3300
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	3900 2900 4150 2900
+Wire Wire Line
+	5100 3300 5250 3300
+$Comp
+L power:+5V #PWR0101
+U 1 1 5F93BF81
+P 4850 1900
+F 0 "#PWR0101" H 4850 1750 50  0001 C CNN
+F 1 "+5V" V 4865 2028 50  0000 L CNN
+F 2 "" H 4850 1900 50  0001 C CNN
+F 3 "" H 4850 1900 50  0001 C CNN
+	1    4850 1900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0102
+U 1 1 5F939484
+P 4850 1800
+F 0 "#PWR0102" H 4850 1550 50  0001 C CNN
+F 1 "Earth" H 4850 1650 50  0001 C CNN
+F 2 "" H 4850 1800 50  0001 C CNN
+F 3 "~" H 4850 1800 50  0001 C CNN
+	1    4850 1800
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	3900 2000 4850 2000
+$Comp
+L Connector:Conn_01x03_Male J2
+U 1 1 5F92E113
+P 5050 1900
+F 0 "J2" H 5022 1832 50  0000 R CNN
+F 1 "Conn_01x03_Male" H 5022 1923 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left" H 5050 1900 50  0001 C CNN
+F 3 "~" H 5050 1900 50  0001 C CNN
+	1    5050 1900
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:+5V #PWR0103
+U 1 1 5F93EF0A
+P 4850 2250
+F 0 "#PWR0103" H 4850 2100 50  0001 C CNN
+F 1 "+5V" V 4865 2378 50  0000 L CNN
+F 2 "" H 4850 2250 50  0001 C CNN
+F 3 "" H 4850 2250 50  0001 C CNN
+	1    4850 2250
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0104
+U 1 1 5F93EF10
+P 4850 2150
+F 0 "#PWR0104" H 4850 1900 50  0001 C CNN
+F 1 "Earth" H 4850 2000 50  0001 C CNN
+F 2 "" H 4850 2150 50  0001 C CNN
+F 3 "~" H 4850 2150 50  0001 C CNN
+	1    4850 2150
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector:Conn_01x03_Male J3
+U 1 1 5F93EF16
+P 5050 2250
+F 0 "J3" H 5022 2182 50  0000 R CNN
+F 1 "Conn_01x03_Male" H 5022 2273 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left" H 5050 2250 50  0001 C CNN
+F 3 "~" H 5050 2250 50  0001 C CNN
+	1    5050 2250
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:+5V #PWR0105
+U 1 1 5F93FC34
+P 4850 2600
+F 0 "#PWR0105" H 4850 2450 50  0001 C CNN
+F 1 "+5V" V 4865 2728 50  0000 L CNN
+F 2 "" H 4850 2600 50  0001 C CNN
+F 3 "" H 4850 2600 50  0001 C CNN
+	1    4850 2600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0106
+U 1 1 5F93FC3A
+P 4850 2500
+F 0 "#PWR0106" H 4850 2250 50  0001 C CNN
+F 1 "Earth" H 4850 2350 50  0001 C CNN
+F 2 "" H 4850 2500 50  0001 C CNN
+F 3 "~" H 4850 2500 50  0001 C CNN
+	1    4850 2500
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector:Conn_01x03_Male J4
+U 1 1 5F93FC40
+P 5050 2600
+F 0 "J4" H 5022 2532 50  0000 R CNN
+F 1 "Conn_01x03_Male" H 5022 2623 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left" H 5050 2600 50  0001 C CNN
+F 3 "~" H 5050 2600 50  0001 C CNN
+	1    5050 2600
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:+5V #PWR0107
+U 1 1 5F940437
+P 4850 2950
+F 0 "#PWR0107" H 4850 2800 50  0001 C CNN
+F 1 "+5V" V 4865 3078 50  0000 L CNN
+F 2 "" H 4850 2950 50  0001 C CNN
+F 3 "" H 4850 2950 50  0001 C CNN
+	1    4850 2950
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0108
+U 1 1 5F94043D
+P 4850 2850
+F 0 "#PWR0108" H 4850 2600 50  0001 C CNN
+F 1 "Earth" H 4850 2700 50  0001 C CNN
+F 2 "" H 4850 2850 50  0001 C CNN
+F 3 "~" H 4850 2850 50  0001 C CNN
+	1    4850 2850
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector:Conn_01x03_Male J5
+U 1 1 5F940443
+P 5050 2950
+F 0 "J5" H 5022 2882 50  0000 R CNN
+F 1 "Conn_01x03_Male" H 5022 2973 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x03_P2.54mm_Vertical_SMD_Pin1Left" H 5050 2950 50  0001 C CNN
+F 3 "~" H 5050 2950 50  0001 C CNN
+	1    5050 2950
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:Earth #PWR0109
+U 1 1 5F9409A9
+P 5550 3300
+F 0 "#PWR0109" H 5550 3050 50  0001 C CNN
+F 1 "Earth" H 5550 3150 50  0001 C CNN
+F 2 "" H 5550 3300 50  0001 C CNN
+F 3 "~" H 5550 3300 50  0001 C CNN
+	1    5550 3300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0110
+U 1 1 5F94249A
+P 3300 3500
+F 0 "#PWR0110" H 3300 3250 50  0001 C CNN
+F 1 "Earth" H 3300 3350 50  0001 C CNN
+F 2 "" H 3300 3500 50  0001 C CNN
+F 3 "~" H 3300 3500 50  0001 C CNN
+	1    3300 3500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0111
+U 1 1 5F942DE9
+P 3300 1700
+F 0 "#PWR0111" H 3300 1550 50  0001 C CNN
+F 1 "+5V" H 3315 1873 50  0000 C CNN
+F 2 "" H 3300 1700 50  0001 C CNN
+F 3 "" H 3300 1700 50  0001 C CNN
+	1    3300 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:CP C1
+U 1 1 5F945CA6
+P 2450 3450
+F 0 "C1" H 2568 3496 50  0000 L CNN
+F 1 "120uF" H 2568 3405 50  0000 L CNN
+F 2 "Capacitor_SMD:CP_Elec_5x5.8" H 2488 3300 50  0001 C CNN
+F 3 "~" H 2450 3450 50  0001 C CNN
+	1    2450 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0112
+U 1 1 5F946839
+P 2450 3300
+F 0 "#PWR0112" H 2450 3150 50  0001 C CNN
+F 1 "+5V" V 2465 3428 50  0000 L CNN
+F 2 "" H 2450 3300 50  0001 C CNN
+F 3 "" H 2450 3300 50  0001 C CNN
+	1    2450 3300
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:Earth #PWR0113
+U 1 1 5F9472C2
+P 2450 3600
+F 0 "#PWR0113" H 2450 3350 50  0001 C CNN
+F 1 "Earth" H 2450 3450 50  0001 C CNN
+F 2 "" H 2450 3600 50  0001 C CNN
+F 3 "~" H 2450 3600 50  0001 C CNN
+	1    2450 3600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3900 2400 4050 2400
+$Comp
+L Connector:Conn_01x04_Male J1
+U 1 1 5F953CA6
+P 5050 1450
+F 0 "J1" H 5022 1332 50  0000 R CNN
+F 1 "Conn_01x04_Male" H 5022 1423 50  0000 R CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical_SMD_Pin1Left" H 5050 1450 50  0001 C CNN
+F 3 "~" H 5050 1450 50  0001 C CNN
+	1    5050 1450
+	-1   0    0    1   
+$EndComp
+$Comp
+L power:Earth #PWR0114
+U 1 1 5F9557F5
+P 4850 1250
+F 0 "#PWR0114" H 4850 1000 50  0001 C CNN
+F 1 "Earth" H 4850 1100 50  0001 C CNN
+F 2 "" H 4850 1250 50  0001 C CNN
+F 3 "~" H 4850 1250 50  0001 C CNN
+	1    4850 1250
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+5V #PWR0115
+U 1 1 5F955FEB
+P 4850 1350
+F 0 "#PWR0115" H 4850 1200 50  0001 C CNN
+F 1 "+5V" V 4865 1478 50  0000 L CNN
+F 2 "" H 4850 1350 50  0001 C CNN
+F 3 "" H 4850 1350 50  0001 C CNN
+	1    4850 1350
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4850 1450 4050 1450
+Wire Wire Line
+	4050 1450 4050 2400
+Text Label 4200 1450 0    50   ~ 0
+scl
+Wire Wire Line
+	4850 1550 4150 1550
+Wire Wire Line
+	4150 1550 4150 2600
+Text Label 4200 1550 0    50   ~ 0
+sda
+$Comp
+L Device:R R1
+U 1 1 5F95B4C3
+P 4000 3400
+F 0 "R1" H 4070 3446 50  0000 L CNN
+F 1 "10K" H 4070 3355 50  0000 L CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3930 3400 50  0001 C CNN
+F 3 "~" H 4000 3400 50  0001 C CNN
+	1    4000 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0116
+U 1 1 5F95C0B4
+P 4000 3650
+F 0 "#PWR0116" H 4000 3500 50  0001 C CNN
+F 1 "+5V" H 4015 3823 50  0000 C CNN
+F 2 "" H 4000 3650 50  0001 C CNN
+F 3 "" H 4000 3650 50  0001 C CNN
+	1    4000 3650
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	3900 3200 4000 3200
+Wire Wire Line
+	4000 3200 4000 3250
+Wire Wire Line
+	4000 3550 4000 3650
+Text Label 3950 3200 0    50   ~ 0
+reset
+Text Label 4350 2000 0    50   ~ 0
+servo_a
+Text Label 4350 2100 0    50   ~ 0
+servo_b
+Text Label 4350 2700 0    50   ~ 0
+servo_c
+Text Label 4350 3050 0    50   ~ 0
+servo_d
+$Comp
+L Connector_Generic:Conn_02x03_Odd_Even J6
+U 1 1 5F984A3C
+P 4650 4050
+F 0 "J6" H 4700 4367 50  0000 C CNN
+F 1 "Conn_02x03_Odd_Even" H 4700 4276 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_2x03_P2.54mm_Vertical" H 4650 4050 50  0001 C CNN
+F 3 "~" H 4650 4050 50  0001 C CNN
+	1    4650 4050
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+5V #PWR0117
+U 1 1 5F989BDC
+P 4450 3950
+F 0 "#PWR0117" H 4450 3800 50  0001 C CNN
+F 1 "+5V" V 4465 4078 50  0000 L CNN
+F 2 "" H 4450 3950 50  0001 C CNN
+F 3 "" H 4450 3950 50  0001 C CNN
+	1    4450 3950
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:Earth #PWR0118
+U 1 1 5F98A352
+P 4450 4150
+F 0 "#PWR0118" H 4450 3900 50  0001 C CNN
+F 1 "Earth" H 4450 4000 50  0001 C CNN
+F 2 "" H 4450 4150 50  0001 C CNN
+F 3 "~" H 4450 4150 50  0001 C CNN
+	1    4450 4150
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	4450 4050 4100 4050
+Wire Wire Line
+	4950 3950 5150 3950
+Wire Wire Line
+	5150 3950 5150 3600
+Wire Wire Line
+	5150 3600 4200 3600
+Wire Wire Line
+	4200 2500 3900 2500
+Wire Wire Line
+	4200 2500 4200 3600
+Wire Wire Line
+	4150 2900 4150 3300
+Wire Wire Line
+	4150 3300 4800 3300
+Wire Wire Line
+	4950 4050 5350 4050
+Text Label 5250 4050 0    50   ~ 0
+scl
+Text Label 4150 4050 0    50   ~ 0
+sda
+Wire Wire Line
+	3900 2600 4150 2600
+Wire Wire Line
+	4950 4150 5350 4150
+Text Label 5250 4150 0    50   ~ 0
+reset
+Text Label 4800 3600 0    50   ~ 0
+miso
+$EndSCHEMATC
