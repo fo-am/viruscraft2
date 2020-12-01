@@ -54,6 +54,38 @@ int show_angle[SERVO_NUM];
 int current = 0;
 servo_state servo[SERVO_NUM];
 
+void show(int id) {
+  servo_modify(&servo[current],hide_angle[current],10);
+  if (id>=0 && id<SERVO_NUM) {
+    current = id;
+    servo_modify(&servo[current],show_angle[current],10);
+  }
+}
+
+uint8_t read_servo(unsigned int servo_id, unsigned int i) {
+  switch (i) {
+  case REG_SERVO_ANGLE: return 0;
+  case REG_SERVO_ACTIVE: return servo[servo_id].active;
+  case REG_SERVO_PULSE_MIN:  return servo[servo_id].min_pulse;
+  case REG_SERVO_PULSE_MAX:  return servo[servo_id].max_pulse;
+  case REG_SERVO_HIDE_ANGLE:  return hide_angle[servo_id];
+  case REG_SERVO_SHOW_ANGLE:  return show_angle[servo_id];;
+  default: return 0;
+  }
+}
+
+void write_servo(unsigned int servo_id, unsigned int i, uint8_t value) {
+  switch (i) {
+  case REG_SERVO_ANGLE: break;
+  case REG_SERVO_ACTIVE: servo[servo_id].active=value; break;
+  case REG_SERVO_PULSE_MIN: servo[servo_id].min_pulse=value; break;
+  case REG_SERVO_PULSE_MAX: servo[servo_id].max_pulse=value; break;
+  case REG_SERVO_HIDE_ANGLE: hide_angle[servo_id]=value; break;
+  case REG_SERVO_SHOW_ANGLE: show_angle[servo_id]=value; break;
+  default: break;
+  }
+}
+
 uint8_t i2c_read(uint8_t reg) {
   switch (reg) {
   case REG_ALIVE: return alive_counter++; 
@@ -78,18 +110,6 @@ uint8_t i2c_read(uint8_t reg) {
   }
 }
 
-uint8_t read_servo(unsigned int servo_id, unsigned int i) {
-  switch (i) {
-  case REG_SERVO_ANGLE: return 0;
-  case REG_SERVO_ACTIVE: return servo[servo_id].active;
-  case REG_SERVO_ACTIVE: return servo[servo_id].active;
-  case REG_SERVO_PULSE_MIN:  return servo[servo_id].min_pulse;
-  case REG_SERVO_PULSE_MAX:  return servo[servo_id].max_pulse;
-  case REG_SERVO_HIDE_ANGLE:  return hide_angle[servo_id];
-  case REG_SERVO_SHOW_ANGLE:  return show_angle[servo_id];;
-  default: return 0;
-  }
-}
   
 void i2c_write(uint8_t reg, uint8_t value) {
   switch (reg) {
@@ -118,33 +138,12 @@ void i2c_write(uint8_t reg, uint8_t value) {
   }
 }
 
-void write_servo(unsigned int servo_id, unsigned int i, uint8_t value) {
-  switch (i) {
-  case REG_SERVO_ANGLE: break;
-  case REG_SERVO_ACTIVE: servo[servo_id].active=value; break;
-  case REG_SERVO_ACTIVE: servo[servo_id].active=value; break;
-  case REG_SERVO_PULSE_MIN: servo[servo_id].min_pulse=value; break;
-  case REG_SERVO_PULSE_MAX: servo[servo_id].max_pulse=value; break;
-  case REG_SERVO_HIDE_ANGLE: hide_angle[servo_id]=value; break;
-  case REG_SERVO_SHOW_ANGLE: show_angle[servo_id]=value; break;
-  default: break;
-  }
-}
-
-
-void show(int id) {
-  servo_modify(&servo[current],hide_angle[current],10);
-  if (id>=0 && id<SERVO_NUM) {
-    current = id;
-    servo_modify(&servo[current],show_angle[current],10);
-  }
-}
 
 int main() {
-  usiTwiSlaveInit(I2C_ADDR, i2c_read, i2c_write);
   servo_init();
+  usiTwiSlaveInit(I2C_ADDR, i2c_read, i2c_write);
   sei();
- 
+  
   hide_angle[0]=-35;
   hide_angle[1]=80;
   hide_angle[2]=-80;
@@ -168,7 +167,7 @@ int main() {
   int state = 0;
   
   while (1) {    
-    if (counter>100) {           
+    if (counter>10) {           
       //show(state%5);
       
       if (state%2==0) {
@@ -180,7 +179,7 @@ int main() {
       state++;
       counter=0;
     }
-
+    
     for (unsigned int s = 0; s<4; s++) { 
       servo_update(&servo[s]);
     }
@@ -191,6 +190,7 @@ int main() {
 }
 
 int i=0;
+
 
 ISR(TIM1_COMPA_vect) {
   servo_pulse_update();
