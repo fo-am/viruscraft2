@@ -1,0 +1,512 @@
+;; -*- mode: scheme; -*-
+;; ViruscraftII Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(load "scm/maths.jscm")
+(load "scm/random.jscm")
+(load "scm/nightjar.jscm")
+(load "scm/local-storage.jscm")
+
+(define params-version 1)
+(define player-id -1)
+(define player-name "???")
+(define end-game-time 7)
+(define installation-mode #f)
+;(define installation-mode #t)
+
+(let ((v (local-load "viruscraft2-version")))
+  (when (or (not v) (< v params-version))
+	(local-nuke)
+	(local-save "viruscraft2-version" params-version)
+	))
+
+(local-setup-params 
+ "viruscraft2" 
+ (list
+  (make-param "world-num-viruses" 300 "viruses")
+  ))
+
+(load "scm/ordered-list.jscm")
+(load "scm/particles.jscm")
+(load "scm/animation.jscm")
+(load "scm/entity.jscm")
+(load "scm/entity-list.jscm")
+(load "scm/entity-renderer.jscm")
+
+(load "scm/virus.jscm")
+(load "scm/world.jscm")
+
+(define (button-sound)
+  (play-sound "button.wav"))
+
+(define default-button-x (- (/ screen-width 2) 150))
+(define default-button-y (+ (/ screen-height 2) 200))
+(define default-button-width 300)
+(define default-button-height 80)
+
+(define button-gap 250)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; stubs
+
+(define (make-new-demo)
+  0)
+
+(define (demo-update game-data time delta)
+  game-data)
+
+(define (demo-render game-data ctx)
+  0)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (register-game c player-id location)
+  (server-call-mutate
+   "game"
+   (list (list "player_id" player-id)
+	 (list "location" location)) 
+   (lambda (c game-id)	 
+     ;;(reset-scores!)
+     (nightjar-game-screen c game-id location)))
+  c)
+
+(define (send-update-scores c)
+  (server-call-mutate
+   "score"
+   (list
+    (list "game_id" (world-game-id (game-data c)))
+    (list "new_nests" 0)
+    (list "num_workers_laid" 0)
+    (list "num_workers_hatched" 0)
+    (list "cells_built" 0)
+    (list "events_survived" 0)
+    (list "num_reproductives_hatched" 0)
+    (list "energy_foraged" 0)
+    (list "survival_time" 0)
+    (list "forages" 0)
+    (list "score" 0)
+    )
+   (lambda (c score-pos)
+     (if ditto.load_resource_static
+	 (nightjar-end c 0)
+	 (nightjar-enter-name c (JSON.parse score-pos)))))
+  c)
+
+(define (register c location)
+  ;; fixed one player per game...
+  (set! player-name "???")
+  (server-call-mutate
+   "player"
+   '() 
+   (lambda (c id)	 
+     (set! player-id id)
+     (register-game c player-id location)))
+  c)
+
+
+(define (nightjar-intro c)
+    (game-modify-timeout
+     (lambda ()
+       (when (not ditto.load_resource_static)	
+	     (set! window.location "/")))
+     (game-modify-data
+      (lambda (d)
+	(make-new-demo))
+      (game-modify-update
+       (lambda (t c)
+	 (game-modify-data
+	  (lambda (d)
+	    (demo-update (game-data c) (/ t 1000) (game-delta c)))
+	  c))
+       (game-modify-render
+	(lambda (ctx)
+	  (demo-render (game-data c) ctx)
+	  (set! ctx.fillStyle "#fff")
+	  
+	  (set! ctx.font "normal 120pt Dosis")
+	  
+	  (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)
+	  
+	  (set! ctx.font "normal 60pt Dosis")
+	  (wrap-text ctx "Can you save your cells from the virus?" 0 340 1200 100)
+	  (set! ctx.font "normal 30pt Dosis")
+
+	  ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
+	  ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
+	  
+	  )
+	
+	(game-modify-buttons
+	 (append
+	  
+	  (list
+	   (rect-button
+	    "PLAY!"
+	    (- default-button-x (if ditto.load_resource_static 200 350))
+	    default-button-y
+	    default-button-width default-button-height
+	    "jumpy"
+	    (lambda (c)
+	      (button-sound)
+	      (register c "none")
+	      ;;(nightjar-enter-name c 1)
+	      ;;(nightjar-end c 99)
+	      ))
+
+	  
+	  (rect-button
+	   "HOW TO PLAY"
+	   (+ default-button-x (if ditto.load_resource_static 200 350))
+	   default-button-y
+	   default-button-width default-button-height
+	   "jumpy"
+	   (lambda (c)
+	     (button-sound)
+	     (nightjar-about c)))
+	  )
+
+	  (if ditto.load_resource_static
+	      '()
+	      (list
+	       (rect-button
+		"LEADERBOARD"
+		default-button-x
+		default-button-y
+		default-button-width default-button-height
+		"jumpy"
+		(lambda (c)
+		  (button-sound)
+		  (server-call-mutate
+		   "hiscores"
+		   (list)
+		   (lambda (c scores)	      
+		     (nightjar-hiscores c (JSON.parse scores))))
+		  c)))))
+	 
+	 c))))))
+
+
+(define (nightjar-about c)
+   (game-modify-render
+    (lambda (ctx)
+      ;;(ctx.drawImage (find-image "crab2.png") 1240 550)
+     (demo-render (game-data c) ctx)
+
+      (set! ctx.font "normal 75pt Dosis")
+      (wrap-text ctx "HOW TO PLAY" 0 100 1300 100)
+      (set! ctx.font "normal 25pt Dosis")
+      
+      (wrap-text-left ctx "Blah Blah" 300 150 1000 40)
+
+      ;;(ctx.drawImage (find-image "logos.png") 300 510)
+
+      ;;(set! ctx.globalAlpha 0.5)
+;;      (ctx.drawImage (find-image "wasp.jpg") 860 290)
+
+      (set! ctx.font "normal 30pt Dosis")
+
+
+      ;;(set! ctx.globalAlpha 1.0)      
+
+      ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
+      ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
+      
+      )
+
+    (game-modify-buttons
+     (list
+      (rect-button
+       "BACK"
+       (- default-button-x 200)
+       (+ default-button-y 50)
+       default-button-width 
+       default-button-height 
+       "jumpy"
+       (lambda (c)
+         (button-sound)
+         (nightjar-intro c))))
+     c)))
+
+(define (nightjar-game-screen c player-id location)
+  (game-modify-data
+   (lambda (d)
+     (build-world player-id (/ (game-time c) 1000)))
+   (game-modify-mouse-hook
+    (lambda (state c)
+      (game-modify-data
+       (lambda (d)
+	 (world-update-mouse (game-data c) state (game-mx c) (game-my c)))
+       c))   
+    (game-modify-render
+     (lambda (ctx)
+       (world-render (game-data c) ctx (game-time c))
+       (set! ctx.font "normal 20pt Dosis")
+       )
+     (game-modify-update
+      (lambda (t c)
+	(game-modify-data
+	 (lambda (d)
+	   (world-update (game-data c) (/ t 1000) (game-delta c)))
+	 (if (> (world-end-game-timer (game-data c)) end-game-time)
+	     (game-modify-update ;; turn off update so we only send once
+	      (lambda (t c)
+		c)
+	      (send-update-scores c))
+	     c)))
+      (game-modify-buttons
+       (list
+	(rect-button
+	 "QUIT"
+	 20
+	 (+ default-button-y 85)
+	 60 60
+	 #f
+	 (lambda (c)
+	   (button-sound)
+	   (nightjar-intro game)))
+	) c))))))
+
+(define scores-anim-t 0)
+(define scores-anim-nests 0)
+(define scores-anim-activity 0)
+(define scores-anim-timing 0.10) 
+
+(define (nightjar-end c rank)
+  (set! scores-anim-pos 0)
+  (set! scores-anim-nests -1)
+  (set! scores-anim-activity -1)
+  (game-modify-mouse-hook
+   (lambda (state c) c)
+   (game-modify-render
+    (lambda (ctx)
+      (set! ctx.fillStyle text-col)      
+      (set! ctx.font "normal 30pt Dosis")
+      
+      (let ((n (game-data c)))		
+	(set! ctx.fillStyle highlight2-col)
+	(ctx.fillRect (- (/ screen-width 2) 330) 50 660 280)
+	(set! ctx.fillStyle text-col)      
+		
+	(ctx.fillText "YOUR TOTAL SCORE:" 500 300)
+	(set! ctx.font "bold 30pt Dosis")	
+	(set! ctx.font "normal 30pt Dosis")
+			
+	)
+
+      )
+    (game-modify-update
+     (lambda (t c)
+       c)
+     (game-modify-buttons
+      (append
+       (list
+	
+	(rect-button
+	 "PLAY AGAIN"
+	 (- default-button-x (if ditto.load_resource_static 200 350))
+	 default-button-y
+	 default-button-width default-button-height
+	 "jumpy"
+	 (lambda (c)
+	   (button-sound)
+	   (register c "none")
+	   ))
+
+	(rect-button
+	 "QUIT"
+	 (+ default-button-x (if ditto.load_resource_static 200 350))
+	 default-button-y
+	 default-button-width 
+	 default-button-height 
+	 "jumpy"
+	 (lambda (c)
+	   (button-sound)
+	   (nightjar-intro game))))
+
+       (if ditto.load_resource_static
+	      '()
+	      (list
+	       (rect-button
+		"LEADERBOARD"
+		default-button-x
+		default-button-y
+		default-button-width default-button-height
+		"jumpy"
+		(lambda (c)
+		  (button-sound)
+		  (server-call-mutate
+		   "hiscores"
+		   (list)
+		   (lambda (c scores)	      
+		     ;; restart the demo!
+		     (nightjar-hiscores
+		      (game-modify-update
+		       (lambda (t c)
+			 ;; update loop
+			 (game-modify-data
+			  (lambda (d)
+			    (demo-update (game-data c) (/ t 1000) (game-delta c)))
+			  c))
+		       ;; init the demo
+		       (game-modify-data
+			(lambda (d)
+			  (make-new-demo))
+			c))
+		      (JSON.parse scores))))
+		  c)))))
+      
+      c)))))
+
+(define col1 -350)
+(define col2 -125)
+(define col3 125)
+(define col4 350)
+
+(define (nightjar-hiscores c scores)
+  (game-modify-render
+   (lambda (ctx)
+     (demo-render (game-data c) ctx)
+     (set! ctx.fillStyle text-col)      
+     (set! ctx.font "normal 75pt Dosis")
+     (wrap-text ctx "LEADERBOARD" 0 100 1300 100)
+     (set! ctx.font "normal 30pt Dosis")
+     
+
+     ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
+     ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
+     
+     )
+   (game-modify-buttons
+    (list
+     (rect-button
+      "BACK"
+       default-button-x
+       (+ default-button-y 85)
+       default-button-width 
+       default-button-height 
+       "jumpy"
+       (lambda (c)
+	 (button-sound)
+	 (nightjar-intro game))))
+    c)))
+
+(define (type-into str ch)
+  (car
+   (foldl
+    (lambda (c r)
+      (if (and (not (cadr r)) (eq? c "?"))
+          (list (string-append (car r) ch) #t)
+          (list (string-append (car r) c) (cadr r))))
+    (list "" #f)
+    (str.split ""))))
+
+(define (type-into-delete str)
+  (car (foldl
+        (lambda (c r)
+          ;;(console.log (list c r))
+          (if (and (not (cadr r)) (not (eq? c "?")))
+              (list (string-append "?" (car r)) #t)
+              (list (string-append c (car r)) (cadr r))))
+        (list "" #f)
+        (reverse (str.split "")))))
+
+(define (type-username ch c)
+  (set! player-name (type-into player-name ch)))
+
+(define (type-delete c)
+  (set! player-name (type-into-delete player-name)))
+
+
+(define (qwertypos-x i)  
+  (cond ((< i 10) i)
+	((and (> i 9) (< i 19)) (- i 10))
+	(else (- i 19))))
+
+(define (qwertypos-y i)  
+  (cond ((< i 10) 0)
+	((and (> i 9) (< i 19)) 1)
+	(else 2)))
+
+(define (nightjar-enter-name c rank)
+  (game-modify-mouse-hook
+   (lambda (state c) c)
+   (game-modify-update
+    (lambda (t c) c)
+    (game-modify-render
+     (lambda (ctx)
+       (set! ctx.font "normal 30pt Dosis")
+       (wrap-text ctx "Enter your name for the leaderboard" 0 70 1000 70)
+       (set! ctx.font "normal 50pt Dosis")
+       (wrap-text ctx player-name 0 150 1000 70)
+       (set! ctx.font "normal 30pt Dosis"))
+
+     (game-modify-buttons
+      (append
+       (index-map
+	(lambda (i ch)
+	  (let ((x (+ (cond ((eq? (qwertypos-y i) 0) 250)
+			    ((eq? (qwertypos-y i) 1) 300)
+			    (else 380))
+		      (* (qwertypos-x i) 120)))
+		(y (+ 220 (* (qwertypos-y i) 130)))
+		(img (find-image "sprites/hex-b-1.png")))
+	    (image-button ch x y #f
+			  img
+			  (lambda (c)
+			    (button-sound)
+			    (type-username ch c)
+			    c))))
+	(list "Q" "W" "E" "R" "T" "Y" "U" "I" "O" "P"
+	      "A" "S" "D" "F" "G" "H" "J" "K" "L"
+	      "Z" "X" "C" "V" "B" "N" "M"))
+
+       (list
+	(rect-button "DELETE" (- default-button-x 200) default-button-y default-button-width default-button-height "jumpy"
+		     (lambda (c)
+		       (button-sound)		      
+		       (type-delete c)
+		       c))
+
+	(rect-button "DONE"  (+ default-button-x 200) default-button-y default-button-width default-button-height "jumpy"
+		     (lambda (c)
+		       (button-sound)
+		       (server-call
+			"player-name"
+			(list
+			 (list "player_id" player-id)
+			 (list "player_name" player-name)))		       
+		       (button-sound)		       
+		       (nightjar-end game rank)))
+	))
+      c)))))
+
+
+(set! ctx.font "normal 75pt Dosis")
+(set! ctx.fillStyle "#fff")
+
+(load-sounds!
+ (list "button.wav"))
+
+(load-images!
+ (append 
+  (anim->filenames virus-animation)
+  (list 
+   "logos.png"
+   ))
+
+ (lambda ()
+   (msg "loaded...")
+   (start-game canvas ctx)))
+

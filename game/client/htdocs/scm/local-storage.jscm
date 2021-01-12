@@ -1,0 +1,156 @@
+;; -*- mode: scheme; -*-
+;; Why We Love Wasps Copyright (C) 2019 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;; use browser local storage for stuff
+;; hopefully removing the need for a server in certain situations
+
+(define (make-param key value units)
+  (list key value units))
+
+(define (param-key p) (list-ref p 0))
+(define (param-value p) (list-ref p 1))
+(define (param-units p) (list-ref p 2))
+
+(define (local-save name o)
+  (localStorage.setItem name (JSON.stringify o)))
+
+(define (local-load name)
+  (JSON.parse (localStorage.getItem name)))
+
+(define (local-delete name)
+  (localStorage.removeItem name))
+
+(define (local-nuke)
+  (localStorage.clear))
+
+(define (local-exists? name)
+  (localStorage.getItem name))
+
+(define (local-load-or-create name def)
+  (cond 
+   ((not (local-exists? name))
+    (local-save name def)
+    def)
+   (else (local-load name))))
+
+(define (set-game-param key value units)
+  (local-set-param "viruscraft2" key value units))
+
+(define (param-form key value units)
+  (string-append
+        "<div class='param-row'>
+           <div class='param-key'>" key "</div>
+           <input class='param-value' onChange='set_game_param(this.name,this.value);' type='text' name='" key "' value='" value "'>
+           <div class='param-units'><center>" units "</center></div></br>
+	</div>"))
+
+(define (setup-params-interface params)
+  (let ((c ($ ".param-list") ))
+    (for-each
+     (lambda (m)
+       (c.append (param-form (param-key m) (param-value m) (param-units m))))
+     params)))
+
+(define (check-and-add-params! namespace new-params)
+  ;; fold over current params, adding new ones if they don't exist
+  (local-save 
+   (string-append namespace "-params")
+   (foldl
+    (lambda (param r)
+      (if (not (local-param-exists? namespace (param-key param)))
+	  (begin
+	    (msg (string-append "Adding " (car param) " to existing params"))
+	    (append r (list param)))
+	  r))
+    (local-load (string-append namespace "-params"))
+    new-params)))
+
+(define (local-setup-params namespace params)
+  (when (not (local-exists? (string-append namespace "-params")))
+	(local-save (string-append namespace "-params") params))
+  (check-and-add-params! namespace params)
+  (setup-params-interface (local-load (string-append namespace "-params"))))
+
+(define (local-set-param namespace name value units)
+  (local-save
+   (string-append namespace "-params")
+   (map
+    (lambda (kv)
+      (if (eq? (car kv) name)
+	  (make-param name value units)
+	  kv))
+    (local-load (string-append namespace "-params")))))
+
+(define (local-get-param namespace name) 
+  (foldl
+   (lambda (kv r)
+     (if (eq? (car kv) name)
+	 (param-value kv) r))
+   #f
+   (local-load (string-append namespace "-params"))))
+
+(define (local-param-exists? namespace name) 
+  (foldl
+   (lambda (kv r)
+     ;; check we have the new units 
+     (cond
+      ((and kv (not (eq? (length kv) 3)))
+       (local-nuke) #f)
+      (else     
+       (if (eq? (param-key kv) name)
+	   #t r))))
+   #f
+   (local-load (string-append namespace "-params"))))
+
+;; used for streaming data, not params
+(define (local-add-item namespace name value)
+  (let ((fullname (string-append namespace "-" name)))
+    (let ((arr (local-load fullname)))
+      (local-save fullname (append (if arr (local-load fullname) '()) (list value))))))
+
+;; utils
+
+(define (unknown->csv l)
+  (cond
+   ((number? l) l)
+   ((string? l) (string-append "'" l "'"))
+   ((list? l) 
+    (car
+     (foldl
+      (lambda (i r)
+	(let ((pos (cadr r)))
+	  (list 
+	   (if (< pos (- (length l) 1)) 
+	       (string-append (car r) (unknown->csv i) (if (list? i) "" ","))
+	       (string-append (car r) (unknown->csv i) (if (list? i) "" "\n")))
+	   (+ pos 1))))
+      (list "" 0) l)))
+   (else (msg "unknown-csv no idea what") (msg l) (msg "is..."))))
+
+(define (local->csv namespace name) 
+  (unknown->csv (local-load (string-append namespace "-" name))))
+
+(define (download-data filename text) 
+  (let ((element (document.createElement "a")))
+    (element.setAttribute 
+     "href" 
+     (string-append "data:text/plain;charset=utf-8," 
+		    (encodeURIComponent text))
+     (element.setAttribute "download" filename))
+    (set! element.style.display "none")
+    (document.body.appendChild element)
+    (element.click)
+    (document.body.removeChild element)))

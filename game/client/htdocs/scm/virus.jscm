@@ -1,0 +1,60 @@
+;; -*- mode: scheme; -*-
+; ------------------------------------------------
+;; Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define (make-receptor pos col)
+  (list pos col))
+
+(define (receptor-pos r) (list-ref r 0))
+(define (receptor-col r) (list-ref r 1))
+
+;;;;;;;;;;;;;;;;;;;;;;
+
+(define virus-animation-idle 0)
+
+(define virus-animation
+  (list
+   (make-anim-move "virus" "virus" '() (list "1" "2" "3") 8 (vec2 0 0))
+   ))
+
+(define (make-virus receptors)
+  (let ((pos (virus-start-pos)))
+    (append
+     (make-entity
+      (generate-entity-id!)
+      "virus"
+      pos 0 (vec2 200 150) "left" (rndf)
+      (anim-load-frames "0" virus-animation)
+      0 virus-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
+     (list
+      (v2mul (vec2 2.5 2.5) (* (rndf) 10))
+      receptors))))
+
+(define (virus-vel v) (list-ref v (+ entity-size 0)))
+(define (virus-receptors v) (list-ref v (+ entity-size 1)))
+
+(define (virus-start-pos)
+  (vec2 (- (* (random screen-width) 2) screen-width) -500))
+
+(define (virus-update v delta world)	  
+  (entity-modify-pos
+   (entity-modify-timer v (+ (entity-timer v) delta))
+   (if (or (> (vy (entity-pos v)) (+ screen-height 100))
+	   (> (vx (entity-pos v)) (+ screen-width 100)))
+       (virus-start-pos)       
+       (v2add (entity-pos v) (virus-vel v)))))
+
+

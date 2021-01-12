@@ -1,0 +1,96 @@
+;; -*- mode: scheme; -*-
+;; Why We Love Wasps Copyright (C) 2019 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define (make-anim-move id name variations frames speed offset) (list id name variations frames speed offset))
+(define (anim-move-id a) (list-ref a 0))
+(define (anim-move-name a) (list-ref a 1))
+(define (anim-move-variations a) (list-ref a 2))
+(define (anim-move-frames a) (list-ref a 3))
+(define (anim-move-speed a) (list-ref a 4))
+(define (anim-move-offset a) (list-ref a 5))
+
+(define (anim-build-path dir variation move frame)
+  (string-append 
+   "sprites/" (anim-move-id move) "/" dir "/"
+   (if (eq? variation "")
+       "" (string-append variation "-"))
+   (anim-move-name move) "-" 
+   frame ".png"))
+
+(define (anim-move->filenames l variation move)
+  (foldl
+   (lambda (frame r)
+     ;; temporary hack to get demo out (common excuse)
+     (if (eq? (anim-move-id move) "pupae")
+	 (append
+	  (list (anim-build-path "left" variation move frame))
+	  r)		   
+	 (append
+	  (list (anim-build-path "left" variation move frame)
+		(anim-build-path "right" variation move frame))
+	  r)))
+   l
+   (anim-move-frames move)))
+
+(define (anim->filenames anim)
+  (foldl
+   (lambda (move r)
+     (if (null? (anim-move-variations move))
+	 (anim-move->filenames r "" move)
+	 (foldl
+	  (lambda (variation r)
+	    (anim-move->filenames r variation move))
+	  r
+	  (anim-move-variations move))))
+   '()
+   anim))
+
+(define (make-anim-clip speed frames offset)
+  (list speed frames offset))
+
+(define (anim-clip-speed c) (list-ref c 0))
+(define (anim-clip-frames c) (list-ref c 1))
+(define (anim-clip-offset c) (list-ref c 2))
+
+(define (anim-clip-frame-looped clip facing n)
+  (list-ref
+   (list-ref 
+    (anim-clip-frames clip)
+    (modulo n (length (anim-clip-frames clip))))
+   (if (eq? facing "left") 0 1)))
+
+(define (anim-load-frames variation anim)
+  (map
+   (lambda (move)
+     ;; bolting speed onto the front of the frame list
+     ;; so we can have different fps for different clips
+     (make-anim-clip
+      (anim-move-speed move)
+      (map 
+       (lambda (frame)
+	 (list
+	  (find-image
+	   (anim-build-path
+	    "left" (if (null? (anim-move-variations move)) "" variation)
+	    move frame))
+	  (find-image
+	   (anim-build-path
+	    "right" (if (null? (anim-move-variations move)) "" variation)
+	    move frame))))
+       (anim-move-frames move))
+      (anim-move-offset move)))
+   anim))
+

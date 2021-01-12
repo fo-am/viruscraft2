@@ -1,0 +1,59 @@
+;; -*- mode: scheme; -*-
+; ------------------------------------------------
+;; Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define (make-world viruses hosts)
+  (list viruses hosts))
+
+(define (world-viruses w) (list-ref w 0))
+(define (world-hosts w) (list-ref w 1))
+
+(define (build-world player-id time)
+  (make-world
+   (build-list
+    (string->number (local-get-param "viruscraft2" "world-num-viruses"))
+    (lambda (_)
+      (make-virus '())))
+   '()))
+
+(define (world-virus-update w delta)
+  (map
+   (lambda (virus)
+     (entity-update (virus-update virus delta w) delta))
+   (world-viruses w)))
+
+(define (world-update w time delta)
+  (make-world
+   (world-virus-update w delta)
+   (world-hosts w)))
+
+(define (world-update-mouse w state x y)
+  w)
+
+(define (world-render w ctx time)
+  ;; build and render the entity renderer
+  (renderer-render!
+   (renderer-add-entities
+    (renderer (list))
+    (world-viruses w))
+   ctx)
+  )
+
+(define (world-end-game-timer w)
+  0)
+
+(define (world-game-id w)
+  0)

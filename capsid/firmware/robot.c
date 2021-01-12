@@ -32,6 +32,34 @@
 #define REG_SERVO_INTERPOLATION 4
 #define REG_SERVO_START 5
 
+// 0x05 Servo 0 angle
+// 0x06 Servo 0 active
+// 0x07 Servo 0 pulse min
+// 0x08 Servo 0 pulse max
+// 0x09 Servo 0 hide angle
+// 0x0a Servo 0 show angle  --> 30
+
+// 0x05 Servo 1 angle
+// 0x06 Servo 1 active
+// 0x07 Servo 1 pulse min
+// 0x08 Servo 1 pulse max
+// 0x09 Servo 1 hide angle
+// 0x0a Servo 1 show angle
+
+// 0x0b Servo 2 angle
+// 0x0c Servo 2 active
+// 0x0d Servo 2 pulse min
+// 0x0e Servo 2 pulse max
+// 0x0f Servo 2 hide angle
+// 0x10 Servo 2 show angle
+
+// 0x11 Servo 3 angle
+// 0x12 Servo 3 active
+// 0x13 Servo 3 pulse min
+// 0x14 Servo 3 pulse max
+// 0x15 Servo 3 hide angle
+// 0x16 Servo 3 show angle
+
 // high level controls i2c registers
 #define REG_SERVO_ANGLE 0
 #define REG_SERVO_ACTIVE 1     // power down to save current consumption
@@ -41,11 +69,14 @@
 #define REG_SERVO_SHOW_ANGLE 5
 #define REG_SERVO_SIZE 6
 
-#define REG_SERVO_A REG_SERVO_START
-#define REG_SERVO_B (REG_SERVO_START+REG_SERVO_SIZE)
-#define REG_SERVO_C (REG_SERVO_START+REG_SERVO_SIZE*2)
-#define REG_SERVO_D (REG_SERVO_START+REG_SERVO_SIZE*3)
-#define REG_SERVO_END (REG_SERVO_START+REG_SERVO_SIZE*4)
+#define REG_SERVO_A REG_SERVO_START                         // 5
+#define REG_SERVO_B (REG_SERVO_START+REG_SERVO_SIZE)        // 11
+#define REG_SERVO_C (REG_SERVO_START+REG_SERVO_SIZE*2)      // 17
+#define REG_SERVO_D (REG_SERVO_START+REG_SERVO_SIZE*3)      // 23
+#define REG_SERVO_END (REG_SERVO_START+REG_SERVO_SIZE*4)    // 29
+
+
+
 
 uint8_t alive_counter=0;
 
