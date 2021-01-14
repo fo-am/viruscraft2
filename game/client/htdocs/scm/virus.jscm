@@ -36,25 +36,59 @@
      (make-entity
       (generate-entity-id!)
       "virus"
-      pos 0 (vec2 200 150) "left" (rndf)
+      pos 0 (vec2 64 64) "left" (rndf)
       (anim-load-frames "0" virus-animation)
       0 virus-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
      (list
-      (v2mul (vec2 2.5 2.5) (* (rndf) 10))
+	  'state-idle
+      (v2mul (rndcirc2d) 0.1)
       receptors))))
 
-(define (virus-vel v) (list-ref v (+ entity-size 0)))
-(define (virus-receptors v) (list-ref v (+ entity-size 1)))
+(define (virus-state v) (list-ref v (+ entity-size 0)))
+(define (virus-modify-state v s) (list-replace v (+ entity-size 0) s))
+(define (virus-vel v) (list-ref v (+ entity-size 1)))
+(define (virus-modify-vel v s) (list-replace v (+ entity-size 1) s))
+(define (virus-receptors v) (list-ref v (+ entity-size 2)))
 
 (define (virus-start-pos)
-  (vec2 (- (* (random screen-width) 2) screen-width) -500))
+  (vec2 (random screen-width) (random screen-height)))
 
-(define (virus-update v delta world)	  
-  (entity-modify-pos
-   (entity-modify-timer v (+ (entity-timer v) delta))
-   (if (or (> (vy (entity-pos v)) (+ screen-height 100))
-	   (> (vx (entity-pos v)) (+ screen-width 100)))
-       (virus-start-pos)       
-       (v2add (entity-pos v) (virus-vel v)))))
+;; refactor with host one
+(define (virus-shove v virus-list)
+  (let ((virus-size (param "virus-size")))
+	(foldl
+	 (lambda (virus r)
+	   (if (eq? (entity-id virus) (entity-id v))
+		   r
+		   (let ((v (v2sub (entity-pos virus) (entity-pos v))))
+			 (if (< (v2mag v) virus-size)
+				 (v2add (v2mul (v2normalise v) -1) r)
+				 r))))
+	 (vec2 0 0)
+	 virus-list)))
 
 
+(define (virus-check-hosts v host-list)
+  (let ((check-dist (+ (param "virus-size") (param "host-cell-size"))))
+	(foldl
+	 (lambda (host r)
+	   (if (and (not r) (< (v2dist (entity-pos virus) (entity-pos v))
+						   check-dist))
+		   host r))
+	 #f
+	 host-list)))
+
+(define (virus-update v time delta world)	  
+  (virus-modify-vel
+   (entity-modify-pos
+	(entity-modify-timer v (+ (entity-timer v) delta))
+	(v2add (entity-pos v)
+		   (v2add
+			(v2add
+			 (virus-shove v (world-viruses world))
+			 (world-bounds-vel (entity-pos v)))
+			(virus-vel v))))
+   (v2lerp
+	(virus-vel v)
+	(world-fluid-vel (v2add (vec2 9000 0) (entity-pos v)) time)
+	0.5)))))

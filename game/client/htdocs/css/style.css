@@ -18,7 +18,7 @@ html, body {
     min-width: 800px;
     /*background: url(../images/bg.jpg);*/
     background-size: 100% 100%;
-    /*background: #f5f5f5;*/
+    background: #f5f5f5;
 
     padding: 0;
     margin: auto;
@@ -53,13 +53,13 @@ html, body {
 
 .param-row {
     display: table;
-    border: 1px solid white;
-    background: #000;
+    border-bottom: 1px solid grey;
+	width: 100%;
 }
 
 .param-key {
     display: table-cell;
-    width: 200px;
+    width: 150px;
 }
 
 .param-value {
@@ -72,8 +72,8 @@ html, body {
 
 .param-units {
     display: table-cell;
-    font-size: 50%;
-    width: 50px;
+    width: 100px;
+	text-align: right;
 }
 
 

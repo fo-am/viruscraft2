@@ -5,17 +5,15 @@
     <link href="css/style.css" rel="stylesheet" type="text/css">
     <body bgcolor="#fff">
       <div>
-	<button id="edit-button" onclick="$('#params').show();">Admin area</button> 
+		<button id="edit-button" onclick="toggle_visibility('params');">Parameters</button> 
         <center>
           <canvas id="canvas" width="1600" height="750"></canvas>
         </center>
 
 	<div id="params">
-	  Viruscraft II Parameters</br>
 	  <p><div class="param-list"></div></p>
 	  <p>Params are saved to your browser: reload the page for changes to take effect.<p>
 	  <button onclick="local_nuke()">Factory defaults</button>
-	  <button onclick="$('#params').hide();">Hide me</button></br>
 	</div>
 	
         <div style="display:none;">
@@ -27,8 +25,17 @@
     </body>
     <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
     <script type="text/javascript" src="js/ditto.js"></script>
+    <script type="text/javascript" src="js/perlin-noise.js"></script>
 
     <script>
+	  function toggle_visibility(id) {
+       var e = document.getElementById(id);
+       if(e.style.display == 'block')
+          e.style.display = 'none';
+       else
+          e.style.display = 'block';
+      }
+	  
       $(document).ready(function(){
           $('#canvas').height($('#canvas').width() * 750/1600);
       });

@@ -46,15 +46,15 @@
     def)
    (else (local-load name))))
 
-(define (set-game-param key value units)
-  (local-set-param "viruscraft2" key value units))
+(define (set-game-param key value)
+  (local-set-param "viruscraft2" key value))
 
 (define (param-form key value units)
   (string-append
         "<div class='param-row'>
            <div class='param-key'>" key "</div>
            <input class='param-value' onChange='set_game_param(this.name,this.value);' type='text' name='" key "' value='" value "'>
-           <div class='param-units'><center>" units "</center></div></br>
+           <div class='param-units'>" units "</div></br>
 	</div>"))
 
 (define (setup-params-interface params)
@@ -84,14 +84,14 @@
   (check-and-add-params! namespace params)
   (setup-params-interface (local-load (string-append namespace "-params"))))
 
-(define (local-set-param namespace name value units)
+(define (local-set-param namespace name value)
   (local-save
    (string-append namespace "-params")
    (map
     (lambda (kv)
-      (if (eq? (car kv) name)
-	  (make-param name value units)
-	  kv))
+      (if (eq? (param-key kv) name)
+		  (make-param name value (param-units kv))
+		  kv))
     (local-load (string-append namespace "-params")))))
 
 (define (local-get-param namespace name) 

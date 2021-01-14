@@ -19,7 +19,7 @@
 (load "scm/nightjar.jscm")
 (load "scm/local-storage.jscm")
 
-(define params-version 1)
+(define params-version 2)
 (define player-id -1)
 (define player-name "???")
 (define end-game-time 7)
@@ -35,8 +35,25 @@
 (local-setup-params 
  "viruscraft2" 
  (list
-  (make-param "world-num-viruses" 300 "viruses")
+  (make-param "world-num-viruses" 10 "viruses")
+  (make-param "world-start-hosts" 1 "host cells")
+  (make-param "host-spawn-count" 2 "babies")
+  (make-param "host-spawn-radius" 10 "pixels")
+  (make-param "host-spawn-rate" 3 "seconds")
+  (make-param "host-max-population" 100 "cells")
+  (make-param "host-cell-size" 50 "pixels")
+  (make-param "virus-size" 50 "pixels")
+  (make-param "petri-radius" 350 "pixels")
+  (make-param "fluid-speed" 200 "x seconds")
+  (make-param "fluid-scale" 0.003 "units")
+  (make-param "fluid-strength" 4 "units")
   ))
+
+(define (param name)
+  (string->number (local-get-param "viruscraft2" name)))
+
+(define (string-param name)
+  (local-get-param "viruscraft2" name))
 
 (load "scm/ordered-list.jscm")
 (load "scm/particles.jscm")
@@ -46,6 +63,7 @@
 (load "scm/entity-renderer.jscm")
 
 (load "scm/virus.jscm")
+(load "scm/host.jscm")
 (load "scm/world.jscm")
 
 (define (button-sound)
@@ -502,6 +520,7 @@
 (load-images!
  (append 
   (anim->filenames virus-animation)
+  (anim->filenames host-animation)
   (list 
    "logos.png"
    ))

@@ -136,7 +136,6 @@
 (define (mscale m v) (mat4.scale m v))
 (define (mrotate m axis angle) (mat4.rotate m angle axis))
 
-
 (define (maim2 m v up)
   (let ((l (vector 0 0 0))
 	(u (vector 0 0 0))
@@ -195,6 +194,9 @@
 (define (v2mul2 a b)
   (vec2 (* (vx a) (vx b)) (* (vy a) (vy b))))
 
+(define (v2div v a)
+  (vec2 (/ (vx v) a) (/ (vy v) a)))
+
 (define (v2mag v)
   (sqrt (+ (square (vx v))
            (square (vy v)))))
@@ -206,6 +208,9 @@
   (vec2
    (+ (* (vx a) (- 1 t)) (* (vx b) t))   
    (+ (* (vy a) (- 1 t)) (* (vy b) t))))
+
+(define (v2normalise v)
+  (v2div v (v2mag v)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

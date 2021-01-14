@@ -24,32 +24,139 @@
 (define (build-world player-id time)
   (make-world
    (build-list
-    (string->number (local-get-param "viruscraft2" "world-num-viruses"))
+    (string->number (param "world-num-viruses"))
     (lambda (_)
       (make-virus '())))
-   '()))
+   (build-list
+    (string->number (param "world-start-hosts"))
+    (lambda (_)
+      (make-host (vec2 (/ screen-width 2) (/ screen-height 2)) '())))))
 
-(define (world-virus-update w delta)
+(define (world-virus-update w time delta)
   (map
    (lambda (virus)
-     (entity-update (virus-update virus delta w) delta))
+     (entity-update (virus-update virus time delta w) delta))
    (world-viruses w)))
+
+
+(define (world-is-pos-empty? pos host-list)
+  (let ((cell-size (param "host-cell-size")))
+	(foldl
+	 (lambda (host v)
+	   (if (and v (> (v2dist pos (entity-pos host)) cell-size))
+		   v #f))
+	 #t
+	 host-list)))
+
+(define (world-pick-new-pos initial-pos host-list count)  
+  (v2add initial-pos (v2mul (rndcirc2d)
+							(param "host-spawn-radius"))))
+
+;; (  (if (zero? count)
+;; 	  #f
+;; 	  (let ((pos (v2add initial-pos
+;; 						(v2mul (rndcirc2d)
+;; 							   (param "host-spawn-radius")))))
+;; 		(if  ;; inside the petri dish?
+;; 			 (< (v2dist (vec2 (/ screen-width 2)
+;; 							  (/ screen-height 2))
+;; 						pos)
+;; 				(- (param "petri-radius")
+;; 				   (param "host-cell-size")))			 
+;; 			 pos
+;; 			 (world-pick-new-pos initial-pos host-list (- count 1))))))
+
+(define (world-spawn-hosts host host-list count)
+  (cond
+   ((zero? count) host-list)
+   (else
+	(let ((pos (world-pick-new-pos (entity-pos host) host-list 10)))
+	  (world-spawn-hosts
+	   host
+	   (if pos ;; did we find an empty space?
+		   (cons
+			(make-host pos (host-receptors host))
+			host-list)
+		   host-list)
+	   (- count 1))))))
+
+(define (world-host-update w time delta)  
+  (foldl
+   (lambda (host r)
+	 (cond	  
+	  ;; cell division
+	  ((and (eq? (host-state host) 'state-divide)
+			(< (length (world-hosts w))
+			   (param "host-max-population")))			   
+	   (world-spawn-hosts host r (param "host-spawn-count")))
+	  ;; cell death
+	  ((eq? (host-state host) 'state-died)
+	   r)
+	  ;; normal update
+	  (else 
+	   (append r (list (entity-update
+						(host-update host time delta w)
+						delta))))))
+   '()
+   (world-hosts w)))
+
+(define noisegen (js "new ClassicalNoise()"))
+
+(define (world-fluid-vel pos time)
+  (let ((np (vmul (vector (vx pos)
+						  (vy pos)
+						  (* time (param "fluid-speed")))
+				  (param "fluid-scale"))))
+	(let ((nx (noisegen.noise (vx np) (vy np) (vz np)))
+		  (ny (noisegen.noise (+ (vx np) 102) (vy np) (vz np))))	   
+	  (v2mul (vec2 nx ny) (param "fluid-strength")))))
+
+(define (world-bounds-vel pos)
+  (v2mul
+   (cond
+	((< (vx pos) 0) (vec2 1 0))
+	((> (vx pos) screen-width) (vec2 -1 0))
+	((< (vy pos) 0) (vec2 0 1))
+	((> (vy pos) screen-height) (vec2 0 -1))
+	(else (vec2 0 0)))
+   4))
 
 (define (world-update w time delta)
   (make-world
-   (world-virus-update w delta)
-   (world-hosts w)))
+   (world-virus-update w time delta)
+   (world-host-update w time delta)))
 
 (define (world-update-mouse w state x y)
   w)
 
 (define (world-render w ctx time)
+  (set! ctx.strokeStyle "#000")
+  ;; draw the petri dish
+  ;; (ctx.beginPath)
+  ;; (ctx.arc
+  ;;  (/ screen-width 2)
+  ;;  (/ screen-height 2)
+  ;;  (param "petri-radius") 0 (* 2 Math.PI))
+  ;; (ctx.stroke) 
+
+
+  (for-each
+   (lambda (e)
+     (entity-render e ctx))
+   (world-hosts w))
+  (for-each
+   (lambda (e)
+     (entity-render e ctx))
+   (world-viruses w))
+  
   ;; build and render the entity renderer
-  (renderer-render!
-   (renderer-add-entities
-    (renderer (list))
-    (world-viruses w))
-   ctx)
+  ;; (renderer-render!
+  ;;  (renderer-add-entities
+  ;;   (renderer-add-entities
+  ;;    (renderer '())
+  ;;    (world-viruses w))
+  ;;   (world-hosts w))
+  ;;  ctx)
   )
 
 (define (world-end-game-timer w)
