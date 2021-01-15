@@ -27,7 +27,7 @@
 
 (define virus-animation
   (list
-   (make-anim-move "virus" "virus" '() (list "1" "2" "3") 8 (vec2 0 0))
+   (make-anim-move "virus" "virus" '() (list "1" "1" "1") 8 (vec2 0 0))
    ))
 
 (define (make-virus receptors)
@@ -36,59 +36,79 @@
      (make-entity
       (generate-entity-id!)
       "virus"
-      pos 0 (vec2 64 64) "left" (rndf)
+      pos 0 (vec2 128 128) "left" (rndf)
       (anim-load-frames "0" virus-animation)
       0 virus-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
      (list
-	  'state-idle
-      (v2mul (rndcirc2d) 0.1)
-      receptors))))
+      'state-idle
+      receptors
+      #f))))
 
 (define (virus-state v) (list-ref v (+ entity-size 0)))
 (define (virus-modify-state v s) (list-replace v (+ entity-size 0) s))
-(define (virus-vel v) (list-ref v (+ entity-size 1)))
-(define (virus-modify-vel v s) (list-replace v (+ entity-size 1) s))
-(define (virus-receptors v) (list-ref v (+ entity-size 2)))
+(define (virus-receptors v) (list-ref v (+ entity-size 1)))
+(define (virus-infected-host v) (list-ref v (+ entity-size 2)))
+(define (virus-modify-infected-host v s) (list-replace v (+ entity-size 2) s))
 
 (define (virus-start-pos)
   (vec2 (random screen-width) (random screen-height)))
 
-;; refactor with host one
+;; todo: refactor with host version
 (define (virus-shove v virus-list)
   (let ((virus-size (param "virus-size")))
-	(foldl
-	 (lambda (virus r)
-	   (if (eq? (entity-id virus) (entity-id v))
-		   r
-		   (let ((v (v2sub (entity-pos virus) (entity-pos v))))
-			 (if (< (v2mag v) virus-size)
-				 (v2add (v2mul (v2normalise v) -1) r)
-				 r))))
-	 (vec2 0 0)
-	 virus-list)))
-
+    (foldl
+     (lambda (virus r)
+       (if (eq? (entity-id virus) (entity-id v))
+	   r
+	   (let ((v (v2sub (entity-pos virus) (entity-pos v))))
+	     (if (< (v2mag v) virus-size)
+		 (v2add (v2mul (v2normalise v) -1) r)
+		 r))))
+     (vec2 0 0)
+     virus-list)))
 
 (define (virus-check-hosts v host-list)
-  (let ((check-dist (+ (param "virus-size") (param "host-cell-size"))))
-	(foldl
-	 (lambda (host r)
-	   (if (and (not r) (< (v2dist (entity-pos virus) (entity-pos v))
-						   check-dist))
-		   host r))
-	 #f
-	 host-list)))
+  (let ((check-dist (+ (param "virus-size")
+		       (param "host-cell-size"))))
+    (foldl
+     (lambda (host r)
+       (if (and (not r)
+		(< (v2dist (entity-pos virus) (entity-pos v))
+		   check-dist))
+	   host r))
+     #f
+     host-list)))
 
-(define (virus-update v time delta world)	  
-  (virus-modify-vel
-   (entity-modify-pos
-	(entity-modify-timer v (+ (entity-timer v) delta))
-	(v2add (entity-pos v)
-		   (v2add
-			(v2add
-			 (virus-shove v (world-viruses world))
-			 (world-bounds-vel (entity-pos v)))
-			(virus-vel v))))
-   (v2lerp
-	(virus-vel v)
-	(world-fluid-vel (v2add (vec2 9000 0) (entity-pos v)) time)
-	0.5)))))
+(define (virus-update v time delta world infected-host)	  
+  (let ((host (virus-infected-host v)))   
+    (entity-modify-pos
+     (entity-modify-timer
+      (virus-modify-infected-host
+       v (cond
+	  ;; update the host postion if we have one
+	  (host	    
+	   (entity-modify-pos host (entity-pos v)))
+	  ;; store the infected host if we have one
+	  (infected-host	 	 
+	   ;; tell it it's infected...
+	   (entity-modify-offset
+	    (host-modify-state infected-host 'state-infected)
+	    ;; add the offset to the virus
+	    (v2sub (entity-pos infected-host) (entity-pos v))))
+	  (else host)))
+      (+ (entity-timer v) delta))
+     ;; update the position
+     (v2add
+      (entity-pos v)	    
+      (v2add
+       (v2add
+	(virus-shove v (world-viruses world))
+	(world-fluid-vel (v2add (vec2 (if host 0 9000) 0) (entity-pos v)) time))	       
+       (world-bounds-vel (entity-pos v)))))))
+	     
+    
+;; overload this to render the host if we have one
+(define (virus-render v ctx)
+  (let ((host (virus-infected-host v)))
+    (when host (entity-render host ctx))
+    (entity-render v ctx)))

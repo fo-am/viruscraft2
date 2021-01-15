@@ -23,6 +23,7 @@
 
 (define (build-world player-id time)
   (make-world
+   ;; we assume these become ordered lists because the ids increase?
    (build-list
     (string->number (param "world-num-viruses"))
     (lambda (_)
@@ -31,12 +32,6 @@
     (string->number (param "world-start-hosts"))
     (lambda (_)
       (make-host (vec2 (/ screen-width 2) (/ screen-height 2)) '())))))
-
-(define (world-virus-update w time delta)
-  (map
-   (lambda (virus)
-     (entity-update (virus-update virus time delta w) delta))
-   (world-viruses w)))
 
 
 (define (world-is-pos-empty? pos host-list)
@@ -70,33 +65,88 @@
   (cond
    ((zero? count) host-list)
    (else
-	(let ((pos (world-pick-new-pos (entity-pos host) host-list 10)))
-	  (world-spawn-hosts
-	   host
-	   (if pos ;; did we find an empty space?
-		   (cons
-			(make-host pos (host-receptors host))
-			host-list)
-		   host-list)
-	   (- count 1))))))
+    (let ((pos (world-pick-new-pos (entity-pos host) host-list 10)))
+      (world-spawn-hosts
+       host
+       (if pos ;; did we find an empty space?
+	   (ordered-list-insert
+	    host-list
+	    (make-host pos (host-receptors host)))
+	   host-list)
+       (- count 1))))))
 
-(define (world-host-update w time delta)  
+;; returns list of pairs of viruses and hosts
+(define (world-infection-check virus-list host-list)
+  ;; why is this distance wrong? 
+  (let ((check-dist (/ (+ (param "virus-size")
+			  (param "host-cell-size")) 2)))
+    (foldl
+     (lambda (virus r)
+       ;; viruses can only infect once
+       (if (not (virus-infected-host virus))
+	   (foldl
+	    (lambda (host r)
+	      ;; hosts cannot be infected more than once
+	      (if (not (eq? (host-state host) 'state-infected))
+		  (if (< (v2dist (entity-pos virus) (entity-pos host))
+			 check-dist)
+		      ;; copy the host into the infection list
+		      (cons (list (entity-id virus) host) r)
+		      r)
+		  r))
+	    r
+	    host-list)
+	   r))
+     '()
+     virus-list)))
+
+(define (world-find-infected-host virus-id infection-list)
+  (foldl
+   (lambda (li r)
+     (if (and (not r) (eq? virus-id (car li)))
+	 (cadr li) ;; return host
+	 r))
+   #f
+   infection-list))
+
+(define (world-host-in-infection-list? host-id infection-list)
+  (foldl
+   (lambda (li r)
+     (if (and (not r) (eq? host-id (entity-id (cadr li))))
+	 #t r))
+   #f
+   infection-list))
+
+(define (world-virus-update w infection-list time delta)
+  (map
+   (lambda (virus)     
+     (entity-update
+      (virus-update
+       virus time delta w
+       (world-find-infected-host
+	(entity-id virus)
+	infection-list)) delta))
+   (world-viruses w)))
+
+(define (world-host-update w infection-list time delta)
   (foldl
    (lambda (host r)
-	 (cond	  
-	  ;; cell division
-	  ((and (eq? (host-state host) 'state-divide)
-			(< (length (world-hosts w))
-			   (param "host-max-population")))			   
-	   (world-spawn-hosts host r (param "host-spawn-count")))
-	  ;; cell death
-	  ((eq? (host-state host) 'state-died)
-	   r)
-	  ;; normal update
-	  (else 
-	   (append r (list (entity-update
-						(host-update host time delta w)
-						delta))))))
+     (cond	  
+      ;; remove if infected - taken over by virus entity
+      ((world-host-in-infection-list?
+	(entity-id host) infection-list) r)
+      ;; cell division
+      ((and (eq? (host-state host) 'state-divide)
+	    (< (length (world-hosts w))
+	       (param "host-max-population")))			   
+       (world-spawn-hosts host r (param "host-spawn-count")))
+      ;; cell death
+      ((eq? (host-state host) 'state-died) r)
+      ;; normal update
+      (else 
+       (append r (list (entity-update
+			(host-update host time delta w)
+			delta))))))
    '()
    (world-hosts w)))
 
@@ -104,12 +154,12 @@
 
 (define (world-fluid-vel pos time)
   (let ((np (vmul (vector (vx pos)
-						  (vy pos)
-						  (* time (param "fluid-speed")))
-				  (param "fluid-scale"))))
-	(let ((nx (noisegen.noise (vx np) (vy np) (vz np)))
-		  (ny (noisegen.noise (+ (vx np) 102) (vy np) (vz np))))	   
-	  (v2mul (vec2 nx ny) (param "fluid-strength")))))
+			  (vy pos)
+			  (* time (param "fluid-speed")))
+		  (param "fluid-scale"))))
+    (let ((nx (noisegen.noise (vx np) (vy np) (vz np)))
+	  (ny (noisegen.noise (+ (vx np) 102) (vy np) (vz np))))	   
+      (v2mul (vec2 nx ny) (param "fluid-strength")))))
 
 (define (world-bounds-vel pos)
   (v2mul
@@ -122,9 +172,12 @@
    4))
 
 (define (world-update w time delta)
-  (make-world
-   (world-virus-update w time delta)
-   (world-host-update w time delta)))
+  (let ((infection-list (world-infection-check
+			 (crop (shuffle (world-viruses w)) 10)
+			 (crop (shuffle (world-hosts w)) 10))))
+    (make-world
+     (world-virus-update w infection-list time delta)
+     (world-host-update w infection-list time delta))))
 
 (define (world-update-mouse w state x y)
   w)
@@ -146,7 +199,7 @@
    (world-hosts w))
   (for-each
    (lambda (e)
-     (entity-render e ctx))
+     (virus-render e ctx))
    (world-viruses w))
   
   ;; build and render the entity renderer

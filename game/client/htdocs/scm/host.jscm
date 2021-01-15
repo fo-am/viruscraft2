@@ -27,20 +27,20 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "2" "3") 8 (vec2 0 0))
+   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
    ))
 
 (define (make-host pos receptors)
   (append
    (make-entity
-	(generate-entity-id!)
-	"host"
-	pos 0 (vec2 64 64) "left" (rndf)
-	(anim-load-frames "0" host-animation)
-	0 host-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
+    (generate-entity-id!)
+    "host"
+    pos 0 (vec2 128 128) "left" (rndf)
+    (anim-load-frames "0" host-animation)
+    0 host-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
    (list
-	'state-idle
-	receptors))))
+    'state-idle
+    receptors))))
 
 (define (host-state h) (list-ref h (+ entity-size 0)))
 (define (host-modify-state h v) (list-replace h (+ entity-size 0) v))
@@ -52,16 +52,16 @@
 ;; refactor with virus one
 (define (host-shove h host-list)
   (let ((cell-size (param "host-cell-size")))
-	(foldl
-	 (lambda (host r)
-	   (if (eq? (entity-id host) (entity-id h))
-		   r
-		   (let ((v (v2sub (entity-pos host) (entity-pos h))))
-			 (if (< (v2mag v) cell-size)
-				 (v2add (v2mul (v2normalise v) -1) r)
-				 r))))
-	 (vec2 0 0)
-	 host-list)))
+    (foldl
+     (lambda (host r)
+       (if (eq? (entity-id host) (entity-id h))
+	   r
+	   (let ((v (v2sub (entity-pos host) (entity-pos h))))
+	     (if (< (v2mag v) cell-size)
+		 (v2add (v2mul (v2normalise v) -1) r)
+		 r))))
+     (vec2 0 0)
+     host-list)))
 
 (define (host-update h time delta world)	  
   (let ((state (host-state h)))
@@ -70,17 +70,20 @@
 	  ;; the host's state machine...
 	  (cond
 	   ((eq? state 'state-idle)
-		(if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
-			(host-modify-state (entity-modify-timer h 0) 'state-divide)
-			h))
+	    (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
+		(host-modify-state (entity-modify-timer h 0) 'state-divide)
+		h))
 	   ((eq? state 'state-divide)
-		(host-modify-state h 'state-died))
+	    (host-modify-state h 'state-died))
 	   ((eq? state 'state-died)
-		h)
+	    h)
 	   (else h))   
 	  (+ (entity-timer h) delta))
 	 
-	 (v2add (entity-pos h)
-			(v2add
-			 (v2mul (world-fluid-vel (entity-pos h) time) 1.0)
-			 (host-shove h (world-hosts world)))))))
+	 (v2add
+	  (entity-pos h)
+	  (v2add
+	   (v2mul (world-fluid-vel (entity-pos h) time) 1.0)
+	   (v2add
+		(world-bounds-vel (entity-pos h))
+		(host-shove h (world-hosts world))))))))
