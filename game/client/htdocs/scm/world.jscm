@@ -45,21 +45,21 @@
 
 (define (world-pick-new-pos initial-pos host-list count)  
   (v2add initial-pos (v2mul (rndcirc2d)
-							(param "host-spawn-radius"))))
+			    (param "host-spawn-radius"))))
 
 ;; (  (if (zero? count)
-;; 	  #f
-;; 	  (let ((pos (v2add initial-pos
-;; 						(v2mul (rndcirc2d)
-;; 							   (param "host-spawn-radius")))))
-;; 		(if  ;; inside the petri dish?
-;; 			 (< (v2dist (vec2 (/ screen-width 2)
-;; 							  (/ screen-height 2))
-;; 						pos)
-;; 				(- (param "petri-radius")
-;; 				   (param "host-cell-size")))			 
-;; 			 pos
-;; 			 (world-pick-new-pos initial-pos host-list (- count 1))))))
+;;        #f
+;;        (let ((pos (v2add initial-pos
+;; 			 (v2mul (rndcirc2d)
+;; 				(param "host-spawn-radius")))))
+;; 	 (if  ;; inside the petri dish?
+;; 	  (< (v2dist (vec2 (/ screen-width 2)
+;; 			   (/ screen-height 2))
+;; 		     pos)
+;; 	     (- (param "petri-radius")
+;; 		(param "host-cell-size")))			 
+;; 	  pos
+;; 	  (world-pick-new-pos initial-pos host-list (- count 1))))))
 
 (define (world-spawn-hosts host host-list count)
   (cond
@@ -75,23 +75,24 @@
 	   host-list)
        (- count 1))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; returns list of pairs of viruses and hosts
 (define (world-infection-check virus-list host-list)
   ;; why is this distance wrong? 
-  (let ((check-dist (/ (+ (param "virus-size")
-			  (param "host-cell-size")) 2)))
+  (let ((check-dist (/ (param "virus-size") 2)))
     (foldl
      (lambda (virus r)
-       ;; viruses can only infect once
-       (if (not (virus-infected-host virus))
+       ;; viruses can only infect one host
+       (if (not (eq? (virus-state virus) 'state-attached))
 	   (foldl
 	    (lambda (host r)
 	      ;; hosts cannot be infected more than once
-	      (if (not (eq? (host-state host) 'state-infected))
+	      (if (not (host-virus host))
 		  (if (< (v2dist (entity-pos virus) (entity-pos host))
 			 check-dist)
 		      ;; copy the host into the infection list
-		      (cons (list (entity-id virus) host) r)
+		      (cons (list (entity-id host) virus) r)
 		      r)
 		  r))
 	    r
@@ -100,41 +101,45 @@
      '()
      virus-list)))
 
-(define (world-find-infected-host virus-id infection-list)
+(define (world-find-attached-virus host-id infection-list)
   (foldl
    (lambda (li r)
-     (if (and (not r) (eq? virus-id (car li)))
-	 (cadr li) ;; return host
+     (if (and (not r) (eq? host-id (car li)))
+	 (cadr li) ;; return virus
 	 r))
    #f
    infection-list))
 
-(define (world-host-in-infection-list? host-id infection-list)
+(define (world-virus-in-infection-list? virus-id infection-list)
   (foldl
    (lambda (li r)
-     (if (and (not r) (eq? host-id (entity-id (cadr li))))
+     (if (and (not r) (eq? virus-id (entity-id (cadr li))))
 	 #t r))
    #f
    infection-list))
 
 (define (world-virus-update w infection-list time delta)
-  (map
-   (lambda (virus)     
-     (entity-update
-      (virus-update
-       virus time delta w
-       (world-find-infected-host
-	(entity-id virus)
-	infection-list)) delta))
+  (foldl
+   (lambda (virus r)     
+     ;; remove if attached - the host will deal with it now
+     (if (world-virus-in-infection-list?
+	  (entity-id virus) infection-list)
+	 r (append
+	    r
+	    (list (entity-update
+		   (virus-update
+		    virus time delta w)
+		   delta)))))
+   (if (< (length (world-viruses w)) (param "world-num-viruses"))
+       ;; get receptors from model when it's plugged in
+       (list (make-virus '()))
+       '())
    (world-viruses w)))
 
 (define (world-host-update w infection-list time delta)
   (foldl
    (lambda (host r)
      (cond	  
-      ;; remove if infected - taken over by virus entity
-      ((world-host-in-infection-list?
-	(entity-id host) infection-list) r)
       ;; cell division
       ((and (eq? (host-state host) 'state-divide)
 	    (< (length (world-hosts w))
@@ -144,9 +149,13 @@
       ((eq? (host-state host) 'state-died) r)
       ;; normal update
       (else 
-       (append r (list (entity-update
-			(host-update host time delta w)
-			delta))))))
+       (append
+	r (list (entity-update
+		 (host-update host time delta w
+			      (world-find-attached-virus
+			       (entity-id host)
+			       infection-list))
+		 delta))))))
    '()
    (world-hosts w)))
 
@@ -195,11 +204,11 @@
 
   (for-each
    (lambda (e)
-     (entity-render e ctx))
+     (host-render e ctx))
    (world-hosts w))
   (for-each
    (lambda (e)
-     (virus-render e ctx))
+     (entity-render e ctx))
    (world-viruses w))
   
   ;; build and render the entity renderer

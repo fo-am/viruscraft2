@@ -24,10 +24,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 
 (define host-animation-idle 0)
+(define host-animation-infected 1)
 
 (define host-animation
   (list
    (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
+   (make-anim-move "host" "host-infected" '() (list "1") 8 (vec2 0 0))
    ))
 
 (define (make-host pos receptors)
@@ -40,11 +42,14 @@
     0 host-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
    (list
     'state-idle
-    receptors))))
+    receptors
+    #f))))
 
 (define (host-state h) (list-ref h (+ entity-size 0)))
 (define (host-modify-state h v) (list-replace h (+ entity-size 0) v))
 (define (host-receptors h) (list-ref h (+ entity-size 1)))
+(define (host-virus h) (list-ref h (+ entity-size 2)))
+(define (host-modify-virus h s) (list-replace h (+ entity-size 2) s))
 
 (define (host-start-pos)
   (vec2 (random screen-width) (random screen-height)))
@@ -63,27 +68,61 @@
      (vec2 0 0)
      host-list)))
 
-(define (host-update h time delta world)	  
-  (let ((state (host-state h)))
-	(entity-modify-pos	 
-	 (entity-modify-timer
-	  ;; the host's state machine...
-	  (cond
-	   ((eq? state 'state-idle)
-	    (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
-		(host-modify-state (entity-modify-timer h 0) 'state-divide)
-		h))
-	   ((eq? state 'state-divide)
-	    (host-modify-state h 'state-died))
-	   ((eq? state 'state-died)
-	    h)
-	   (else h))   
-	  (+ (entity-timer h) delta))
-	 
-	 (v2add
-	  (entity-pos h)
-	  (v2add
-	   (v2mul (world-fluid-vel (entity-pos h) time) 1.0)
-	   (v2add
-		(world-bounds-vel (entity-pos h))
-		(host-shove h (world-hosts world))))))))
+(define (host-update h time delta world new-virus)
+  (let ((state (host-state h))
+	(virus (host-virus h)))
+    (host-modify-virus
+     (entity-modify-pos
+      (entity-modify-timer
+       
+       ;; the host's state machine...
+       (cond
+	;; at any time switch to infected if a virus attaches
+	(new-virus
+	 (host-modify-state h 'state-infected))
+	((eq? state 'state-idle)
+	 (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
+	     (host-modify-state (entity-modify-timer h 0) 'state-divide)
+	     h))
+	((eq? state 'state-divide)
+	 (host-modify-state h 'state-died))
+	((eq? state 'state-died)
+	 h) 
+	((eq? state 'state-infected)
+	 (entity-modify-clip h host-animation-infected))
+	(else h))   
+       (+ (entity-timer h)
+	  ;; speed up heart rate when infected!
+	  (if (eq? state 'state-infected)
+	      (* delta 2) delta)))
+      
+      ;; update the position
+      (v2add
+       (entity-pos h)
+       (v2add
+	(v2mul (world-fluid-vel (v2add (vec2 (if virus 0 9000) 0) (entity-pos h)) time) 0.0)
+	(v2add
+	 (world-bounds-vel (entity-pos h))
+	 (host-shove h (world-hosts world))))))
+
+     ;; update the virus
+     (cond
+      ;; update the host postion if we have one
+      (virus	    
+       (entity-modify-pos virus (entity-pos h)))
+      ;; store the infected host if we have one
+      (new-virus
+       ;; tell it it's infected...
+       (entity-modify-pos
+	(entity-modify-offset
+	 (host-modify-state new-virus 'state-attached)
+	 ;; add the offset to the virus
+	 (v2sub (entity-pos new-virus) (entity-pos h)))
+	(entity-pos h)))
+      (else virus)))))
+
+;; overload this to render the virus if we have one
+(define (host-render h ctx)
+  (let ((virus (host-virus h)))
+    (entity-render h ctx)
+    (when virus (entity-render virus ctx))))

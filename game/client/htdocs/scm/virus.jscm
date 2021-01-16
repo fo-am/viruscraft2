@@ -41,17 +41,14 @@
       0 virus-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
      (list
       'state-idle
-      receptors
-      #f))))
+      receptors))))
 
 (define (virus-state v) (list-ref v (+ entity-size 0)))
 (define (virus-modify-state v s) (list-replace v (+ entity-size 0) s))
 (define (virus-receptors v) (list-ref v (+ entity-size 1)))
-(define (virus-infected-host v) (list-ref v (+ entity-size 2)))
-(define (virus-modify-infected-host v s) (list-replace v (+ entity-size 2) s))
 
 (define (virus-start-pos)
-  (vec2 (random screen-width) (random screen-height)))
+  (vec2 (random screen-width) -10))
 
 ;; todo: refactor with host version
 (define (virus-shove v virus-list)
@@ -67,6 +64,7 @@
      (vec2 0 0)
      virus-list)))
 
+;; not needed?
 (define (virus-check-hosts v host-list)
   (let ((check-dist (+ (param "virus-size")
 		       (param "host-cell-size"))))
@@ -79,36 +77,15 @@
      #f
      host-list)))
 
-(define (virus-update v time delta world infected-host)	  
-  (let ((host (virus-infected-host v)))   
-    (entity-modify-pos
-     (entity-modify-timer
-      (virus-modify-infected-host
-       v (cond
-	  ;; update the host postion if we have one
-	  (host	    
-	   (entity-modify-pos host (entity-pos v)))
-	  ;; store the infected host if we have one
-	  (infected-host	 	 
-	   ;; tell it it's infected...
-	   (entity-modify-offset
-	    (host-modify-state infected-host 'state-infected)
-	    ;; add the offset to the virus
-	    (v2sub (entity-pos infected-host) (entity-pos v))))
-	  (else host)))
-      (+ (entity-timer v) delta))
-     ;; update the position
+(define (virus-update v time delta world)	  
+  (entity-modify-pos
+   (entity-modify-timer v (+ (entity-timer v) delta))
+   ;; update the position
+   (v2add
+    (entity-pos v)	    
+    (v2add
      (v2add
-      (entity-pos v)	    
-      (v2add
-       (v2add
-	(virus-shove v (world-viruses world))
-	(world-fluid-vel (v2add (vec2 (if host 0 9000) 0) (entity-pos v)) time))	       
-       (world-bounds-vel (entity-pos v)))))))
-	     
-    
-;; overload this to render the host if we have one
-(define (virus-render v ctx)
-  (let ((host (virus-infected-host v)))
-    (when host (entity-render host ctx))
-    (entity-render v ctx)))
+      (virus-shove v (world-viruses world))
+      (world-fluid-vel (entity-pos v) time))	       
+     (world-bounds-vel (entity-pos v))))))
+
