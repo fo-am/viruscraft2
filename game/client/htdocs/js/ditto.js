@@ -397,11 +397,14 @@ ditto.core_forms = function(fn, args) {
     }
 
     if (fn == "list_ref") {
-        if (ditto.check(fn,args,2,2)) return debug+ditto.comp(ditto.car(args))+"["+ditto.comp(ditto.cadr(args))+"]";
+        if (ditto.check(fn,args,2,2))
+	    return debug+ditto.comp(ditto.car(args))+"["+ditto.comp(ditto.cadr(args))+"]";
     }
 
     if (fn == "list_replace") {
         if (ditto.check(fn,args,3,3))
+	    // calling fn for x[y]=z return x is annoying
+	    // tried splice but it doesn't return the right array
             return "ditto.list_replace_helper("+
             ditto.comp(ditto.car(args))+","+
             ditto.comp(ditto.cadr(args))+","+
@@ -506,6 +509,7 @@ ditto.core_forms = function(fn, args) {
 
     if (fn == "eq_q") {
         if (ditto.check(fn,args,2,2))
+	    // todo: === ?
             return debug+ditto.comp(ditto.car(args))+"=="+
             ditto.comp(ditto.cadr(args));
     }

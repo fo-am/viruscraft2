@@ -205,19 +205,36 @@
       (append (list (car l)) (delete-n (cdr l) (- n 1)))))
 
 (define (shuffle l)
-  (cond ((null? l) ())
-        ((< (length l) 2)
-         (list (car l)))
-        (else
-         (let ((item (random (length l))))
-           (cons (list-ref l item)
-                 (shuffle (delete-n l item)))))))
+  ;; replaced recursive version with imperative
+  ;; Durstenfeld shuffle to save stack
+  (js "for (var i = l.length - 1; i > 0; i--) {")
+  (js "var j = Math.floor(Math.random() * (i + 1));")
+  (js "var temp = l[i];")
+  (js "l[i] = l[j];")
+  (js "l[j] = temp;")
+  (js "}")
+  l)
 
+;; recursive shuffle
+;; (cond ((null? l) ())
+;;       ((< (length l) 2)
+;;        (list (car l)))
+;;       (else
+;;        (let ((item (random (length l))))
+;;          (cons (list-ref l item)
+;;                (shuffle (delete-n l item))))))
+
+;; removes elements from the end so l becomes n length
 (define (crop l n)
-  (cond
-   ((null? l) ())
-   ((zero? n) ())
-   (else (cons (car l) (crop (cdr l) (- n 1))))))
+  (js "l.slice(0,n);"))
+
+;; recursive version removed
+  ;; (cond
+  ;;  ((null? l) ())
+  ;;  ((zero? n) ())
+  ;;  (else (cons (car l) (crop (cdr l) (- n 1)))))
+
+
 
 ;; return (picked left-over)
 (define (pick-out-of l n)
@@ -308,7 +325,9 @@
     (when (not (eq? (let ((a 1) (b 2) (c 3)) (list 2 3) (+ a b c)) 6)) (display "let(2) failed"))
     (when (not (eq? a 10)) (display "set! failed"))
     (when (not (eq? (factorial 10) 3628800)) (display "factorial test failed"))
-    (when (not (eq? (list-ref (list-replace (list 1 2 3) 2 4) 2) 4)) (display "list-replace failed"))
+    (when (not (eq? (list-ref (list-replace (list 1 2 3) 2 4) 2) 4))
+	  (display (list-replace (list 1 2 3) 2 4))(newline)
+	  (display "list-replace failed"))
     (when (not (list-equal? (build-list 10 (lambda (n) n)) (list 0 1 2 3 4 5 6 7 8 9)))
           (display "build-list failed"))
     (when (eq? (not (+ 200 3)) 203) (display "+ failed"))
