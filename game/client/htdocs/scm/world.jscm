@@ -15,65 +15,55 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts)
-  (list viruses hosts))
+(define (make-world viruses hosts model receptor-mixer)
+  (list viruses hosts model receptor-mixer))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
+(define (world-model w) (list-ref w 2))
+(define (world-receptor-mixer w) (list-ref w 3))
 
 (define (build-world player-id time)
   (make-world
    ;; we assume these become ordered lists because the ids increase?
    (build-list
-    (string->number (param "world-num-viruses"))
+    1
     (lambda (_)
-      (make-virus '())))
+      (make-virus
+       (generate-receptors num-virus-receptors)
+       (random (param "virus-max-age"))
+       )))
    (build-list
     (string->number (param "world-start-hosts"))
     (lambda (_)
-      (make-host (vec2 (/ screen-width 2) (/ screen-height 2)) '())))))
-
-
-(define (world-is-pos-empty? pos host-list)
-  (let ((cell-size (param "host-cell-size")))
-	(foldl
-	 (lambda (host v)
-	   (if (and v (> (v2dist pos (entity-pos host)) cell-size))
-		   v #f))
-	 #t
-	 host-list)))
-
-(define (world-pick-new-pos initial-pos host-list count)  
-  (v2add initial-pos (v2mul (rndcirc2d)
-			    (param "host-spawn-radius"))))
-
-;; (  (if (zero? count)
-;;        #f
-;;        (let ((pos (v2add initial-pos
-;; 			 (v2mul (rndcirc2d)
-;; 				(param "host-spawn-radius")))))
-;; 	 (if  ;; inside the petri dish?
-;; 	  (< (v2dist (vec2 (/ screen-width 2)
-;; 			   (/ screen-height 2))
-;; 		     pos)
-;; 	     (- (param "petri-radius")
-;; 		(param "host-cell-size")))			 
-;; 	  pos
-;; 	  (world-pick-new-pos initial-pos host-list (- count 1))))))
-
-(define (world-spawn-hosts host host-list count)
+      (make-host
+       (vec2 (/ screen-width 2) (/ screen-height 2))
+       (list 'square 'square 'square 'square)
+       ;;(generate-receptors num-host-receptors)
+       )))
+   (build-model model-virus-popsize)
+   (make-receptor-mixer)
+   ))
+  
+(define (world-spawn-hosts host host-list count w)
   (cond
    ((zero? count) host-list)
    (else
-    (let ((pos (world-pick-new-pos (entity-pos host) host-list 10)))
-      (world-spawn-hosts
-       host
-       (if pos ;; did we find an empty space?
-	   (ordered-list-insert
-	    host-list
-	    (make-host pos (host-receptors host)))
-	   host-list)
-       (- count 1))))))
+    (world-spawn-hosts
+     host
+     (ordered-list-insert
+      host-list
+      (make-host
+       (v2add
+	(entity-pos host)
+	(v2mul (rndcirc2d)
+	       (param "host-spawn-radius")))
+       ;; todo: get receptors from player
+       (mixer->receptors (world-receptor-mixer w))
+       ;;(host-receptors host)
+       ))
+     (- count 1)
+     w))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -89,8 +79,13 @@
 	    (lambda (host r)
 	      ;; hosts cannot be infected more than once
 	      (if (not (host-virus host))
-		  (if (< (v2dist (entity-pos virus) (entity-pos host))
-			 check-dist)
+		  ;; if close enough
+		  (if (and (< (v2dist (entity-pos virus) (entity-pos host))
+			      check-dist)
+			   ;; and compatible receptor check
+			   (eq?
+			    (choose (virus-receptors virus))
+			    (choose (host-receptors host))))				  		      
 		      ;; copy the host into the infection list
 		      (cons (list (entity-id host) virus) r)
 		      r)
@@ -118,23 +113,47 @@
    #f
    infection-list))
 
+(define (world-spawn-new-viruses w)
+  (foldl
+   (lambda (host r)
+     ;; if it died with a virus
+     (if (and (eq? (host-state host) 'state-died)
+	      (host-virus host)
+	      (< (length (world-viruses w)) (param "world-max-viruses")))
+	 (append
+	  r
+	  (build-list
+	   (param "virus-cell-spawn-count")
+	   (lambda (_)
+	     (make-virus-at
+	      (v2add (rndcirc2d) (entity-pos host))
+	      (model-hypothesis (world-model w)) 0))))
+	 r))
+   (world-viruses w)
+   (world-hosts w)))
+
 (define (world-virus-update w infection-list time delta)
   (foldl
    (lambda (virus r)     
      ;; remove if attached - the host will deal with it now
-     (if (world-virus-in-infection-list?
-	  (entity-id virus) infection-list)
-	 r (append
-	    r
-	    (list (entity-update
-		   (virus-update
-		    virus time delta w)
-		   delta)))))
-   (if (< (length (world-viruses w)) (param "world-num-viruses"))
-       ;; get receptors from model when it's plugged in
-       (list (make-virus '()))
+     (cond
+      ;; a succesful infection
+      ((world-virus-in-infection-list?
+	(entity-id virus) infection-list) r)
+      ;; death via old age
+      ((eq? (virus-state virus) 'state-died) r)
+      ;; normal update
+      (else (append
+	     r
+	     (list (entity-update
+		    (virus-update
+		     virus time delta w)
+		    delta))))))
+   (if (< (length (world-viruses w)) (param "world-min-viruses"))
+       ;; get receptors from model 
+       (list (make-virus (model-hypothesis (world-model w)) 0))
        '())
-   (world-viruses w)))
+   (world-spawn-new-viruses w)))
 
 (define (world-host-update w infection-list time delta)
   (foldl
@@ -144,7 +163,7 @@
       ((and (eq? (host-state host) 'state-divide)
 	    (< (length (world-hosts w))
 	       (param "host-max-population")))			   
-       (world-spawn-hosts host r (param "host-spawn-count")))
+       (world-spawn-hosts host r (param "host-spawn-count") w))
       ;; cell death
       ((eq? (host-state host) 'state-died) r)
       ;; normal update
@@ -186,10 +205,36 @@
 			 (crop (shuffle (world-hosts w)) 10))))
     (make-world
      (world-virus-update w infection-list time delta)
-     (world-host-update w infection-list time delta))))
+     (world-host-update w infection-list time delta)
+     (if (zero? (random (param "model-update-likelihood")))
+		 (model-update (world-model w) (world-hosts w))
+		 (world-model w))
+     (world-receptor-mixer w)
+     )))
 
 (define (world-update-mouse w state x y)
   w)
+
+(define (world-receptor-button w receptor)
+  (make-world
+   (world-viruses w)
+   (world-hosts w)
+   (world-model w)
+   (receptor-mixer-increase
+    (world-receptor-mixer w)
+    (cond
+     ((eq? receptor 'triangle) 0)
+     ((eq? receptor 'square) 1)
+     ((eq? receptor 'donut) 2)
+     (else 3)))))
+
+(define (render-receptor-bar w x y i)
+  (ctx.beginPath)
+  (ctx.rect x y 20 100)
+  (ctx.stroke)
+  (let ((h (* 100 (list-ref (world-receptor-mixer w) i))))
+	(ctx.fillRect x (- (+ 100 y) h) 20 h)))
+  
 
 (define (world-render w ctx time)
   (set! ctx.strokeStyle "#000")
@@ -208,7 +253,7 @@
    (world-hosts w))
   (for-each
    (lambda (e)
-     (entity-render e ctx))
+     (virus-render e ctx))
    (world-viruses w))
   
   ;; build and render the entity renderer
@@ -219,6 +264,49 @@
   ;;    (world-viruses w))
   ;;   (world-hosts w))
   ;;  ctx)
+
+  
+
+  
+  ;; control panel
+  (set! ctx.fillStyle "#fff")
+  (set! ctx.globalAlpha 0.8)
+  (ctx.fillRect 420 600 800 120)
+  (set! ctx.globalAlpha 1.0)
+  (ctx.beginPath)
+  (ctx.rect 420 600 800 120)
+  (ctx.stroke)
+
+  ;; infection rate
+  (set! ctx.fillStyle "#f00")
+  (set! ctx.font "normal 20pt Dosis")
+  (ctx.fillText "INFECTION LEVEL" 180 40) 
+  (ctx.fillRect
+   400 20
+   (* 800 (/ (foldl
+			  (lambda (host r)
+				(if (host-virus host)
+					(+ r 1) r))
+			  0
+			  (world-hosts w))
+			 (length (world-hosts w))))
+   20)							
+  (ctx.beginPath)
+  (ctx.rect 400 20 800 20)
+  (ctx.stroke)
+
+  (when (zero? (length (world-hosts w)))
+		(set! ctx.fillStyle "#f00")
+		(set! ctx.font "normal 80pt Dosis")
+		(ctx.fillText "GAME OVER" 550 400))
+  
+  ;; render receptor type bars
+  (set! ctx.fillStyle "#000")
+  (render-receptor-bar w 560 610 0)
+  (render-receptor-bar w 760 610 1)
+  (render-receptor-bar w 960 610 2)
+  (render-receptor-bar w 1160 610 3)
+  
   )
 
 (define (world-end-game-timer w)

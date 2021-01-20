@@ -17,9 +17,9 @@
 ;; order children by (car) of v
 (define (ordered-list-insert l v)
   (cond
-    ((null? l) (list v))
-    ((< (car  v) (car (car l))) (cons v l))
-    (else (cons (car l) (ordered-list-insert (cdr l) v)))))
+   ((null? l) (list v))
+   ((< (car  v) (car (car l))) (cons v l))
+   (else (cons (car l) (ordered-list-insert (cdr l) v)))))
 
 ;; binary search
 (define (ordered-list-search l id)

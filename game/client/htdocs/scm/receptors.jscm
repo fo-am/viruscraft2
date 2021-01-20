@@ -1,0 +1,102 @@
+;; -*- mode: scheme; -*-
+; ------------------------------------------------
+;; Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define receptor-shapes (list 'triangle 'square 'donut 'guitar))
+(define num-virus-receptors 5)
+(define num-host-receptors 4)
+
+(define (generate-receptors size)
+  (build-list
+   size
+   (lambda (_)
+     (choose receptor-shapes))))
+
+(define (mutate-receptors receptors rate)
+  (map
+   (lambda (r)
+     (if (< (random 10000) (* rate 100))
+         (choose receptor-shapes)
+         r))
+   receptors))
+
+(define (receptor-count receptor receptors)
+  (foldl
+   (lambda (r v)
+     (if (eq? r receptor) (+ v 1) v))
+   0 receptors))
+
+(define (receptor-histogram receptors)
+  (map
+   (lambda (shape)
+     (receptor-count shape receptors))
+   receptor-shapes))
+   
+(define (receptors-paint receptor-images is-a-virus)
+  (let ((tcanv (document.createElement "canvas")))
+    (set! tcanv.width 100)
+    (set! tcanv.height 100)    
+    (let ((tctx (tcanv.getContext "2d")))
+      (tctx.save)
+      (tctx.translate 50 50)
+      (index-for-each
+       (lambda (i ri)
+      	 (tctx.save)
+      	 (tctx.rotate (* i (/ (* Math.PI 2) (length receptor-images))))
+	 (if is-a-virus 
+	     (tctx.translate -20 -50)
+	     (tctx.translate -20 15))
+      	 (tctx.drawImage ri 0 0)
+      	 (tctx.restore)
+      	 )
+       receptor-images)
+      (tctx.restore))
+    tcanv))  
+
+
+(define (make-receptor-mixer) (list 1 1 1 1))
+
+(define (receptor-mixer-normalise m)
+  (let ((max (foldl (lambda (v r) (if (> v r) v r)) 0 m)))
+    (map (lambda (v) (/ v max)) m)))
+
+(define (receptor-mixer-increase m n)
+  (dbg (receptor-mixer-normalise
+   (index-map
+    (lambda (i r)
+      (if (eq? n i)
+	  (* r 1.2)
+	  (/ r 1.2)))
+    m))))
+
+(define (probrnd probs)
+  (define (_ val prob-lis n)
+    (let ((nval (- val (car prob-lis))))
+      (if (or (< nval 0) (null? (cdr prob-lis)))
+	  n (_ nval (cdr prob-lis) (+ n 1)))))
+  (_
+   (* (rndf)
+      (foldl (lambda (p r) (+ p r)) 0 probs))
+   probs 0))
+
+(define (receptor-mixer-choose m)
+  (list-ref receptor-shapes (probrnd m)))
+
+(define (mixer->receptors m)
+  (build-list
+   num-host-receptors
+   (lambda (_)
+     (receptor-mixer-choose m))))

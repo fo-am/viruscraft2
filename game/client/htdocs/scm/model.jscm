@@ -1,0 +1,125 @@
+;; -*- mode: scheme; -*-
+; ------------------------------------------------
+;; Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;; a genetic algorithm for evolving viruses!
+
+(define model-virus-mutation-rate (param "model-mutation-rate"))
+(define model-virus-threshold (param "model-pop-threshold"))
+(define model-virus-popsize (param "model-population-size"))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (make-model-virus receptors fitness) (list receptors fitness))
+(define (model-virus-receptors v) (list-ref v 0))
+(define (model-virus-fitness v) (list-ref v 1))
+
+(define (build-model-virus)
+  (make-model-virus (generate-receptors num-virus-receptors) 0))
+
+(define (model-virus-spawn v rate)
+  (make-model-virus
+   (mutate-receptors (model-virus-receptors v) rate)
+   0))
+
+;; could do fitness via histograms
+;; but this stochastically is what is happening
+(define (model-virus-attempt-attach? virus host-receptors)
+  (eq?
+   (choose (model-virus-receptors virus))
+   (choose host-receptors)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (viruses-repop v rate virus-popsize)
+  (append
+   v (build-list
+      (- virus-popsize (length v))
+      (lambda (_)
+	(model-virus-spawn (choose v) rate)))))
+
+(define (viruses-decimate v threshold)
+  (cadr
+   (foldl
+    (lambda (virus r)
+      (let ((index (car r))
+            (l (cadr r)))
+        (if (> index (* (/ threshold 100) (length v)))
+            (list (+ index 1)
+                  (cons virus l))
+            (list (+ index 1)
+                  l))))
+    (list 0 '()) v)))
+
+(define (viruses-sort v)
+  (v.sort
+   (lambda (a b)
+     (if (< (model-virus-fitness a)
+	    (model-virus-fitness b))
+	 -1
+	 (if (eq? (model-virus-fitness a)
+		  (model-virus-fitness b))
+	     0
+	     1)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (make-model viruses generations) (list viruses generations))
+(define (model-viruses w) (list-ref w 0))
+(define (model-generations w) (list-ref w 1))
+
+(define (build-model virus-popsize)
+  (make-model
+   (build-list
+    virus-popsize
+    (lambda (_)
+      (build-model-virus)))
+   0))
+
+(define (model-calc-fitness virus hosts w)
+  (foldl
+   (lambda (host r)
+     (if (model-virus-attempt-attach? virus (host-receptors host))
+         (+ r 1)
+         r))
+   0 hosts))
+
+(define (model-update-fitness w hosts)
+  (make-model
+   (map
+    (lambda (virus)
+      (make-model-virus
+       (model-virus-receptors virus)
+       (model-calc-fitness virus hosts w)))
+    (model-viruses w))
+   (model-generations w)))
+
+(define (model-repopulate-viruses w)
+  (make-model
+   (viruses-repop
+    (viruses-decimate    
+     (viruses-sort (model-viruses w))
+     model-virus-threshold)
+    model-virus-mutation-rate
+    (length (model-viruses w)))
+   (+ (model-generations w) 1)))
+
+(define (model-update w hosts)
+  (model-repopulate-viruses
+   (model-update-fitness w hosts)))
+
+(define (model-hypothesis w)
+  (dbg (model-virus-receptors (car (model-viruses w)))))

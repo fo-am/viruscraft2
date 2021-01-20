@@ -46,7 +46,7 @@ html, body {
 
 .param-list {
     height: 400px;
-<!--    overflow: scroll; -->
+    overflow-y: scroll;
 }
 
 .param-row {

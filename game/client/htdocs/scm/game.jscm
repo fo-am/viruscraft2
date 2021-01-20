@@ -35,18 +35,27 @@
 (local-setup-params 
  "viruscraft2" 
  (list
-  (make-param "world-num-viruses" 10 "viruses")
+  (make-param "world-min-viruses" 3 "viruses")
+  (make-param "world-max-viruses" 15 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
   (make-param "host-spawn-count" 2 "babies")
   (make-param "host-spawn-radius" 10 "pixels")
   (make-param "host-spawn-rate" 3 "seconds")
-  (make-param "host-max-population" 100 "cells")
-  (make-param "host-cell-size" 50 "pixels")
-  (make-param "virus-size" 50 "pixels")
+  (make-param "host-max-population" 50 "cells")
+  (make-param "host-cell-size" 100 "pixels")
+  (make-param "host-infected-death-time" 10 "seconds")
+  (make-param "virus-size" 120 "pixels")
+  (make-param "virus-max-age" 10 "seconds")
+  (make-param "virus-cell-spawn-count" 3 "viruses")
   (make-param "petri-radius" 350 "pixels")
   (make-param "fluid-speed" 200 "x seconds")
-  (make-param "fluid-scale" 0.003 "units")
-  (make-param "fluid-strength" 4 "units")
+  (make-param "fluid-scale" 0.002 "units")
+  (make-param "fluid-strength" 8 "units")
+  (make-param "model-mutation-rate" 1 "percent")
+  (make-param "model-pop-threshold" 50 "percent")
+  (make-param "model-population-size" 10 "individuals")
+  (make-param "model-hosts-per-update" 3 "hosts")
+  (make-param "model-update-likelihood" 10 "frames")
   ))
 
 (define (param name)
@@ -62,6 +71,8 @@
 (load "scm/entity-list.jscm")
 (load "scm/entity-renderer.jscm")
 
+(load "scm/receptors.jscm")
+(load "scm/model.jscm")
 (load "scm/virus.jscm")
 (load "scm/host.jscm")
 (load "scm/world.jscm")
@@ -151,7 +162,7 @@
        (game-modify-render
 	(lambda (ctx)
 	  (demo-render (game-data c) ctx)
-	  (set! ctx.fillStyle "#fff")
+	  (set! ctx.fillStyle text-col)
 	  
 	  (set! ctx.font "normal 120pt Dosis")
 	  
@@ -285,6 +296,50 @@
 	     c)))
       (game-modify-buttons
        (list
+	(image-button
+	 ""
+	 (- (/ screen-width 2) 300)
+	 (+ default-button-y 85) #f
+	 (find-image "triangle-button.png")
+	 (lambda (c)
+	   (button-sound)	   
+	   (game-modify-data
+	    (lambda (d) (world-receptor-button d 'triangle))
+	    c)))
+
+	(image-button
+	 ""
+	 (- (/ screen-width 2) 100)
+	 (+ default-button-y 85) #f
+	 (find-image "square-button.png")
+	 (lambda (c)
+	   (button-sound)	   
+	   (game-modify-data
+	    (lambda (d) (world-receptor-button d 'square))
+	    c)))
+	
+	(image-button
+	 ""
+	 (+ (/ screen-width 2) 100)
+	 (+ default-button-y 85) #f
+	 (find-image "donut-button.png")
+	 (lambda (c)
+	   (button-sound)	   
+	   (game-modify-data
+	    (lambda (d) (world-receptor-button d 'donut))
+	    c)))
+
+	(image-button
+	 ""
+	 (+ (/ screen-width 2) 300)
+	 (+ default-button-y 85) #f
+	 (find-image "guitar-button.png")
+	 (lambda (c)
+	   (button-sound)	   
+	   (game-modify-data
+	    (lambda (d) (world-receptor-button d 'guitar))
+	    c)))
+
 	(rect-button
 	 "QUIT"
 	 20
@@ -294,6 +349,20 @@
 	 (lambda (c)
 	   (button-sound)
 	   (nightjar-intro game)))
+
+	(rect-button
+	 "RESET"
+	 100
+	 (+ default-button-y 85)
+	 60 60
+	 #f
+	 (lambda (c)
+	   (button-sound)
+	   (game-modify-data
+		(lambda (d)
+		  (build-world player-id (/ (game-time c) 1000)))
+		c)))
+	
 	) c))))))
 
 (define scores-anim-t 0)
@@ -522,6 +591,15 @@
   (anim->filenames virus-animation)
   (anim->filenames host-animation)
   (list 
+   "square.png"
+   "triangle.png"
+   "donut.png"
+   "guitar.png"
+   "logos.png"
+   "square-button.png"
+   "triangle-button.png"
+   "donut-button.png"
+   "guitar-button.png"
    "logos.png"
    ))
 
