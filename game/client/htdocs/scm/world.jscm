@@ -317,6 +317,9 @@
   (render-receptor-bar w 250 250 1)
   (render-receptor-bar w 250 370 2)
   (render-receptor-bar w 250 490 3)
+  (set! ctx.fillStyle "#f00")
+  (set! ctx.font "normal 20pt Dosis")
+  (ctx.fillText "HOST RECEPTOR MIX" 100 640) 
 
   ;; population graph
   (set! ctx.fillStyle "#fff")
