@@ -88,6 +88,7 @@
 	 (host-modify-state
 	  (entity-modify-timer h 0)
 	  'state-infected))
+
 	((eq? state 'state-idle)
 	 (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
 	     (host-modify-state (entity-modify-timer h 0) 'state-divide)
@@ -112,7 +113,7 @@
        (v2add
 	(v2mul (world-fluid-vel (v2add (vec2 (if virus 0 9000) 0) (entity-pos h)) time) 0.0)
 	(v2add
-	 (world-bounds-vel (entity-pos h))
+	 (world-petri-vel (entity-pos h))
 	 (host-shove h (world-hosts world))))))
 
      ;; update the virus

@@ -135,7 +135,6 @@
            (list 0 s)
            l))))
 
-
 (define index-map
   (lambda (fn l)
     (cadr (foldl

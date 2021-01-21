@@ -36,26 +36,28 @@
  "viruscraft2" 
  (list
   (make-param "world-min-viruses" 3 "viruses")
-  (make-param "world-max-viruses" 15 "viruses")
+  (make-param "world-max-viruses" 20 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
+  (make-param "host-receptor-count" 4 "receptors")
   (make-param "host-spawn-count" 2 "babies")
   (make-param "host-spawn-radius" 10 "pixels")
   (make-param "host-spawn-rate" 3 "seconds")
-  (make-param "host-max-population" 50 "cells")
+  (make-param "host-max-population" 20 "cells")
   (make-param "host-cell-size" 100 "pixels")
-  (make-param "host-infected-death-time" 10 "seconds")
+  (make-param "host-infected-death-time" 5 "seconds")
+  (make-param "virus-receptor-count" 5 "receptors")
   (make-param "virus-size" 120 "pixels")
   (make-param "virus-max-age" 10 "seconds")
-  (make-param "virus-cell-spawn-count" 3 "viruses")
+  (make-param "virus-cell-spawn-count" 5 "viruses")
   (make-param "petri-radius" 350 "pixels")
   (make-param "fluid-speed" 200 "x seconds")
   (make-param "fluid-scale" 0.002 "units")
-  (make-param "fluid-strength" 8 "units")
+  (make-param "fluid-strength" 4 "units")
   (make-param "model-mutation-rate" 1 "percent")
   (make-param "model-pop-threshold" 50 "percent")
   (make-param "model-population-size" 10 "individuals")
   (make-param "model-hosts-per-update" 3 "hosts")
-  (make-param "model-update-likelihood" 10 "frames")
+  (make-param "model-update-rate" 20 "~once per x frames")
   ))
 
 (define (param name)
@@ -169,7 +171,7 @@
 	  (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)
 	  
 	  (set! ctx.font "normal 60pt Dosis")
-	  (wrap-text ctx "Can you save your cells from the virus?" 0 340 1200 100)
+	  (wrap-text ctx "Placeholder text..." 0 340 1200 100)
 	  (set! ctx.font "normal 30pt Dosis")
 
 	  ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
@@ -183,7 +185,7 @@
 	  (list
 	   (rect-button
 	    "PLAY!"
-	    (- default-button-x (if ditto.load_resource_static 200 350))
+	    (- default-button-x 0) ;;((if ditto.load_resource_static 200 350))
 	    default-button-y
 	    default-button-width default-button-height
 	    "jumpy"
@@ -195,34 +197,37 @@
 	      ))
 
 	  
-	  (rect-button
-	   "HOW TO PLAY"
-	   (+ default-button-x (if ditto.load_resource_static 200 350))
-	   default-button-y
-	   default-button-width default-button-height
-	   "jumpy"
-	   (lambda (c)
-	     (button-sound)
-	     (nightjar-about c)))
-	  )
+	  ;; (rect-button
+	  ;;  "HOW TO PLAY"
+	  ;;  (+ default-button-x (if ditto.load_resource_static 200 350))
+	  ;;  default-button-y
+	  ;;  default-button-width default-button-height
+	  ;;  "jumpy"
+	  ;;  (lambda (c)
+	  ;;    (button-sound)
+	  ;;    (nightjar-about c)))
+	  ;; )
 
-	  (if ditto.load_resource_static
-	      '()
-	      (list
-	       (rect-button
-		"LEADERBOARD"
-		default-button-x
-		default-button-y
-		default-button-width default-button-height
-		"jumpy"
-		(lambda (c)
-		  (button-sound)
-		  (server-call-mutate
-		   "hiscores"
-		   (list)
-		   (lambda (c scores)	      
-		     (nightjar-hiscores c (JSON.parse scores))))
-		  c)))))
+	  ;; (if ditto.load_resource_static
+	  ;;     '()
+	  ;;     (list
+	  ;;      (rect-button
+	  ;; 	"LEADERBOARD"
+	  ;; 	default-button-x
+	  ;; 	default-button-y
+	  ;; 	default-button-width default-button-height
+	  ;; 	"jumpy"
+	  ;; 	(lambda (c)
+	  ;; 	  (button-sound)
+	  ;; 	  (server-call-mutate
+	  ;; 	   "hiscores"
+	  ;; 	   (list)
+	  ;; 	   (lambda (c scores)	      
+	  ;; 	     (nightjar-hiscores c (JSON.parse scores))))
+	  ;; 	  c))))
+
+
+	  )
 	 
 	 c))))))
 
@@ -296,10 +301,11 @@
 	     c)))
       (game-modify-buttons
        (list
+		
 	(image-button
 	 ""
-	 (- (/ screen-width 2) 300)
-	 (+ default-button-y 85) #f
+	 180
+	 180 "pulse"
 	 (find-image "triangle-button.png")
 	 (lambda (c)
 	   (button-sound)	   
@@ -309,8 +315,8 @@
 
 	(image-button
 	 ""
-	 (- (/ screen-width 2) 100)
-	 (+ default-button-y 85) #f
+	 180
+	 300 "pulse"
 	 (find-image "square-button.png")
 	 (lambda (c)
 	   (button-sound)	   
@@ -320,8 +326,8 @@
 	
 	(image-button
 	 ""
-	 (+ (/ screen-width 2) 100)
-	 (+ default-button-y 85) #f
+	 180
+	 420 "pulse"
 	 (find-image "donut-button.png")
 	 (lambda (c)
 	   (button-sound)	   
@@ -331,8 +337,8 @@
 
 	(image-button
 	 ""
-	 (+ (/ screen-width 2) 300)
-	 (+ default-button-y 85) #f
+	 180
+	 540 "pulse"
 	 (find-image "guitar-button.png")
 	 (lambda (c)
 	   (button-sound)	   

@@ -15,35 +15,45 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts model receptor-mixer)
-  (list viruses hosts model receptor-mixer))
+(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph)
+  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
 (define (world-model w) (list-ref w 2))
 (define (world-receptor-mixer w) (list-ref w 3))
+(define (world-variant-id w) (list-ref w 4))
+(define (world-variant-virus w) (list-ref w 5))
+(define (world-variant-timer w) (list-ref w 6))
+(define (world-population-graph w) (list-ref w 7))
+
+(define virus-age-var 5)
 
 (define (build-world player-id time)
-  (make-world
-   ;; we assume these become ordered lists because the ids increase?
-   (build-list
-    1
-    (lambda (_)
-      (make-virus
-       (generate-receptors num-virus-receptors)
-       (random (param "virus-max-age"))
-       )))
-   (build-list
-    (string->number (param "world-start-hosts"))
-    (lambda (_)
-      (make-host
-       (vec2 (/ screen-width 2) (/ screen-height 2))
-       (list 'square 'square 'square 'square)
-       ;;(generate-receptors num-host-receptors)
-       )))
-   (build-model model-virus-popsize)
-   (make-receptor-mixer)
-   ))
+  (let ((mixer (make-receptor-mixer)))
+	(make-world
+	 ;; we assume these become ordered lists because the ids increase?
+	 (build-list
+	  1
+	  (lambda (_)
+		(make-virus
+		 (generate-receptors num-virus-receptors)
+		 (* (rndf) (param "virus-max-age"))
+		 )))
+	 (build-list
+	  (string->number (param "world-start-hosts"))
+	  (lambda (_)
+		(make-host
+		 (vec2 (/ screen-width 2) (/ screen-height 2))
+		 (mixer->receptors mixer)
+		 )))
+	 (build-model model-virus-popsize)
+	 mixer
+	 -1 ;; variant id
+	 #f ;; variant virus
+	 0  ;; varient timer
+	 '() ;; pop graph
+	 )))
   
 (define (world-spawn-hosts host host-list count w)
   (cond
@@ -127,7 +137,7 @@
 	   (lambda (_)
 	     (make-virus-at
 	      (v2add (rndcirc2d) (entity-pos host))
-	      (model-hypothesis (world-model w)) 0))))
+	      (model-hypothesis (world-model w)) (* (rndf) virus-age-var)))))
 	 r))
    (world-viruses w)
    (world-hosts w)))
@@ -143,15 +153,15 @@
       ;; death via old age
       ((eq? (virus-state virus) 'state-died) r)
       ;; normal update
-      (else (append
-	     r
-	     (list (entity-update
-		    (virus-update
-		     virus time delta w)
-		    delta))))))
+      (else (append			 
+			 (list (entity-update
+					(virus-update
+					 virus time delta w)
+					delta))
+			 r))))
    (if (< (length (world-viruses w)) (param "world-min-viruses"))
        ;; get receptors from model 
-       (list (make-virus (model-hypothesis (world-model w)) 0))
+       (list (make-virus (model-hypothesis (world-model w)) (* (rndf) virus-age-var)))
        '())
    (world-spawn-new-viruses w)))
 
@@ -199,17 +209,34 @@
 	(else (vec2 0 0)))
    4))
 
+(define (world-petri-vel pos)
+  (let ((centre-vec
+		 (v2sub pos (vec2 (/ screen-width 2) (/ screen-height 2)))))
+	(if (> (v2mag centre-vec) (param "petri-radius"))
+		(v2mul (v2normalise centre-vec) -4)
+		(vec2 0 0))))
+
 (define (world-update w time delta)
   (let ((infection-list (world-infection-check
-			 (crop (shuffle (world-viruses w)) 10)
-			 (crop (shuffle (world-hosts w)) 10))))
+						 (crop (shuffle (world-viruses w)) 10)
+						 (crop (shuffle (world-hosts w)) 10)))
+		(variant-id (model-variant-id (world-model w))))
     (make-world
      (world-virus-update w infection-list time delta)
      (world-host-update w infection-list time delta)
-     (if (zero? (random (param "model-update-likelihood")))
+     (if (zero? (random (param "model-update-rate")))
 		 (model-update (world-model w) (world-hosts w))
 		 (world-model w))
      (world-receptor-mixer w)
+	 ;; update the variant info if it has changed
+	 variant-id	 
+	 (if (not (eq? variant-id (world-variant-id w)))
+		 (make-virus-at (vec2 1400 90) (model-variant (world-model w)) 0)
+		 (world-variant-virus w))
+	 (if (not (eq? variant-id (world-variant-id w)))
+		 0
+		 (+ (world-variant-timer w) delta))
+	 (crop (cons (length (world-hosts w)) (world-population-graph w)) 1000) 
      )))
 
 (define (world-update-mouse w state x y)
@@ -226,7 +253,11 @@
      ((eq? receptor 'triangle) 0)
      ((eq? receptor 'square) 1)
      ((eq? receptor 'donut) 2)
-     (else 3)))))
+     (else 3)))
+   (world-variant-id w)
+   (world-variant-virus w)
+   (world-variant-timer w)
+   (world-population-graph w)))
 
 (define (render-receptor-bar w x y i)
   (ctx.beginPath)
@@ -239,13 +270,14 @@
 (define (world-render w ctx time)
   (set! ctx.strokeStyle "#000")
   ;; draw the petri dish
-  ;; (ctx.beginPath)
-  ;; (ctx.arc
-  ;;  (/ screen-width 2)
-  ;;  (/ screen-height 2)
-  ;;  (param "petri-radius") 0 (* 2 Math.PI))
-  ;; (ctx.stroke) 
-
+  (set! ctx.lineWidth 3)
+  (ctx.beginPath)
+  (ctx.arc
+   (/ screen-width 2)
+   (/ screen-height 2)
+   (param "petri-radius") 0 (* 2 Math.PI))
+  (ctx.stroke) 
+  (set! ctx.lineWidth 1)
 
   (for-each
    (lambda (e)
@@ -256,27 +288,6 @@
      (virus-render e ctx))
    (world-viruses w))
   
-  ;; build and render the entity renderer
-  ;; (renderer-render!
-  ;;  (renderer-add-entities
-  ;;   (renderer-add-entities
-  ;;    (renderer '())
-  ;;    (world-viruses w))
-  ;;   (world-hosts w))
-  ;;  ctx)
-
-  
-
-  
-  ;; control panel
-  (set! ctx.fillStyle "#fff")
-  (set! ctx.globalAlpha 0.8)
-  (ctx.fillRect 420 600 800 120)
-  (set! ctx.globalAlpha 1.0)
-  (ctx.beginPath)
-  (ctx.rect 420 600 800 120)
-  (ctx.stroke)
-
   ;; infection rate
   (set! ctx.fillStyle "#f00")
   (set! ctx.font "normal 20pt Dosis")
@@ -302,10 +313,46 @@
   
   ;; render receptor type bars
   (set! ctx.fillStyle "#000")
-  (render-receptor-bar w 560 610 0)
-  (render-receptor-bar w 760 610 1)
-  (render-receptor-bar w 960 610 2)
-  (render-receptor-bar w 1160 610 3)
+  (render-receptor-bar w 250 130 0)
+  (render-receptor-bar w 250 250 1)
+  (render-receptor-bar w 250 370 2)
+  (render-receptor-bar w 250 490 3)
+
+  ;; population graph
+  (set! ctx.fillStyle "#fff")
+  (set! ctx.globalAlpha 0.8)
+  (ctx.fillRect 1200 450 350 250)
+  (set! ctx.globalAlpha 1.0)
+  (ctx.beginPath)
+  (ctx.rect 1200 450 350 250)
+  (ctx.stroke)
+  (set! ctx.fillStyle "#000")
+  (set! ctx.font "normal 20pt Dosis")
+  (ctx.fillText "POPULATION LEVEL" 1280 690) 
+  (index-for-each
+   (lambda (i pop)
+	 (let ((pop (* pop 4)))
+	   (ctx.fillRect
+		(+ 1210 (/ i 3))
+		(- 660 pop)
+		1 pop)))
+   (world-population-graph w))
+  
+  ;; new variant
+  (set! ctx.fillStyle "#fff")
+  (set! ctx.globalAlpha 0.8)
+  (ctx.fillRect 1290 30 210 150)
+  (set! ctx.globalAlpha 1.0)
+  (ctx.beginPath)
+  (ctx.rect 1290 30 210 150)
+  (ctx.stroke)
+  (set! ctx.fillStyle "#f00")
+  (set! ctx.font "normal 20pt Dosis")
+  (ctx.fillText "CURRENT VARIANT" 1300 170) 
+ 
+  (when (world-variant-virus w)
+		(virus-render (world-variant-virus w) ctx))
+  
   
   )
 

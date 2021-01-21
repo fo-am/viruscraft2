@@ -77,9 +77,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-model viruses generations) (list viruses generations))
-(define (model-viruses w) (list-ref w 0))
-(define (model-generations w) (list-ref w 1))
+(define (make-model viruses generations variant-id variant)
+  (list viruses generations variant-id variant))
+(define (model-viruses m) (list-ref m 0))
+(define (model-generations m) (list-ref m 1))
+(define (model-variant-id m) (list-ref m 2))
+(define (model-variant m) (list-ref m 3))
 
 (define (build-model virus-popsize)
   (make-model
@@ -87,9 +90,12 @@
     virus-popsize
     (lambda (_)
       (build-model-virus)))
-   0))
+   0 ;; generations
+   0 ;; variant id
+   #f ;; variant
+   ))
 
-(define (model-calc-fitness virus hosts w)
+(define (model-calc-fitness virus hosts m)
   (foldl
    (lambda (host r)
      (if (model-virus-attempt-attach? virus (host-receptors host))
@@ -97,29 +103,45 @@
          r))
    0 hosts))
 
-(define (model-update-fitness w hosts)
+(define (model-update-fitness m hosts)
   (make-model
    (map
     (lambda (virus)
       (make-model-virus
        (model-virus-receptors virus)
-       (model-calc-fitness virus hosts w)))
-    (model-viruses w))
-   (model-generations w)))
+       (model-calc-fitness virus hosts m)))
+    (model-viruses m))
+   (model-generations m)
+   (model-variant-id m)
+   (model-variant m)))
 
-(define (model-repopulate-viruses w)
+(define (model-repopulate-viruses m)
   (make-model
    (viruses-repop
     (viruses-decimate    
-     (viruses-sort (model-viruses w))
+     (viruses-sort (model-viruses m))
      model-virus-threshold)
     model-virus-mutation-rate
-    (length (model-viruses w)))
-   (+ (model-generations w) 1)))
+    (length (model-viruses m)))
+   (+ (model-generations m) 1)
+   (model-variant-id m)
+   (model-variant m)))
 
-(define (model-update w hosts)
-  (model-repopulate-viruses
-   (model-update-fitness w hosts)))
+(define (model-update-variant m)
+  (let ((current (model-hypothesis m)))
+	(if (not (list-equal? current (model-variant m)))
+		(make-model
+		 (model-viruses m)
+		 (model-generations m)
+		 (+ (model-variant-id m) 1)
+		 current)
+		m)))
 
-(define (model-hypothesis w)
-  (dbg (model-virus-receptors (car (model-viruses w)))))
+(define (model-update m hosts)
+  (model-update-variant
+   (model-repopulate-viruses
+	(model-update-fitness m hosts))))
+
+(define (model-hypothesis m)
+  (model-virus-receptors (car (model-viruses m))))
+

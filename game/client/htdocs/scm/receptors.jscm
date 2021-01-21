@@ -16,8 +16,8 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (define receptor-shapes (list 'triangle 'square 'donut 'guitar))
-(define num-virus-receptors 5)
-(define num-host-receptors 4)
+(define num-virus-receptors (param "virus-receptor-count"))
+(define num-host-receptors (param "host-receptor-count"))
 
 (define (generate-receptors size)
   (build-list
@@ -67,20 +67,19 @@
     tcanv))  
 
 
-(define (make-receptor-mixer) (list 1 1 1 1))
-
+(define (make-receptor-mixer) (list 1 0 0 0))
 (define (receptor-mixer-normalise m)
   (let ((max (foldl (lambda (v r) (if (> v r) v r)) 0 m)))
     (map (lambda (v) (/ v max)) m)))
 
 (define (receptor-mixer-increase m n)
-  (dbg (receptor-mixer-normalise
+  (receptor-mixer-normalise
    (index-map
     (lambda (i r)
-      (if (eq? n i)
-	  (* r 1.2)
-	  (/ r 1.2)))
-    m))))
+      (max 0.05 (if (eq? n i)
+					(* r 1.2)
+					(/ r 1.2))))
+    m)))
 
 (define (probrnd probs)
   (define (_ val prob-lis n)

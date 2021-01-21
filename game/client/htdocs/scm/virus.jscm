@@ -49,7 +49,7 @@
 (define (virus-receptor-image v) (list-ref v (+ entity-size 2)))
 
 (define (virus-start-pos)
-  (vec2 (random screen-width) -10))
+  (vec2 (+ (* (crndf) 100) (/ screen-width 2)) -10))
 
 ;; todo: refactor with host version
 (define (virus-shove v virus-list)
@@ -98,8 +98,8 @@
       (entity-pos v)	    
       (v2add
        (v2add
-	(virus-shove v (world-viruses world))
-	(world-fluid-vel (entity-pos v) time))	       
+		(virus-shove v (world-viruses world))
+		(world-fluid-vel (entity-pos v) time))	       
        (world-bounds-vel (entity-pos v)))))))
 
 (define (virus-render v ctx)
