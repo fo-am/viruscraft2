@@ -108,6 +108,14 @@
   (ctx.translate
    (+ (- (vx (entity-pos v)) 50) (vx (entity-offset v)))
    (+ (- (vy (entity-pos v)) 50) (vy (entity-offset v))))       
+  (ctx.restore))
+    
+(define (virus-render-receptors v ctx)
+  (entity-render v ctx)  
+  (ctx.save)
+  (ctx.translate
+   (+ (- (vx (entity-pos v)) 50) (vx (entity-offset v)))
+   (+ (- (vy (entity-pos v)) 50) (vy (entity-offset v))))       
   (ctx.drawImage (host-receptor-image v) 0 0)
   (ctx.restore))
     

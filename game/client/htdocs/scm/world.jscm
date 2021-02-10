@@ -354,7 +354,7 @@
   (ctx.fillText "CURRENT VARIANT" 1300 170) 
  
   (when (world-variant-virus w)
-		(virus-render (world-variant-virus w) ctx))
+		(virus-render-receptors (world-variant-virus w) ctx))
   
   
   )
