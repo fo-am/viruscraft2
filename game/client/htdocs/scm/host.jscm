@@ -28,7 +28,7 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
+   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 3 (vec2 0 0))
    (make-anim-move "host" "host-infected" '() (list "1") 8 (vec2 0 0))
    ))
 

@@ -28,7 +28,10 @@
 (define (model-virus-fitness v) (list-ref v 1))
 
 (define (build-model-virus)
-  (make-model-virus (generate-receptors num-virus-receptors) 0))
+  (make-model-virus
+   ;;(generate-receptors num-virus-receptors)
+   (build-list num-virus-receptors (lambda (_) 'triangle))
+   0))
 
 (define (model-virus-spawn v rate)
   (make-model-virus
@@ -77,14 +80,17 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-model viruses generations variant-id variant)
-  (list viruses generations variant-id variant))
+(define (make-model viruses generations variant-id variant timer period)
+  (list viruses generations variant-id variant timer period))
 (define (model-viruses m) (list-ref m 0))
 (define (model-generations m) (list-ref m 1))
 (define (model-variant-id m) (list-ref m 2))
 (define (model-variant m) (list-ref m 3))
+(define (model-timer m) (list-ref m 4))
+(define (model-modify-timer m s) (list-replace m 4 s))
+(define (model-period m) (list-ref m 5))
 
-(define (build-model virus-popsize)
+(define (build-model virus-popsize period)
   (make-model
    (build-list
     virus-popsize
@@ -93,6 +99,8 @@
    0 ;; generations
    0 ;; variant id
    #f ;; variant
+   0 ;; timer
+   period ;; period
    ))
 
 (define (model-calc-fitness virus hosts m)
@@ -113,7 +121,10 @@
     (model-viruses m))
    (model-generations m)
    (model-variant-id m)
-   (model-variant m)))
+   (model-variant m)
+   (model-timer m)
+   (model-period m)
+   ))
 
 (define (model-repopulate-viruses m)
   (make-model
@@ -125,7 +136,10 @@
     (length (model-viruses m)))
    (+ (model-generations m) 1)
    (model-variant-id m)
-   (model-variant m)))
+   (model-variant m)
+   (model-timer m)
+   (model-period m)
+   ))
 
 (define (model-update-variant m)
   (let ((current (model-hypothesis m)))
@@ -134,13 +148,19 @@
 		 (model-viruses m)
 		 (model-generations m)
 		 (+ (model-variant-id m) 1)
-		 current)
+		 current
+		 (model-timer m)
+		 (model-period m))
 		m)))
 
-(define (model-update m hosts)
-  (model-update-variant
-   (model-repopulate-viruses
-	(model-update-fitness m hosts))))
+(define (model-update m hosts delta)
+   (if (< (model-timer m) 0)
+	   (model-modify-timer
+		(model-update-variant
+		 (model-repopulate-viruses
+		  (model-update-fitness m hosts)))
+		(model-period m))
+	   (model-modify-timer m (- (model-timer m) delta))))
 
 (define (model-hypothesis m)
   (model-virus-receptors (car (model-viruses m))))

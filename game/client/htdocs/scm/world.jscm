@@ -15,8 +15,8 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph)
-  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph))
+(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph level level-time level-params state)
+  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer population-graph level level-time level-params state))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
@@ -26,11 +26,18 @@
 (define (world-variant-virus w) (list-ref w 5))
 (define (world-variant-timer w) (list-ref w 6))
 (define (world-population-graph w) (list-ref w 7))
+(define (world-level w) (list-ref w 8))
+(define (world-level-time w) (list-ref w 9))
+(define (world-modify-level-time w s) (list-replace w 9 s))
+(define (world-level-params w) (list-ref w 10))
+(define (world-state w) (list-ref w 11))
+(define (world-modify-state w s) (list-replace w 11 s))
 
 (define virus-age-var 5)
 
-(define (build-world player-id time)
-  (let ((mixer (make-receptor-mixer)))
+(define (build-world level player-id time)
+  (let ((mixer (make-receptor-mixer))
+		(level-params (generate-level-params level)))
 	(make-world
 	 ;; we assume these become ordered lists because the ids increase?
 	 (build-list
@@ -47,14 +54,19 @@
 		 (vec2 (/ screen-width 2) (/ screen-height 2))
 		 (mixer->receptors mixer)
 		 )))
-	 (build-model model-virus-popsize)
+	 (build-model model-virus-popsize
+				  (level-params-model-update-rate level-params))
 	 mixer
 	 -1 ;; variant id
 	 #f ;; variant virus
 	 0  ;; varient timer
 	 '() ;; pop graph
+	 level ;; level
+	 0 ;; level-time
+	 level-params
+	 "state-running" ;; state
 	 )))
-  
+
 (define (world-spawn-hosts host host-list count w)
   (cond
    ((zero? count) host-list)
@@ -65,9 +77,9 @@
       host-list
       (make-host
        (v2add
-	(entity-pos host)
-	(v2mul (rndcirc2d)
-	       (param "host-spawn-radius")))
+		(entity-pos host)
+		(v2mul (rndcirc2d)
+			   (param "host-spawn-radius")))
        ;; todo: get receptors from player
        (mixer->receptors (world-receptor-mixer w))
        ;;(host-receptors host)
@@ -192,11 +204,11 @@
 
 (define (world-fluid-vel pos time)
   (let ((np (vmul (vector (vx pos)
-			  (vy pos)
-			  (* time (param "fluid-speed")))
-		  (param "fluid-scale"))))
+						  (vy pos)
+						  (* time (param "fluid-speed")))
+				  (param "fluid-scale"))))
     (let ((nx (noisegen.noise (vx np) (vy np) (vz np)))
-	  (ny (noisegen.noise (+ (vx np) 102) (vy np) (vz np))))	   
+		  (ny (noisegen.noise (+ (vx np) 102) (vy np) (vz np))))	   
       (v2mul (vec2 nx ny) (param "fluid-strength")))))
 
 (define (world-bounds-vel pos)
@@ -216,28 +228,64 @@
 		(v2mul (v2normalise centre-vec) -4)
 		(vec2 0 0))))
 
+(define (world-update-state w time delta)
+  (let ((state (world-state w)))
+	(cond
+	 ((eq? state "state-running")
+	  (cond 
+	   ((zero? (length (world-hosts w)))
+		(world-modify-level-time
+		 (world-modify-state w "state-game-over")
+		 0))
+	   ((> (world-level-time w) (param "world-level-time"))
+		(world-modify-level-time
+		 (world-modify-state w "state-level-complete")
+		 0))
+	   (else w)))	 
+	 ((eq? state "state-level-complete")
+	  (if (> (world-level-time w) 10)
+		  (world-modify-state w "state-new-level")
+		  w))
+	 ((eq? state "state-new-level")
+	  (world-modify-state w "state-running"))
+	 ((eq? state "state-game-over")
+	  (if (> (world-level-time w) 10)
+		  (world-modify-state w "state-restart-game")
+		  w))	 
+	 (else w))))
+
+
 (define (world-update w time delta)
   (let ((infection-list (world-infection-check
 						 (crop (shuffle (world-viruses w)) 10)
 						 (crop (shuffle (world-hosts w)) 10)))
 		(variant-id (model-variant-id (world-model w))))
-    (make-world
-     (world-virus-update w infection-list time delta)
-     (world-host-update w infection-list time delta)
-     (if (zero? (random (param "model-update-rate")))
-		 (model-update (world-model w) (world-hosts w))
-		 (world-model w))
-     (world-receptor-mixer w)
-	 ;; update the variant info if it has changed
-	 variant-id	 
-	 (if (not (eq? variant-id (world-variant-id w)))
-		 (make-virus-at (vec2 1400 90) (model-variant (world-model w)) 0)
-		 (world-variant-virus w))
-	 (if (not (eq? variant-id (world-variant-id w)))
-		 0
-		 (+ (world-variant-timer w) delta))
-	 (crop (cons (length (world-hosts w)) (world-population-graph w)) 1000) 
-     )))
+	(world-update-state 
+	 (make-world
+	  (if (eq? (world-state w) "state-running")
+		  (world-virus-update w infection-list time delta)
+		  (world-viruses w))
+	  (if (eq? (world-state w) "state-running")
+		  (world-host-update w infection-list time delta)
+		  (world-hosts w))
+	  (if (eq? (world-state w) "state-running")
+		  (model-update (world-model w) (world-hosts w) delta)
+		  (world-model w))
+	  (world-receptor-mixer w)
+	  ;; update the variant info if it has changed
+	  variant-id	 
+	  (if (not (eq? variant-id (world-variant-id w)))
+		  (make-virus-at (vec2 1400 90) (model-variant (world-model w)) 0)
+		  (world-variant-virus w))
+	  (if (not (eq? variant-id (world-variant-id w)))
+		  0
+		  (+ (world-variant-timer w) delta))
+	  (crop (cons (length (world-hosts w)) (world-population-graph w)) 1000) 
+	  (world-level w)
+	  (+ (world-level-time w) delta)
+	  (world-level-params w)
+	  (world-state w))
+	 time delta)))
 
 (define (world-update-mouse w state x y)
   w)
@@ -257,7 +305,11 @@
    (world-variant-id w)
    (world-variant-virus w)
    (world-variant-timer w)
-   (world-population-graph w)))
+   (world-population-graph w)
+   (world-level w)
+   (world-level-time w)
+   (world-level-params w)
+   (world-state w)))
 
 (define (render-receptor-bar w x y i)
   (ctx.beginPath)
@@ -306,10 +358,28 @@
   (ctx.rect 400 20 800 20)
   (ctx.stroke)
 
-  (when (zero? (length (world-hosts w)))
+  (set! ctx.font "normal 20pt Dosis")
+  (ctx.fillText (string-append "LEVEL: " (world-level w)) 100 90) 
+  (ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 100 120) 
+				
+  (when (eq? (world-state w) "state-game-over")
 		(set! ctx.fillStyle "#f00")
 		(set! ctx.font "normal 80pt Dosis")
 		(ctx.fillText "GAME OVER" 550 400))
+
+  (when (eq? (world-state w) "state-level-complete")
+		(set! ctx.fillStyle "#f00")
+		(set! ctx.font "normal 80pt Dosis")
+		(ctx.fillText (string-append "LEVEL " (world-level w) " COMPLETE!") 550 400))
+
+  (when (and
+		 (eq? (world-state w) "state-running")
+		 (> (world-level-time w) (- (param "world-level-time") 5)))
+		(set! ctx.fillStyle "#f00")
+		(set! ctx.font "normal 80pt Dosis")
+		(ctx.fillText (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
+									 " SECONDS TO GO!") 550 400))
+  
   
   ;; render receptor type bars
   (set! ctx.fillStyle "#000")
