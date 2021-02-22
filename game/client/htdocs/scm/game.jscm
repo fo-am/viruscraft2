@@ -19,7 +19,7 @@
 (load "scm/nightjar.jscm")
 (load "scm/local-storage.jscm")
 
-(define params-version 2)
+(define params-version 3)
 (define player-id -1)
 (define player-name "???")
 (define end-game-time 7)
@@ -36,7 +36,7 @@
 (local-setup-params 
  "viruscraft2" 
  (list
-  (make-param "world-level-time" 30 "seconds")
+  (make-param "world-level-time" 60 "seconds")
   (make-param "world-num-levels" 10 "levels")
   (make-param "world-max-viruses" 20 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
@@ -44,19 +44,19 @@
   (make-param "host-receptor-count" 4 "receptors")
   (make-param "host-spawn-count" 2 "babies")
   (make-param "host-spawn-radius" 10 "pixels")
-  (make-param "host-spawn-rate" 6 "seconds") ;; 3???
+  (make-param "host-spawn-rate" 3 "seconds") 
   (make-param "host-max-population" 20 "cells")
   (make-param "host-cell-size" 100 "pixels")
   (make-param "host-infected-death-time" 2 "seconds")
   (make-param "virus-receptor-count" 5 "receptors")
   (make-param "virus-size" 120 "pixels")
-  (make-param "virus-max-age" 10 "seconds")
+  (make-param "virus-max-age" 30 "seconds")
   (make-param "virus-cell-spawn-count" 5 "viruses")
   (make-param "petri-radius" 350 "pixels")
   (make-param "fluid-speed" 400 "x seconds")
   (make-param "fluid-scale" 0.002 "units")
   (make-param "fluid-strength" 4 "units")
-  (make-param "model-mutation-rate" 2 "percent")
+  (make-param "model-mutation-rate" 10 "percent")
   (make-param "model-pop-threshold" 50 "percent")
   (make-param "model-population-size" 100 "individuals")
   (make-param "model-hosts-per-update" 3 "hosts")
