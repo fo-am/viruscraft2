@@ -68,17 +68,26 @@
 
 
 (define (make-receptor-mixer) (list 1 0 0 0))
+
 (define (receptor-mixer-normalise m)
   (let ((max (foldl (lambda (v r) (if (> v r) v r)) 0 m)))
     (map (lambda (v) (/ v max)) m)))
+
+(define mixer-minimum 0.05)
+
+(define (receptor-mixer-clamp m)
+  (map
+   (lambda (p)
+	 (if (< p mixer-minimum) 0 p))
+   m))
 
 (define (receptor-mixer-increase m n)
   (receptor-mixer-normalise
    (index-map
     (lambda (i r)
-      (max 0.05 (if (eq? n i)
-					(* r 1.2)
-					(/ r 1.2))))
+      (max mixer-minimum (if (eq? n i)
+							 (* r 1.2)
+							 (/ r 1.2))))
     m)))
 
 (define (probrnd probs)
@@ -92,7 +101,7 @@
    probs 0))
 
 (define (receptor-mixer-choose m)
-  (list-ref receptor-shapes (probrnd m)))
+  (list-ref receptor-shapes (probrnd (receptor-mixer-clamp m))))
 
 (define (mixer->receptors m)
   (build-list

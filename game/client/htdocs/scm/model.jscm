@@ -141,6 +141,9 @@
    (model-period m)
    ))
 
+(define (model-hypothesis m)
+  (model-virus-receptors (car (model-viruses m))))
+
 (define (model-update-variant m)
   (let ((current (model-hypothesis m)))
 	(if (not (list-equal? current (model-variant m)))
@@ -162,6 +165,4 @@
 		(model-period m))
 	   (model-modify-timer m (- (model-timer m) delta))))
 
-(define (model-hypothesis m)
-  (model-virus-receptors (car (model-viruses m))))
 

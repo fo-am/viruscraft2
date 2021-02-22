@@ -22,11 +22,20 @@
    (make-anim-move "virus" "virus" '() (list "1" "1" "1") 8 (vec2 0 0))
    ))
 
-(define (make-virus receptors age)
-  (let ((pos (virus-start-pos)))
-    (make-virus-at pos receptors age)))
+(define (make-virus age)
+  (make-virus-at (virus-start-pos) age))
 
-(define (make-virus-at pos receptors age)
+(define (make-virus-at pos age)
+  (append
+   (make-entity
+    (generate-entity-id!)
+    "virus"
+    pos 0 (vec2 128 128) "left" (rndf)
+    (anim-load-frames "0" virus-animation)
+    0 virus-animation-idle 0 0 pos #f 0 age (vec2 0 0))
+   (list 'state-idle #f)))
+
+(define (make-virus-with-receptors pos age receptors)
   (append
    (make-entity
     (generate-entity-id!)
@@ -36,17 +45,15 @@
     0 virus-animation-idle 0 0 pos #f 0 age (vec2 0 0))
    (list
     'state-idle
-    receptors
     (receptors-paint
      (map
       (lambda (r)
-	(find-image (string-append r ".png")))
+		(find-image (string-append r ".png")))
       receptors) #t))))
 
 (define (virus-state v) (list-ref v (+ entity-size 0)))
 (define (virus-modify-state v s) (list-replace v (+ entity-size 0) s))
-(define (virus-receptors v) (list-ref v (+ entity-size 1)))
-(define (virus-receptor-image v) (list-ref v (+ entity-size 2)))
+(define (virus-receptor-image v) (list-ref v (+ entity-size 1)))
 
 (define (virus-start-pos)
   (vec2 (+ (* (crndf) 100) (/ screen-width 2)) -10))
@@ -97,10 +104,12 @@
      (v2add
       (entity-pos v)	    
       (v2add
-       (v2add
-		(virus-shove v (world-viruses world))
-		(world-fluid-vel (entity-pos v) time))	       
-       (world-bounds-vel (entity-pos v)))))))
+	   (world-centre-vel (entity-pos v))
+	   (v2add
+		(v2add
+		 (virus-shove v (world-viruses world))
+		 (world-fluid-vel (entity-pos v) time))	       
+		(world-bounds-vel (entity-pos v))))))))
 
 (define (virus-render v ctx)
   (entity-render v ctx)  
@@ -116,6 +125,6 @@
   (ctx.translate
    (+ (- (vx (entity-pos v)) 50) (vx (entity-offset v)))
    (+ (- (vy (entity-pos v)) 50) (vy (entity-offset v))))       
-  (ctx.drawImage (host-receptor-image v) 0 0)
+  (ctx.drawImage (virus-receptor-image v) 0 0)
   (ctx.restore))
     

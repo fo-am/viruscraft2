@@ -17,12 +17,26 @@
 
 (define (generate-level-params level)
   (dbg (level-params
-		(list-ref (list 10 8 6 4 3 2 1 0.5 0.2 0.1) (- level 1)))))
+		(list-ref (list (/ (param "world-level-time") 2)
+						(/ (param "world-level-time") 3)
+						(/ (param "world-level-time") 4)
+						(/ (param "world-level-time") 5)
+						(/ (param "world-level-time") 6)
+						(/ (param "world-level-time") 7)
+						(/ (param "world-level-time") 8)
+						(/ (param "world-level-time") 9)
+						(/ (param "world-level-time") 10)
+						(/ (param "world-level-time") 11))
+				  (- level 1))
+		(list-ref (list 1 2 4 6 8 10 12 14 16) (- level 1)))))
 
-(define (level-params model-update-rate)
-  (list model-update-rate))
+(define (level-params model-update-rate min-viruses)
+  (list model-update-rate min-viruses))
+
+;; todo - stop initial host from being infected
 
 (define (level-params-model-update-rate p) (list-ref p 0))
+(define (level-params-min-viruses p) (list-ref p 1))
 
 
   

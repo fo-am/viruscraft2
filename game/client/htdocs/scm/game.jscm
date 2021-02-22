@@ -24,7 +24,8 @@
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
-										;(define installation-mode #t)
+(define start-level 1)
+;;(define installation-mode #t)
 
 (let ((v (local-load "viruscraft2-version")))
   (when (or (not v) (< v params-version))
@@ -35,32 +36,30 @@
 (local-setup-params 
  "viruscraft2" 
  (list
-  (make-param "world-level-time" 300 "seconds")
+  (make-param "world-level-time" 30 "seconds")
   (make-param "world-num-levels" 10 "levels")
-  (make-param "world-min-viruses" 3 "viruses")
   (make-param "world-max-viruses" 20 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
+  (make-param "world-infection-period" 0.5 "seconds")
   (make-param "host-receptor-count" 4 "receptors")
   (make-param "host-spawn-count" 2 "babies")
   (make-param "host-spawn-radius" 10 "pixels")
-  (make-param "host-spawn-rate" 3 "seconds")
+  (make-param "host-spawn-rate" 6 "seconds") ;; 3???
   (make-param "host-max-population" 20 "cells")
   (make-param "host-cell-size" 100 "pixels")
-  (make-param "host-infected-death-time" 5 "seconds")
+  (make-param "host-infected-death-time" 2 "seconds")
   (make-param "virus-receptor-count" 5 "receptors")
   (make-param "virus-size" 120 "pixels")
   (make-param "virus-max-age" 10 "seconds")
   (make-param "virus-cell-spawn-count" 5 "viruses")
   (make-param "petri-radius" 350 "pixels")
-  (make-param "fluid-speed" 200 "x seconds")
+  (make-param "fluid-speed" 400 "x seconds")
   (make-param "fluid-scale" 0.002 "units")
   (make-param "fluid-strength" 4 "units")
-  (make-param "model-mutation-rate" 1 "percent")
+  (make-param "model-mutation-rate" 2 "percent")
   (make-param "model-pop-threshold" 50 "percent")
-  (make-param "model-population-size" 10 "individuals")
+  (make-param "model-population-size" 100 "individuals")
   (make-param "model-hosts-per-update" 3 "hosts")
-  (make-param "model-update-rate-min" 50 "~once per x frames")
-  (make-param "model-update-rate-max" 2 "~once per x frames")
   ))
 
 (define (param name)
@@ -279,7 +278,7 @@
   (define (nightjar-game-screen c player-id location)
 	(game-modify-data
 	 (lambda (d)
-	   (build-world 1 player-id (/ (game-time c) 1000)))
+	   (build-world start-level player-id (/ (game-time c) 1000)))
 	 (game-modify-mouse-hook
 	  (lambda (state c)
 		(game-modify-data
@@ -374,7 +373,7 @@
 			 (button-sound)
 			 (game-modify-data
 			  (lambda (d)
-				(build-world 1 player-id (/ (game-time c) 1000)))
+				(build-world start-level player-id (/ (game-time c) 1000)))
 			  c)))
 		  
 		  ) c))))))
