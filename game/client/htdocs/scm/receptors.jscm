@@ -66,29 +66,67 @@
       (tctx.restore))
     tcanv))  
 
+;;------------------------------------------------------------------
 
-(define (make-receptor-mixer) (list 1 0 0 0))
+(define (make-receptor-mixer game-type)
+  (list game-type
+		(if (eq? game-type "mutate")
+			(list 'triangle 'triangle 'triangle 'triangle)
+			(list 1 0 0 0))
+		0))
+
+(define (receptor-mixer-game-type m) (list-ref m 0))
+(define (receptor-mixer-values m) (list-ref m 1))
+(define (receptor-mixer-modify-values m s) (list-replace m 1 s))
+(define (receptor-mixer-power m) (list-ref m 2))
+(define (receptor-mixer-modify-power m s) (list-replace m 2 s))
 
 (define (receptor-mixer-normalise m)
-  (let ((max (foldl (lambda (v r) (if (> v r) v r)) 0 m)))
-    (map (lambda (v) (/ v max)) m)))
+  (receptor-mixer-modify-values
+   m (let ((max (foldl
+				 (lambda (v r)
+				   (if (> v r) v r))
+				 0
+				 (receptor-mixer-values m))))
+	   (map (lambda (v) (/ v max)) (receptor-mixer-values m)))))
 
 (define mixer-minimum 0.05)
 
 (define (receptor-mixer-clamp m)
-  (map
-   (lambda (p)
-	 (if (< p mixer-minimum) 0 p))
-   m))
-
+  (receptor-mixer-modify-values
+   m (map
+	  (lambda (p)
+		(if (< p mixer-minimum) 0 p))
+	  (receptor-mixer-values m))))
+  
 (define (receptor-mixer-increase m n)
   (receptor-mixer-normalise
-   (index-map
-    (lambda (i r)
-      (max mixer-minimum (if (eq? n i)
-							 (* r 1.2)
-							 (/ r 1.2))))
-    m)))
+   (receptor-mixer-modify-values
+	m (index-map
+	   (lambda (i r)
+		 (max mixer-minimum (if (eq? n i)
+								(* r 1.2)
+								(/ r 1.2))))
+	   (receptor-mixer-values m)))))
+
+(define (receptor-mixer-mutate m)
+  (receptor-mixer-modify-power
+   (receptor-mixer-modify-values
+	m (index-map
+	   (lambda (i r)
+		 (if (< (rndf) 0.5)
+			 (choose receptor-shapes)
+			 r))
+	   (receptor-mixer-values m)))
+   (min 1 (+ (param "world-mutate-power-mul")
+			 (receptor-mixer-power m)))))
+
+(define (receptor-mixer-decrease-power m delta)
+  (receptor-mixer-modify-power
+   m (max
+	  mixer-minimum
+	  (- (receptor-mixer-power m)
+		 (* delta (param "world-mutate-power-drop"))))))
 
 (define (probrnd probs)
   (define (_ val prob-lis n)
@@ -101,10 +139,26 @@
    probs 0))
 
 (define (receptor-mixer-choose m)
-  (list-ref receptor-shapes (probrnd (receptor-mixer-clamp m))))
+  (if (eq? (receptor-mixer-game-type m) "mutate")	  
+	  (choose (receptor-mixer-values m))
+	  (list-ref
+	   receptor-shapes
+	   (probrnd (receptor-mixer-values
+				 (receptor-mixer-clamp m))))))
 
 (define (mixer->receptors m)
   (build-list
    num-host-receptors
    (lambda (_)
      (receptor-mixer-choose m))))
+
+(define (calculate-suceptibility a b)
+  (/
+   (foldl
+	(lambda (at r)
+	  (+ (foldl
+		  (lambda (bt r)
+			(if (eq? at bt) (+ r 1) r))
+		  0 b) r))
+	0 a)
+   (length b)))

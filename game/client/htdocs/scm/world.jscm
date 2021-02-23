@@ -15,13 +15,15 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace)
-  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace))
+(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace game-type)
+  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace game-type))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
+(define (world-modify-hosts w s) (list-replace w 1 s))
 (define (world-model w) (list-ref w 2))
 (define (world-receptor-mixer w) (list-ref w 3))
+(define (world-modify-receptor-mixer w s) (list-replace w 3 s))
 (define (world-variant-id w) (list-ref w 4))
 (define (world-variant-virus w) (list-ref w 5))
 (define (world-variant-timer w) (list-ref w 6))
@@ -33,11 +35,12 @@
 (define (world-modify-state w s) (list-replace w 10 s))
 (define (world-infection-timer w) (list-ref w 11))
 (define (world-grace w) (list-ref w 12))
+(define (world-game-type w) (list-ref w 13))
 
 (define virus-age-var 5)
 
-(define (build-world level player-id time)
-  (let ((mixer (make-receptor-mixer))
+(define (build-world game-type level player-id time)
+  (let ((mixer (make-receptor-mixer game-type))
 		(level-params (generate-level-params level)))
 	(make-world
 	 ;; we assume these become ordered lists because the ids increase?
@@ -69,6 +72,7 @@
 		 "state-restart-game")
 	 0 ;; infection timer
 	 #t ;; grace
+	 game-type
 	 )))
 
 (define (world-spawn-hosts host host-list count w)
@@ -84,9 +88,7 @@
 		(entity-pos host)
 		(v2mul (rndcirc2d)
 			   (param "host-spawn-radius")))
-       ;; todo: get receptors from player
        (mixer->receptors (world-receptor-mixer w))
-       ;;(host-receptors host)
        ))
      (- count 1)
      w))))
@@ -205,6 +207,12 @@
    '()
    (world-hosts w)))
 
+(define (world-decimate-hosts w p)
+  (world-modify-hosts
+   w (filter
+	  (lambda (h) (> (rndf) (/ (* p p) 5)))
+	  (world-hosts w))))
+
 (define noisegen (js "new ClassicalNoise()"))
 
 (define (world-fluid-vel pos time)
@@ -286,7 +294,10 @@
 	  (if (eq? (world-state w) "state-running")
 		  (model-update (world-model w) (world-hosts w) delta)
 		  (world-model w))
-	  (world-receptor-mixer w)
+	  (if (eq? (world-game-type w) "mutate")
+		  (receptor-mixer-decrease-power
+		   (world-receptor-mixer w) delta)
+		  (world-receptor-mixer w))
 	  ;; update the variant info if it has changed
 	  variant-id	 
 	  (if (not (eq? variant-id (world-variant-id w)))
@@ -304,39 +315,36 @@
 		  (param "world-infection-period"))
 	  (if (not (world-grace w))
 		  #f
-		  (if (> (length (world-hosts w)) 2) #f #t)))
+		  (if (> (length (world-hosts w)) 2) #f #t))
+	  (world-game-type w))
 	 time delta)))
 
 (define (world-update-mouse w state x y)
   w)
 
 (define (world-receptor-button w receptor)
-  (make-world
-   (world-viruses w)
-   (world-hosts w)
-   (world-model w)
-   (receptor-mixer-increase
-    (world-receptor-mixer w)
-    (cond
-     ((eq? receptor 'triangle) 0)
-     ((eq? receptor 'square) 1)
-     ((eq? receptor 'donut) 2)
-     (else 3)))
-   (world-variant-id w)
-   (world-variant-virus w)
-   (world-variant-timer w)
-   (world-level w)
-   (world-level-time w)
-   (world-level-params w)
-   (world-state w)
-   (world-infection-timer w)
-   (world-grace w)))
+  (if (eq? (world-game-type w) "mutate")
+	  (world-decimate-hosts
+	   (world-modify-receptor-mixer
+		w (receptor-mixer-mutate
+		   (world-receptor-mixer w)))	   
+	   (receptor-mixer-power
+		(world-receptor-mixer w)))
+	  (world-modify-receptor-mixer
+	   w (receptor-mixer-increase
+		  (world-receptor-mixer w)
+		  (cond
+		   ((eq? receptor 'triangle) 0)
+		   ((eq? receptor 'square) 1)
+		   ((eq? receptor 'donut) 2)
+		   (else 3))))))
 
 (define (render-receptor-bar w x y i)
   (ctx.beginPath)
   (ctx.rect x y 20 100)
   (ctx.stroke)
-  (let ((h (* 100 (list-ref (world-receptor-mixer w) i))))
+  (let ((h (* 100 (list-ref (receptor-mixer-values
+							 (world-receptor-mixer w)) i))))
 	(ctx.fillRect x (- (+ 100 y) h) 20 h)))
 
 
@@ -411,15 +419,38 @@
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
 		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
 									   " SECONDS TO GO!")))
-    
-  ;; render receptor type bars
-  (set! ctx.fillStyle "#000")
-  (render-receptor-bar w 250 130 0)
-  (render-receptor-bar w 250 250 1)
-  (render-receptor-bar w 250 370 2)
-  (render-receptor-bar w 250 490 3)
-  (set! ctx.fillStyle "#f00")
-  
+
+  (cond
+   ((eq? (world-game-type w) "mutate")
+	(ctx.beginPath)
+	(ctx.rect 250 300 20 100)
+	(ctx.stroke)
+	(if (< (receptor-mixer-power (world-receptor-mixer w)) 0.5)
+ 		(set! ctx.fillStyle "#000")
+ 		(set! ctx.fillStyle "#f00"))
+	(let ((h (* 100 (receptor-mixer-power (world-receptor-mixer w)))))
+	  (ctx.fillRect 250 (- (+ 100 300) h) 20 h))
+	(set! ctx.fillStyle "#000")
+	(index-for-each
+	 (lambda (i shape)
+	   (ctx.drawImage
+		(find-image
+		 (cond
+		  ((eq? shape 'triangle) "triangle.png")
+		  ((eq? shape 'square) "square.png")
+		  ((eq? shape 'donut) "donut.png")
+		  (else "guitar.png")))
+		(+ 150 (* i 50)) 450))
+	 (receptor-mixer-values (world-receptor-mixer w))))
+   (else
+	;; render receptor type bars
+	(set! ctx.fillStyle "#000")
+	(render-receptor-bar w 250 130 0)
+	(render-receptor-bar w 250 250 1)
+	(render-receptor-bar w 250 370 2)
+	(render-receptor-bar w 250 490 3)
+	(set! ctx.fillStyle "#f00")))
+
   ;; variant
   (let ((mutation-time (- (model-period (world-model w))
 						  (model-timer (world-model w)))))
