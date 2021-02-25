@@ -206,13 +206,14 @@
 (define (shuffle l)
   ;; replaced recursive version with imperative
   ;; Durstenfeld shuffle to save stack
+  (js "r = [...l];") ;; clone array
   (js "for (var i = l.length - 1; i > 0; i--) {")
   (js "var j = Math.floor(Math.random() * (i + 1));")
-  (js "var temp = l[i];")
-  (js "l[i] = l[j];")
-  (js "l[j] = temp;")
+  (js "var temp = r[i];")
+  (js "r[i] = r[j];")
+  (js "r[j] = temp;")
   (js "}")
-  l)
+  r)
 
 ;; recursive shuffle
 ;; (cond ((null? l) ())

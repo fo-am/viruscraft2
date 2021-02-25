@@ -71,7 +71,7 @@
 (define (make-receptor-mixer game-type)
   (list game-type
 		(if (eq? game-type "mutate")
-			(list 'triangle 'triangle 'triangle 'triangle)
+			(build-list num-host-receptors (lambda (_) 'triangle))
 			(list 1 0 0 0))
 		0))
 
@@ -139,19 +139,19 @@
    probs 0))
 
 (define (receptor-mixer-choose m)
-  (if (eq? (receptor-mixer-game-type m) "mutate")	  
-	  (choose (receptor-mixer-values m))
-	  (list-ref
-	   receptor-shapes
-	   (probrnd (receptor-mixer-values
-				 (receptor-mixer-clamp m))))))
+  (list-ref
+   receptor-shapes
+   (probrnd (receptor-mixer-values
+			 (receptor-mixer-clamp m)))))
 
 (define (mixer->receptors m)
-  (build-list
-   num-host-receptors
-   (lambda (_)
-     (receptor-mixer-choose m))))
-
+  (if (eq? (receptor-mixer-game-type m) "mutate")	  
+	  (shuffle (receptor-mixer-values m))
+	  (build-list
+	   num-host-receptors
+	   (lambda (_)
+		 (receptor-mixer-choose m)))))
+  
 (define (calculate-suceptibility a b)
   (/
    (foldl

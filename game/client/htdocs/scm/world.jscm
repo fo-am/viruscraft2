@@ -147,8 +147,7 @@
    (lambda (host r)
      ;; if it died with a virus
      (if (and (eq? (host-state host) 'state-died)
-	      (host-virus host)
-	      (< (length (world-viruses w)) (param "world-max-viruses")))
+	      (host-virus host))
 	 (append
 	  r
 	  (build-list
@@ -162,27 +161,29 @@
    (world-hosts w)))
 
 (define (world-virus-update w infection-list time delta)
-  (foldl
-   (lambda (virus r)     
-     ;; remove if attached - the host will deal with it now
-     (cond
-      ;; a succesful infection
-      ((world-virus-in-infection-list?
-	(entity-id virus) infection-list) r)
-      ;; death via old age
-      ((eq? (virus-state virus) 'state-died) r)
-      ;; normal update
-      (else (append			 
-			 (list (entity-update
-					(virus-update
-					 virus time delta w)
-					delta))
-			 r))))
-   (if (< (length (world-viruses w))
-		  (level-params-min-viruses (world-level-params w)))
-       (list (make-virus (* (rndf) virus-age-var)))
-       '())
-   (world-spawn-new-viruses w)))
+  (crop
+   (foldl
+	(lambda (virus r)     
+	  ;; remove if attached - the host will deal with it now
+	  (cond
+	   ;; a succesful infection
+	   ((world-virus-in-infection-list?
+		 (entity-id virus) infection-list) r)
+	   ;; death via old age
+	   ((eq? (virus-state virus) 'state-died) r)
+	   ;; normal update
+	   (else (append			 
+			  (list (entity-update
+					 (virus-update
+					  virus time delta w)
+					 delta))
+			  r))))
+	(if (< (length (world-viruses w))
+		   (level-params-min-viruses (world-level-params w)))
+		(list (make-virus (* (rndf) virus-age-var)))
+		'())
+	(world-spawn-new-viruses w))
+   (param "world-max-viruses")))
 
 (define (world-host-update w infection-list time delta)
   (foldl
@@ -208,10 +209,12 @@
    (world-hosts w)))
 
 (define (world-decimate-hosts w p)
-  (world-modify-hosts
-   w (filter
-	  (lambda (h) (> (rndf) (/ (* p p) 5)))
-	  (world-hosts w))))
+  (if (world-grace w)
+	  w
+	  (world-modify-hosts
+	   w (filter
+		  (lambda (h) (> (rndf) (/ (* p p) 5)))
+		  (world-hosts w)))))
 
 (define noisegen (js "new ClassicalNoise()"))
 
