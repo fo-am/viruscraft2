@@ -154,6 +154,16 @@
            (list 0 ())
            l))))
 
+(define index-map2
+  (lambda (fn l1 l2)
+    (cadr (foldl
+           (lambda (e1 e2 r)
+             (list
+              (+ (car r) 1)
+              (append (cadr r) (list (fn (car r) e1 e2)))))
+           (list 0 ())
+           l1 l2))))
+
 (define index-for-each
   (lambda (fn l)
     (foldl

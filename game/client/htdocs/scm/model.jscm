@@ -27,10 +27,10 @@
 (define (model-virus-receptors v) (list-ref v 0))
 (define (model-virus-fitness v) (list-ref v 1))
 
-(define (build-model-virus)
+(define (build-model-virus rate)
   (make-model-virus
    ;;(generate-receptors num-virus-receptors)
-   (build-list num-virus-receptors (lambda (_) 'triangle))
+   (mutate-receptors (build-list num-virus-receptors (lambda (_) 'triangle)) rate)
    0))
 
 (define (model-virus-spawn v rate)
@@ -93,16 +93,16 @@
 (define (model-new-variant? m) (list-ref m 6))
 (define (model-modify-new-variant m s) (list-replace m 6 s))
 
-(define (build-model virus-popsize period)
+(define (build-model virus-popsize period timing-offset rate)
   (make-model
    (build-list
     virus-popsize
     (lambda (_)
-      (build-model-virus)))
+      (build-model-virus rate)))
    0 ;; generations
    0 ;; variant id
    #f ;; variant
-   -1 ;; timer
+   (+ -1 timing-offset) ;; timer
    period ;; period
    #t)) ;; new-variant
 
