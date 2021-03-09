@@ -80,15 +80,18 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (make-model viruses generations variant-id variant timer period)
-  (list viruses generations variant-id variant timer period))
+(define (make-model viruses generations variant-id variant timer period new-variant)
+  (list viruses generations variant-id variant timer period new-variant))
 (define (model-viruses m) (list-ref m 0))
 (define (model-generations m) (list-ref m 1))
+;; todo: no longer using variant id anywhere...
 (define (model-variant-id m) (list-ref m 2))
 (define (model-variant m) (list-ref m 3))
 (define (model-timer m) (list-ref m 4))
 (define (model-modify-timer m s) (list-replace m 4 s))
 (define (model-period m) (list-ref m 5))
+(define (model-new-variant? m) (list-ref m 6))
+(define (model-modify-new-variant m s) (list-replace m 6 s))
 
 (define (build-model virus-popsize period)
   (make-model
@@ -99,9 +102,9 @@
    0 ;; generations
    0 ;; variant id
    #f ;; variant
-   0 ;; timer
+   -1 ;; timer
    period ;; period
-   ))
+   #t)) ;; new-variant
 
 (define (model-calc-fitness virus hosts m)
   (foldl
@@ -124,6 +127,7 @@
    (model-variant m)
    (model-timer m)
    (model-period m)
+   (model-new-variant? m)
    ))
 
 (define (model-repopulate-viruses m)
@@ -139,6 +143,7 @@
    (model-variant m)
    (model-timer m)
    (model-period m)
+   (model-new-variant? m)
    ))
 
 (define (model-hypothesis m)
@@ -153,16 +158,18 @@
 		 (+ (model-variant-id m) 1)
 		 current
 		 (model-timer m)
-		 (model-period m))
+		 (model-period m)
+		 #t) ;; new variant
 		m)))
 
 (define (model-update m hosts delta)
-   (if (< (model-timer m) 0)
-	   (model-modify-timer
-		(model-update-variant
-		 (model-repopulate-viruses
-		  (model-update-fitness m hosts)))
-		(model-period m))
-	   (model-modify-timer m (- (model-timer m) delta))))
+  (if (< (model-timer m) 0)
+	  (model-modify-timer
+	   (model-update-variant
+		(model-repopulate-viruses
+		 (model-update-fitness m hosts)))
+	   (model-period m))
+	  (model-modify-new-variant
+	   (model-modify-timer m (- (model-timer m) delta)) #f)))
 
 

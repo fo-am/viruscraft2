@@ -15,27 +15,25 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace game-type)
-  (list viruses hosts model receptor-mixer variant-id variant-virus variant-timer level level-time level-params state infection-timer grace game-type))
+(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type)
+  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
 (define (world-modify-hosts w s) (list-replace w 1 s))
-(define (world-model w) (list-ref w 2))
+(define (world-models w) (list-ref w 2))
 (define (world-receptor-mixer w) (list-ref w 3))
 (define (world-modify-receptor-mixer w s) (list-replace w 3 s))
-(define (world-variant-id w) (list-ref w 4))
-(define (world-variant-virus w) (list-ref w 5))
-(define (world-variant-timer w) (list-ref w 6))
-(define (world-level w) (list-ref w 7))
-(define (world-level-time w) (list-ref w 8))
-(define (world-modify-level-time w s) (list-replace w 8 s))
-(define (world-level-params w) (list-ref w 9))
-(define (world-state w) (list-ref w 10))
-(define (world-modify-state w s) (list-replace w 10 s))
-(define (world-infection-timer w) (list-ref w 11))
-(define (world-grace w) (list-ref w 12))
-(define (world-game-type w) (list-ref w 13))
+(define (world-variant-viruses w) (list-ref w 4))
+(define (world-level w) (list-ref w 5))
+(define (world-level-time w) (list-ref w 6))
+(define (world-modify-level-time w s) (list-replace w 6 s))
+(define (world-level-params w) (list-ref w 7))
+(define (world-state w) (list-ref w 8))
+(define (world-modify-state w s) (list-replace w 8 s))
+(define (world-infection-timer w) (list-ref w 9))
+(define (world-grace w) (list-ref w 10))
+(define (world-game-type w) (list-ref w 11))
 
 (define virus-age-var 5)
 
@@ -57,12 +55,11 @@
 		 (vec2 (/ screen-width 2) (/ screen-height 2))
 		 (mixer->receptors mixer)
 		 )))
-	 (build-model model-virus-popsize
-				  (level-params-model-update-rate level-params))
+	 (list
+	  (build-model model-virus-popsize
+				   (level-params-model-update-rate level-params)))
 	 mixer
-	 -1 ;; variant id
-	 #f ;; variant virus
-	 0  ;; varient timer
+	 (list #f) ;; variant viruses
 	 level ;; level
 	 0 ;; level-time
 	 level-params
@@ -277,38 +274,43 @@
 
 
 (define (world-update w time delta)
-  (let ((infection-list
-		 (if (and (not (world-grace w))
-				  (< (world-infection-timer w) 0))
-			 (world-infection-check
-			  (world-viruses w) ;; (crop (shuffle (world-viruses w)) 10)
-			  (world-hosts w)   ;; (crop (shuffle (world-hosts w)) 10)
-			  (model-variant (world-model w)))
-			 '()))
-		(variant-id (model-variant-id (world-model w))))
-	(world-update-state 
-	 (make-world
-	  (if (eq? (world-state w) "state-running")
+  (let ((model (choose (world-models w))))
+	(let ((infection-list
+		   (if (and (not (world-grace w))
+					(< (world-infection-timer w) 0))
+			   (world-infection-check
+				(world-viruses w) ;; (crop (shuffle (world-viruses w)) 10)
+				(world-hosts w)   ;; (crop (shuffle (world-hosts w)) 10)
+				;; pick randomly from the models we have for multiple variants
+				(model-variant model))
+			   '()))
+		  ;; pre-update the models as js is doing something here I don't like
+		  (models
+		   (if (eq? (world-state w) "state-running")
+			   (map (lambda (m) (model-update m (world-hosts w) delta)) (world-models w))
+			   (world-models w))))
+	  
+	  (world-update-state 
+	   (make-world
+		(if (eq? (world-state w) "state-running")
 		  (world-virus-update w infection-list time delta)
 		  (world-viruses w))
 	  (if (eq? (world-state w) "state-running")
 		  (world-host-update w infection-list time delta)
 		  (world-hosts w))
-	  (if (eq? (world-state w) "state-running")
-		  (model-update (world-model w) (world-hosts w) delta)
-		  (world-model w))
+	  models
 	  (if (eq? (world-game-type w) "mutate")
 		  (receptor-mixer-decrease-power
 		   (world-receptor-mixer w) delta)
 		  (world-receptor-mixer w))
 	  ;; update the variant info if it has changed
-	  variant-id	 
-	  (if (not (eq? variant-id (world-variant-id w)))
-		  (make-virus-with-receptors (vec2 1400 90) 0 (model-variant (world-model w)))
-		  (world-variant-virus w))
-	  (if (not (eq? variant-id (world-variant-id w)))
-		  0
-		  (+ (world-variant-timer w) delta))
+	  (map2
+	   (lambda (m v)
+		 (if (model-new-variant? m)
+			 (make-virus-with-receptors (vec2 1400 90) 0 (model-variant m))
+			 v))
+	   models
+	   (world-variant-viruses w))
 	  (world-level w)
 	  (+ (world-level-time w) delta)
 	  (world-level-params w)
@@ -320,7 +322,7 @@
 		  #f
 		  (if (> (length (world-hosts w)) 2) #f #t))
 	  (world-game-type w))
-	 time delta)))
+	 time delta))))
 
 (define (world-update-mouse w state x y)
   w)
@@ -371,14 +373,14 @@
 (define (world-render w ctx time)
   (set! ctx.strokeStyle "#000")
   ;; draw the petri dish
-  (set! ctx.lineWidth 3)
-  (ctx.beginPath)
-  (ctx.arc
-   (/ screen-width 2)
-   (/ screen-height 2)
-   (param "petri-radius") 0 (* 2 Math.PI))
-  (ctx.stroke) 
-  (set! ctx.lineWidth 1)
+  ;; (set! ctx.lineWidth 3)
+  ;; (ctx.beginPath)
+  ;; (ctx.arc
+  ;;  (/ screen-width 2)
+  ;;  (/ screen-height 2)
+  ;;  (param "petri-radius") 0 (* 2 Math.PI))
+  ;; (ctx.stroke) 
+  ;; (set! ctx.lineWidth 1)
 
   (for-each
    (lambda (e)
@@ -455,28 +457,31 @@
 	(set! ctx.fillStyle "#f00")))
 
   ;; variant
-  (let ((mutation-time (- (model-period (world-model w))
-						  (model-timer (world-model w)))))
-	(when (< mutation-time 1)
-		  (set! ctx.fillStyle "#f00")
-		  (ctx.beginPath)
-		  (ctx.arc 1400 90 100 0 (* 2 Math.PI))
-		  (set! ctx.globalAlpha (- 1 mutation-time))
-		  (ctx.fill)
-		  (set! ctx.globalAlpha 1)))
+  (index-for-each2
+   (lambda (i model variant)
+  	 (let ((x (* i 200))
+  		   (mutation-time (- (model-period model) (model-timer model))))
+  	   (when (< mutation-time 1)
+  			 (set! ctx.fillStyle "#f00")
+  			 (ctx.beginPath)
+  			 (ctx.arc (+ i 1400) 90 100 0 (* 2 Math.PI))
+  			 (set! ctx.globalAlpha (- 1 mutation-time))
+  			 (ctx.fill)
+  			 (set! ctx.globalAlpha 1))
+  	   (set! ctx.fillStyle "#000")
+  	   (set! ctx.font "normal 30pt Dosis")
+  	   (ctx.fillText "CURRENT VARIANT" (+ i 1250) 180)  
+  	   (when variant
+			 (virus-render-receptors variant ctx))
+  	   (ctx.fillText
+  		(string-append "NEXT MUTATION: "
+  					   (trunc (model-timer model)))
+  		(+ i 1250) 230)
+  	   ))
+   (world-models w)
+   (world-variant-viruses w))
   
-  (set! ctx.fillStyle "#000")
-  (set! ctx.font "normal 30pt Dosis")
-  (ctx.fillText "CURRENT VARIANT" 1250 180) 
- 
-  (when (world-variant-virus w)
-		(virus-render-receptors (world-variant-virus w) ctx))
-
-  (ctx.fillText
-   (string-append "NEXT MUTATION: "
-				  (trunc (model-timer (world-model w))))
-   1250 230) 
-
+  
   )
 
 (define (world-end-game-timer w)

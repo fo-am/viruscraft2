@@ -28,7 +28,7 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 3 (vec2 0 0))
+   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
    (make-anim-move "host" "host-infected" '() (list "1") 8 (vec2 0 0))
    ))
 
@@ -37,7 +37,7 @@
    (make-entity
     (generate-entity-id!)
     "host"
-    pos 0 (vec2 128 128) "left" (rndf)
+    pos (random 360) (vec2 128 128) "left" (rndf)
     (anim-load-frames "0" host-animation)
     0 host-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
    (list

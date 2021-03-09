@@ -92,6 +92,7 @@
        (append r (list (fn i))))
      () l)))
 
+;; foldl supports multiple lists - todo: fix these to do this properly
 (define map2
   (lambda (fn l l2)
     (foldl
@@ -116,6 +117,14 @@
        (fn i))
      ()
      l) #f))
+
+(define for-each2
+  (lambda (fn l1 l2)
+    (foldl
+     (lambda (i1 i2 r)
+       (fn i1 i2))
+     ()
+     l1 l2) #f))
 
 (define (assoc k l)
   (foldl
@@ -152,6 +161,14 @@
        (fn r e)
        (+ r 1))
      0 l)))
+
+(define index-for-each2
+  (lambda (fn l1 l2)
+	(foldl
+     (lambda (e1 e2 r)
+       (fn r e1 e2)
+       (+ r 1))
+     0 l1 l2)))
 
 ;; fix js modulo irt negative numbers
 (define (modulo m n) (js "((m%n)+n)%n"))
