@@ -16,19 +16,14 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (define (generate-level-params level)
-  (dbg (level-params
-		(list-ref (list (/ (param "world-level-time") 2)
-						(/ (param "world-level-time") 3)
-						(/ (param "world-level-time") 4)
-						(/ (param "world-level-time") 5)
-						(/ (param "world-level-time") 6)
-						(/ (param "world-level-time") 7)
-						(/ (param "world-level-time") 8)
-						(/ (param "world-level-time") 9)
-						(/ (param "world-level-time") 10)
-						(/ (param "world-level-time") 11))
-				  (- level 1))
-		(list-ref (list 1 2 4 6 8 10 12 14 16) (- level 1)))))
+  (level-params
+   (list-ref (list (/ (param "world-level-time") 2)
+				   (/ (param "world-level-time") 3)
+				   (/ (param "world-level-time") 4)
+				   (/ (param "world-level-time") 6)
+				   (/ (param "world-level-time") 8))
+			 (- level 1))
+   (list-ref (list 1 2 3 8 12) (- level 1))))
 
 (define (level-params model-update-rate min-viruses)
   (list model-update-rate min-viruses))

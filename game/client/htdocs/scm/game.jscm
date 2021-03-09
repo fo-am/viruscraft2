@@ -19,7 +19,7 @@
 (load "scm/nightjar.jscm")
 (load "scm/local-storage.jscm")
 
-(define params-version 5)
+(define params-version 6)
 (define player-id -1)
 (define player-name "???")
 (define end-game-time 7)
@@ -45,8 +45,8 @@
  (list
   (make-param "start-level" 1 "seconds")
   (make-param "world-level-time" 60 "seconds")
-  (make-param "world-num-levels" 10 "levels")
-  (make-param "world-max-viruses" 20 "viruses")
+  (make-param "world-num-levels" 5 "levels")
+  (make-param "world-max-viruses" 30 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
   (make-param "world-infection-period" 0.5 "seconds")
   (make-param "world-mutate-power-mul" 0.1 "units")

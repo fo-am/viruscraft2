@@ -432,7 +432,7 @@
   ;; (ctx.stroke)
 
   (set! ctx.font "normal 30pt Dosis")
-  (ctx.fillText (string-append "LEVEL: " (world-level w)) 100 80) 
+  (ctx.fillText (string-append "LEVEL: " (world-level w) "/" (param "world-num-levels")) 100 80) 
   (ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 100 120) 
 				
   (when (eq? (world-state w) "state-game-over")
