@@ -28,8 +28,8 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
-   (make-anim-move "host" "host-infected" '() (list "1" "2" "3" "2") 8 (vec2 0 0))
+   (make-anim-move "host" "host" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 8 (vec2 0 0))
+   (make-anim-move "host" "host-infected" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 3 (vec2 0 0))
    ))
 
 (define (make-host pos receptors)
@@ -125,7 +125,14 @@
 	   ;; facing angle
 	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 1)
 	  ;; dir
-	  (if (< (v2mag move) 0.001) (v2mul (host-dir h) 0.99) move))
+	  (v2lerp
+	   (host-dir h)
+	   (if (< (v2mag move) 0.001)
+		   (if (< (rndf) 0.1)
+			   (vmul (rndcirc2d) 10)
+			   (v2mul (host-dir h) 0.99))
+		   move)
+	   0.01))
 	 ;; update the virus
 	 (cond
 	  ;; update the host postion if we have one
