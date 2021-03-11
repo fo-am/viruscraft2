@@ -26,6 +26,12 @@
 (define installation-mode #f)
 (define stage-reached 4)
 
+(let ((v (local-load "viruscraft2-version")))
+  (when (or (not v) (< v params-version))
+		(local-nuke)
+		(local-save "viruscraft2-version" params-version)
+		))
+
 (define (param name)
   (string->number (local-get-param "viruscraft2" name)))
 
@@ -35,11 +41,6 @@
 (define start-level (param "start-level"))
 ;;(define installation-mode #t)
 
-(let ((v (local-load "viruscraft2-version")))
-  (when (or (not v) (< v params-version))
-		(local-nuke)
-		(local-save "viruscraft2-version" params-version)
-		))
 
 (local-setup-params 
  "viruscraft2" 
