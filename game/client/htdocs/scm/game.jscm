@@ -203,8 +203,8 @@
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 0) (register c "mutate"))
-		   c))
+		   (if (> stage-reached 0) (register c "mutate")
+			   c)))
 
 		(rect-button
 		 (if (> stage-reached 1) "MULTIVARIANT" "????")
@@ -214,8 +214,8 @@
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 1) (register c "multivariant"))
-		   c))
+		   (if (> stage-reached 1) (register c "multivariant")
+			   c)))
 
 		(rect-button
 		 (if (> stage-reached 2) "HIDDEN" "????")
@@ -225,8 +225,8 @@
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 1) (register c "hidden"))
-		   c))
+		   (if (> stage-reached 1) (register c "hidden")
+			   c)))
 		)
 	   c))))))
 
