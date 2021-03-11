@@ -40,9 +40,6 @@
 (define (string-param name)
   (local-get-param "viruscraft2" name))
 
-(define start-level (param "start-level"))
-;;(define installation-mode #t)
-
 
 (local-setup-params 
  "viruscraft2" 
@@ -76,6 +73,8 @@
   (make-param "model-hosts-per-update" 3 "hosts")
   ))
 
+(define start-level (param "start-level"))
+;;(define installation-mode #t)
 
 (load "scm/ordered-list.jscm")
 (load "scm/particles.jscm")
