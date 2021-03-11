@@ -24,6 +24,7 @@
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
+(define stage-reached 4)
 
 (define (param name)
   (string->number (local-get-param "viruscraft2" name)))
@@ -192,50 +193,40 @@
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (register c "shape")
-		   ;;(nightjar-enter-name c 1)
-		   ;;(nightjar-end c 99)
-		   ))
+		   (register c "shape")))
 
 		(rect-button
-		 "MUTATE"
+		 (if (> stage-reached 0) "MUTATE" "????")
 		 (+ default-button-x 200)
 		 default-button-y
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (register c "mutate")
-		   ;;(nightjar-enter-name c 1)
-		   ;;(nightjar-end c 99)
-		   ))
+		   (if (> stage-reached 0) (register c "mutate"))
+		   c))
 
 		(rect-button
-		 "MULTIVARIANT"
+		 (if (> stage-reached 1) "MULTIVARIANT" "????")
 		 (- default-button-x 200)
 		 (+ default-button-y 100)
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (register c "multivariant")
-		   ;;(nightjar-enter-name c 1)
-		   ;;(nightjar-end c 99)
-		   ))
+		   (if (> stage-reached 1) (register c "multivariant"))
+		   c))
 
 		(rect-button
-		 "HIDDEN"
+		 (if (> stage-reached 2) "HIDDEN" "????")
 		 (+ default-button-x 200)
 		 (+ default-button-y 100)
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (register c "hidden")
-		   ;;(nightjar-enter-name c 1)
-		   ;;(nightjar-end c 99)
-		   ))
-
+		   (if (> stage-reached 1) (register c "hidden"))
+		   c))
 		)
 	   c))))))
 

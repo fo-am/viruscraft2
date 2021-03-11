@@ -28,8 +28,8 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 8 (vec2 0 0))
-   (make-anim-move "host" "host-infected" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 3 (vec2 0 0))
+   (make-anim-move "host" "host" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
+   (make-anim-move "host" "host-infected" '() (list  "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
    ))
 
 (define (make-host pos receptors)
