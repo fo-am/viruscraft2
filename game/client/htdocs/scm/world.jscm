@@ -211,19 +211,26 @@
       ;; cell division
       ((and (eq? (host-state host) 'state-divide)
 	    (< (length (world-hosts w))
-	       (param "host-max-population")))			   
-       (world-spawn-hosts host r (param "host-spawn-count") w))
+	       (param "host-max-population")))
+	   (cons
+		(entity-update
+		 (host-update host time delta w
+					  (world-find-attached-virus
+					   (entity-id host)
+					   infection-list))
+		 delta)
+		(world-spawn-hosts host r (param "host-spawn-count") w)))
       ;; cell death
       ((eq? (host-state host) 'state-died) r)
       ;; normal update
       (else 
        (append
-	r (list (entity-update
-		 (host-update host time delta w
-			      (world-find-attached-virus
-			       (entity-id host)
-			       infection-list))
-		 delta))))))
+		r (list (entity-update
+				 (host-update host time delta w
+							  (world-find-attached-virus
+							   (entity-id host)
+							   infection-list))
+				 delta))))))
    '()
    (world-hosts w)))
 

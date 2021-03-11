@@ -15,6 +15,8 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+(define host-fade-time 0.5)
+
 (define (make-receptor pos col)
   (list pos col))
 
@@ -94,12 +96,18 @@
 		   (host-modify-state (entity-modify-timer h 0) 'state-divide)
 		   h))
 	  ((eq? state 'state-divide)
-	   (host-modify-state h 'state-died))
+	   (host-modify-state h 'state-fade-away))
+	  ((eq? state 'state-fade-away)
+	   (if (> (entity-timer h) host-fade-time)
+		   (host-modify-state h 'state-died)
+		   h))
 	  ((eq? state 'state-died)
 	   h) 
 	  ((eq? state 'state-infected)
 	   (if (> (entity-timer h) (param "host-infected-death-time"))
-		   (host-modify-state h 'state-died)
+		   (host-modify-state
+			(entity-modify-timer h 0)
+			'state-fade-away)
 		   (entity-modify-clip h host-animation-infected)))
 	  (else h))   
 	 (+ (entity-timer h)
@@ -152,13 +160,17 @@
 ;; overload this to render the virus if we have one
 (define (host-render h ctx)
   (let ((virus (host-virus h)))
-    (entity-render h ctx)
+	(when (not (eq? (host-state h) 'state-died))
+		  (when (eq? (host-state h) 'state-fade-away)
+				(set! ctx.globalAlpha (- 1.1 (/ (entity-timer h) host-fade-time))))
+		  (entity-render h ctx)
 
-    (ctx.save)
-    (ctx.translate
-     (- (vx (entity-pos h)) 50)
-     (- (vy (entity-pos h)) 50))       
-    (ctx.drawImage (host-receptor-image h) 0 0)
-    (ctx.restore)
-    
-    (when virus (virus-render virus ctx))))
+		  (ctx.save)
+		  (ctx.translate
+		   (- (vx (entity-pos h)) 50)
+		   (- (vy (entity-pos h)) 50))       
+		  (ctx.drawImage (host-receptor-image h) 0 0)
+		  (ctx.restore)
+		  
+		  (when virus (virus-render virus ctx))
+		  (set! ctx.globalAlpha 1.0))))
