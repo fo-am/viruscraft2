@@ -79,7 +79,7 @@
 	 (index-map
 	   (lambda (i m)
 		 (make-virus-with-receptors
-		  (vec2 1400 (+ (* i 300) 90)) 0
+		  (vec2 1400 (+ (* i 300) 190)) 0
 		  (build-list num-virus-receptors (lambda (_) 'tri))))
 	   models)	 
 	 level ;; level
@@ -336,7 +336,7 @@
 	  (index-map2
 	   (lambda (i m v)
 		 (if (model-new-variant? m)
-			 (make-virus-with-receptors (vec2 1400 (+ (* i 300) 90)) 0 (model-variant m))
+			 (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m))
 			 v))
 	   models
 	   (world-variant-viruses w))
@@ -396,20 +396,22 @@
 	  (set! ctx.strokeStyle "#000")
 	  (ctx.stroke)
 	  (set! ctx.fillStyle "#000")
-	  (ctx.fillText text (+ x 30) (- (+ y h) 25)))))
+	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
 
+
+(define panel-col "#f2f2f2")
+(define bg-col "#e3e2db")
+(define panel-width 400)
 
 (define (world-render w ctx time)
+
+  (set! ctx.fillStyle bg-col)
+  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
+  (set! ctx.fillStyle panel-col)
+  (ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
+
   (set! ctx.strokeStyle "#000")
-  ;; draw the petri dish
-  ;; (set! ctx.lineWidth 3)
-  ;; (ctx.beginPath)
-  ;; (ctx.arc
-  ;;  (/ screen-width 2)
-  ;;  (/ screen-height 2)
-  ;;  (param "petri-radius") 0 (* 2 Math.PI))
-  ;; (ctx.stroke) 
-  ;; (set! ctx.lineWidth 1)
+  (set! ctx.fillStyle "#000")
 
   (for-each
    (lambda (e)
@@ -419,27 +421,8 @@
    (lambda (e)
      (virus-render e ctx))
    (world-viruses w))
-  
-  ;; infection rate
-  ;; (set! ctx.fillStyle "#f00")
-  ;; (set! ctx.font "normal 20pt Dosis")
-  ;; (ctx.fillText "INFECTION LEVEL" 180 40) 
-  ;; (ctx.fillRect
-  ;;  400 20
-  ;;  (* 800 (/ (foldl
-  ;; 			  (lambda (host r)
-  ;; 				(if (host-virus host)
-  ;; 					(+ r 1) r))
-  ;; 			  0
-  ;; 			  (world-hosts w))
-  ;; 			 (length (world-hosts w))))
-  ;;  20)							
-  ;; (ctx.beginPath)
-  ;; (ctx.rect 400 20 800 20)
-  ;; (ctx.stroke)
 
   (set! ctx.font "normal 30pt Dosis")
-  (ctx.fillText (string-append "LEVEL: " (world-level w) "/" (param "world-num-levels")) 100 80) 
   (ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 100 120) 
 				
   (when (eq? (world-state w) "state-game-over")
@@ -488,7 +471,7 @@
   ;; variant
   (index-for-each2
    (lambda (i model variant)
-	 (let ((y (* i 300))
+	 (let ((y (+ (* i 300) 100))
 		   (mutation-time (- (model-period model) (model-timer model))))
 	   (when (< mutation-time 1)
 			 (set! ctx.fillStyle "#f00")
@@ -499,15 +482,15 @@
 			 (set! ctx.globalAlpha 1))
 	   (set! ctx.fillStyle "#000")
 	   (set! ctx.font "normal 30pt Dosis")
-	   (ctx.fillText "CURRENT VARIANT" 1250 (+ 180 y))  
+	   (ctx.fillText "Current virus:" 1300 (+ -10 y))  
 	   (when variant
 			 (if (eq? (world-game-type w) "hidden")
 				 (virus-render variant ctx)
 				 (virus-render-receptors variant ctx)))
 	   (ctx.fillText
-		(string-append "NEXT MUTATION: "
+		(string-append "Next mutation: "
 					   (trunc (model-timer model)))
-		1250 (+ 230 y)) 
+		1280 (+ 230 y)) 
 	   ))
    (world-models w)
    (world-variant-viruses w))

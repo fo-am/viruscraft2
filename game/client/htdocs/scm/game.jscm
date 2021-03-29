@@ -354,19 +354,10 @@
 		
 		(list
 		 (rect-button
-		  "QUIT" 20 (+ default-button-y 85) 60 60 #f
+		  "QUIT" 20 (+ default-button-y 185) 60 60 #f
 		  (lambda (c)
 			(button-sound)
 			(nightjar-intro game)))
-		 
-		 (rect-button
-		  "RESET" 100 (+ default-button-y 85) 60 60 #f
-		  (lambda (c)
-			(button-sound)
-			(game-modify-data
-			 (lambda (d)
-			   (build-world game-type start-level player-id (/ (game-time c) 1000)))
-			 c)))
 		 
 		 )) c))))))
 
