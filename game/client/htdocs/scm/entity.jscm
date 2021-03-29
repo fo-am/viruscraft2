@@ -64,27 +64,34 @@
 
 (define (entity-render e ctx)
   (let ((clip (list-ref (entity-sprite-list e) (entity-clip e))))
-    (let ((image (anim-clip-frame-looped
-		  clip (entity-facing e)
-		  (entity-frame e))))
-      (let ((posx (+ (- (vx (entity-pos e)) (/ image.width 2))
-		     (vx (entity-offset e))))
-	    (posy (+ (- (vy (entity-pos e)) (/ image.height 2))
-		     (vy (entity-offset e)))))
-	(cond
-	 ((zero? (entity-rot e))
-	  (when (entity-bg-image e) (ctx.drawImage (entity-bg-image e) posx posy))
-	  (ctx.drawImage image posx posy))
-	 (else
-	  ;; render path for rotation is more complex
-	  (ctx.save)
-	  (ctx.translate posx posy)
-	  (ctx.translate (/ image.width 2) (/ image.height 2))
-	  (ctx.rotate (entity-rot e))
-	  (ctx.translate (/ image.width -2) (/ image.height -2))
-	  (when (entity-bg-image e) (ctx.drawImage (entity-bg-image e) 0 0))
-	  (ctx.drawImage image 0 0)
-	  (ctx.restore)))))))
+    (let ((images (anim-clip-frame-looped
+				   clip (entity-facing e)
+				   (entity-frame e))))
+	  (let ((first-image (list-ref images 0)))
+		(let ((posx (+ (- (vx (entity-pos e)) (/ first-image.width 2))
+					   (vx (entity-offset e))))
+			  (posy (+ (- (vy (entity-pos e)) (/ first-image.height 2))
+					   (vy (entity-offset e)))))
+		  (cond
+		   ((zero? (entity-rot e))
+			(when (entity-bg-image e) (ctx.drawImage (entity-bg-image e) posx posy))
+			(for-each
+			 (lambda (image)
+			   (ctx.drawImage image posx posy))
+			 images))
+		   (else
+			;; render path for rotation is more complex
+			(ctx.save)
+			(ctx.translate posx posy)
+			(ctx.translate (/ first-image.width 2) (/ first-image.height 2))
+			(ctx.rotate (entity-rot e))
+			(ctx.translate (/ first-image.width -2) (/ first-image.height -2))
+			(when (entity-bg-image e) (ctx.drawImage (entity-bg-image e) 0 0))
+			(for-each
+			 (lambda (image)
+			   (ctx.drawImage image 0 0))
+			 images)
+			(ctx.restore))))))))
 
 (define (drop-n n l)
   (cond

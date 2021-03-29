@@ -30,7 +30,7 @@
 (define (build-model-virus rate)
   (make-model-virus
    ;;(generate-receptors num-virus-receptors)
-   (mutate-receptors (build-list num-virus-receptors (lambda (_) 'triangle)) rate)
+   (mutate-receptors (build-list num-virus-receptors (lambda (_) 'tri)) rate)
    0))
 
 (define (model-virus-spawn v rate)

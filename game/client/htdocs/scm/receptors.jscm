@@ -15,7 +15,7 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define receptor-shapes (list 'triangle 'square 'donut 'guitar))
+(define receptor-shapes (list 'tri 'squ 'cir 'gui))
 (define num-virus-receptors (param "virus-receptor-count"))
 (define num-host-receptors (param "host-receptor-count"))
 
@@ -47,20 +47,12 @@
    
 (define (receptors-paint receptor-images is-a-virus)
   (let ((tcanv (document.createElement "canvas")))
-    (set! tcanv.width 100)
-    (set! tcanv.height 100)    
+    (set! tcanv.width 300)
+    (set! tcanv.height 300)    
     (let ((tctx (tcanv.getContext "2d")))
-      (tctx.save)
-      (tctx.translate 50 50)
       (index-for-each
        (lambda (i ri)
-      	 (tctx.save)
-      	 (tctx.rotate (* i (/ (* Math.PI 2) (length receptor-images))))
-	 (if is-a-virus 
-	     (tctx.translate -20 -50)
-	     (tctx.translate -20 15))
       	 (tctx.drawImage ri 0 0)
-      	 (tctx.restore)
       	 )
        receptor-images)
       (tctx.restore))
@@ -72,7 +64,7 @@
   (list game-type
 		(if (eq? game-type "shape")
 			(list 1 0 0 0)
-			(build-list num-host-receptors (lambda (_) 'triangle)))
+			(build-list num-host-receptors (lambda (_) 'tri)))
 		0))
 
 (define (receptor-mixer-game-type m) (list-ref m 0))

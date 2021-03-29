@@ -19,8 +19,12 @@
 
 (define virus-animation
   (list
-   (make-anim-move "virus" "virus" '() (list "1" "1" "1") 8 (vec2 0 0))
+   (make-anim-move "virus" "small-virus" '() (list "") 0 (vec2 0 0))
    ))
+
+(define virus-variant-animation
+  (list
+   (make-anim-move "virus" "virus-capsid" '() (list "") 0 (vec2 0 0))))
 
 (define (make-virus age)
   (make-virus-at (virus-start-pos) age))
@@ -35,20 +39,32 @@
     0 virus-animation-idle 0 0 pos #f 0 age (vec2 0 0))
    (list 'state-idle #f)))
 
+(define (virus-receptor-filenames)
+  (map
+   (lambda (n)
+	 (string-append "sprites/virus/" n))
+   (list 
+	"1_cir.png" "1_gui.png" "1_squ.png" "1_tri.png"
+	"2_cir.png" "2_gui.png" "2_squ.png" "2_tri.png"
+	"3_cir.png" "3_gui.png" "3_squ.png" "3_tri.png"
+	"4_cir.png" "4_gui.png" "4_squ.png" "4_tri.png"
+	"5_cir.png" "5_gui.png" "5_squ.png" "5_tri.png")))
+
+
 (define (make-virus-with-receptors pos age receptors)
   (append
    (make-entity
     (generate-entity-id!)
     "virus"
     pos 0 (vec2 128 128) "left" (rndf)
-    (anim-load-frames "0" virus-animation)
+    (anim-load-frames "0" virus-variant-animation)
     0 virus-animation-idle 0 0 pos #f 0 age (vec2 0 0))
    (list
     'state-idle
     (receptors-paint
-     (map
-      (lambda (r)
-		(find-image (string-append r ".png")))
+     (index-map
+      (lambda (i r)
+		(find-image (string-append "sprites/virus/" (+ i 1) "_" r ".png")))
       receptors) #t))))
 
 (define (virus-state v) (list-ref v (+ entity-size 0)))
@@ -123,8 +139,8 @@
   (entity-render v ctx)  
   (ctx.save)
   (ctx.translate
-   (+ (- (vx (entity-pos v)) 50) (vx (entity-offset v)))
-   (+ (- (vy (entity-pos v)) 50) (vy (entity-offset v))))       
+   (+ (- (vx (entity-pos v)) 150) (vx (entity-offset v)))
+   (+ (- (vy (entity-pos v)) 150) (vy (entity-offset v))))       
   (ctx.drawImage (virus-receptor-image v) 0 0)
   (ctx.restore))
     

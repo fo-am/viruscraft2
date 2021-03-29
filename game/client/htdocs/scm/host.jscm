@@ -30,8 +30,9 @@
 
 (define host-animation
   (list
-   (make-anim-move "host" "host" '() (list "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
-   (make-anim-move "host" "host-infected" '() (list  "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
+   (make-anim-move "host" "A" (list "A" "B" "C") (list "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
+   (make-anim-move "host" "A" (list "A" "B" "C") (list "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
+;;   (make-anim-move "host" "host-infected" '() (list  "1" "12" "2" "23" "3" "23" "2" "12") 12 (vec2 0 0))
    ))
 
 (define (make-host pos receptors)
@@ -40,16 +41,22 @@
     (generate-entity-id!)
     "host"
     pos (random (* 2 Math.PI)) (vec2 128 128) "left" (rndf)
-    (anim-load-frames "0" host-animation)
+	;; shapes will go in below
+    (anim-load-frames
+	 (map
+	  (lambda (shape)
+		(cond
+		 ((eq? shape 'cir) "_cir")
+		 ((eq? shape 'gui) "_gui")
+		 ((eq? shape 'tri) "_tri")
+		 (else "_squ")))
+	  receptors)
+	 host-animation)
     0 host-animation-idle 0 0 pos #f 0 0 (vec2 0 0))
    (list
     'state-idle
     receptors
-    (receptors-paint
-     (map
-      (lambda (r)
-		(find-image (string-append r ".png")))
-      receptors) #f)
+    '() ;; receptor images not used any more
     #f
 	;; initial nudge to look alive
 	(rndcirc2d))))
@@ -87,10 +94,12 @@
 	 (cond
 	  ;; at any time switch to infected if a virus attaches
 	  (new-virus
-	   (host-modify-state
-		(entity-modify-timer h 0)
-		'state-infected))
-
+	   (entity-modify-bg-image
+		(host-modify-state
+		 (entity-modify-timer h 0)
+		 'state-infected)
+		(find-image "sprites/host/infected.png")))
+	  
 	  ((eq? state 'state-idle)
 	   (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
 		   (host-modify-state (entity-modify-timer h 0) 'state-divide)
@@ -165,12 +174,12 @@
 				(set! ctx.globalAlpha (- 1.1 (/ (entity-timer h) host-fade-time))))
 		  (entity-render h ctx)
 
-		  (ctx.save)
-		  (ctx.translate
-		   (- (vx (entity-pos h)) 50)
-		   (- (vy (entity-pos h)) 50))       
-		  (ctx.drawImage (host-receptor-image h) 0 0)
-		  (ctx.restore)
+		  ;; (ctx.save)
+		  ;; (ctx.translate
+		  ;;  (- (vx (entity-pos h)) 50)
+		  ;;  (- (vy (entity-pos h)) 50))       
+		  ;; (ctx.drawImage (host-receptor-image h) 0 0)
+		  ;; (ctx.restore)
 		  
 		  (when virus (virus-render virus ctx))
 		  (set! ctx.globalAlpha 1.0))))

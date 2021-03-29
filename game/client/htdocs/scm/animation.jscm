@@ -14,47 +14,42 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-anim-move id name variations frames speed offset) (list id name variations frames speed offset))
+(define (make-anim-move id name components frames speed offset) (list id name components frames speed offset))
 (define (anim-move-id a) (list-ref a 0))
 (define (anim-move-name a) (list-ref a 1))
-(define (anim-move-variations a) (list-ref a 2))
+(define (anim-move-components a) (list-ref a 2))
 (define (anim-move-frames a) (list-ref a 3))
 (define (anim-move-speed a) (list-ref a 4))
 (define (anim-move-offset a) (list-ref a 5))
 
-(define (anim-build-path dir variation move frame)
+(define (anim-build-path component move frame type)
   (string-append 
-   "sprites/" (anim-move-id move) "/" dir "/"
-   (if (eq? variation "")
-       "" (string-append variation "-"))
-   (anim-move-name move) "-" 
-   frame ".png"))
+   "sprites/" (anim-move-id move) "/" 
+   (anim-move-name move)
+   frame component type ".png"))
 
-(define (anim-move->filenames l variation move)
+(define (anim-move->filenames l component move types)
   (foldl
    (lambda (frame r)
-     ;; temporary hack to get demo out (common excuse)
-     (if (eq? (anim-move-id move) "pupae")
-	 (append
-	  (list (anim-build-path "left" variation move frame))
-	  r)		   
-	 (append
-	  (list (anim-build-path "left" variation move frame)
-		(anim-build-path "right" variation move frame))
-	  r)))
-   l
-   (anim-move-frames move)))
+	 (foldl
+	  (lambda (type r)
+		(append
+		 (list (anim-build-path component move frame type))
+		 r))
+	  r types))
+   l (anim-move-frames move)))
 
-(define (anim->filenames anim)
+(define (anim->filenames anim types)
   (foldl
    (lambda (move r)
-     (if (null? (anim-move-variations move))
-	 (anim-move->filenames r "" move)
+     (if (null? (anim-move-components move))
+	 (anim-move->filenames r "" move (list ""))
 	 (foldl
-	  (lambda (variation r)
-	    (anim-move->filenames r variation move))
+	  (lambda (component r)
+		;; hardcoded types - fix
+	    (anim-move->filenames r component move types))
 	  r
-	  (anim-move-variations move))))
+	  (anim-move-components move))))
    '()
    anim))
 
@@ -65,14 +60,14 @@
 (define (anim-clip-frames c) (list-ref c 1))
 (define (anim-clip-offset c) (list-ref c 2))
 
+;; now returns list of images to draw over each other
 (define (anim-clip-frame-looped clip facing n)
-  (list-ref
    (list-ref 
-    (anim-clip-frames clip)
-    (modulo n (length (anim-clip-frames clip))))
-   (if (eq? facing "left") 0 1)))
+	(anim-clip-frames clip)
+	(modulo n (length (anim-clip-frames clip)))))
 
-(define (anim-load-frames variation anim)
+;; todo component-type-list
+(define (anim-load-frames component-type-list anim)
   (map
    (lambda (move)
      ;; bolting speed onto the front of the frame list
@@ -81,15 +76,13 @@
       (anim-move-speed move)
       (map 
        (lambda (frame)
-	 (list
-	  (find-image
-	   (anim-build-path
-	    "left" (if (null? (anim-move-variations move)) "" variation)
-	    move frame))
-	  (find-image
-	   (anim-build-path
-	    "right" (if (null? (anim-move-variations move)) "" variation)
-	    move frame))))
+		 (if (null? (anim-move-components move))
+			 (list (find-image (anim-build-path "" move frame "")))
+			 (map2
+			  (lambda (component type)
+				(find-image (anim-build-path component move frame type)))
+			  (anim-move-components move)
+			  component-type-list)))
        (anim-move-frames move))
       (anim-move-offset move)))
    anim))

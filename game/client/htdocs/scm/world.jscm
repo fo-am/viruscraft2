@@ -80,7 +80,7 @@
 	   (lambda (i m)
 		 (make-virus-with-receptors
 		  (vec2 1400 (+ (* i 300) 90)) 0
-		  (build-list num-virus-receptors (lambda (_) 'triangle))))
+		  (build-list num-virus-receptors (lambda (_) 'tri))))
 	   models)	 
 	 level ;; level
 	 0 ;; level-time
@@ -362,9 +362,9 @@
 	   w (receptor-mixer-increase
 		  (world-receptor-mixer w)
 		  (cond
-		   ((eq? receptor 'triangle) 0)
-		   ((eq? receptor 'square) 1)
-		   ((eq? receptor 'donut) 2)
+		   ((eq? receptor 'tri) 0)
+		   ((eq? receptor 'squ) 1)
+		   ((eq? receptor 'cir) 2)
 		   (else 3))))
 	  (world-decimate-hosts
 	   (world-modify-receptor-mixer
@@ -478,9 +478,9 @@
 	   (ctx.drawImage
 		(find-image
 		 (cond
-		  ((eq? shape 'triangle) "triangle.png")
-		  ((eq? shape 'square) "square.png")
-		  ((eq? shape 'donut) "donut.png")
+		  ((eq? shape 'tri) "triangle.png")
+		  ((eq? shape 'squ) "square.png")
+		  ((eq? shape 'cir) "donut.png")
 		  (else "guitar.png")))
 		(+ 150 (* i 50)) 450))
 	 (receptor-mixer-values (world-receptor-mixer w)))))
