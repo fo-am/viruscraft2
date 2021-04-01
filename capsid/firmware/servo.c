@@ -100,7 +100,7 @@ int cosi(int a, int b, float v) {
 void servo_update(servo_state *state) {
   if (state->time >= MAKE_FIXED(1.0)) {
     state->time = MAKE_FIXED(1.0);
-    state->active = 0;
+	state->active = 0;
   } else {
     state->active = 1;
     state->time += state->speed;

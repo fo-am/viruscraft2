@@ -26,9 +26,10 @@
 #define SERVO_NUM 4
 #define SERVO_MASK (0xff>>(8-SERVO_NUM))
 
-#define SERVO_MIN (1100/2) //1000
-#define SERVO_MAX (4500/2) //4500
-#define SERVO_MID (2750/2) //2750
+// dfrobot values
+#define SERVO_MIN (100) //1000
+#define SERVO_MAX (2500) //4500
+#define SERVO_MID (SERVO_MIN+(SERVO_MAX-SERVO_MIN)/2) //2750
 #define SERVO_DEG_MIN -90
 #define SERVO_DEG_MAX 90
 
