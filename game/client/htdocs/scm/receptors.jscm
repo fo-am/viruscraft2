@@ -122,9 +122,7 @@
    (receptor-mixer-modify-values
 	m (index-map
 	   (lambda (i r)
-		 (if (< (rndf) 0.5)
-			 (choose receptor-shapes)
-			 r))
+		 (choose receptor-shapes))
 	   (receptor-mixer-values m)))
    (min 1 (+ (param "world-mutate-power-mul")
 			 (receptor-mixer-power m)))))
