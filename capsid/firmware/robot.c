@@ -88,8 +88,8 @@
 unsigned char EEMEM ee_servo[EE_SERVO_SIZE]={ [0 ... EE_SERVO_SIZE-1] = 0 };
 
 uint8_t alive_counter=0;
-// 0=normal 1=calibration (all servos 90 degrees) 2=waggle test
-uint8_t mode=2;
+// 0=normal 1=calibration (all servos restracted position) 2=waggle test
+uint8_t mode=0;
 uint8_t led_state=0;
 
 int hide_angle[SERVO_NUM];

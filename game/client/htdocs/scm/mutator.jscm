@@ -1,0 +1,164 @@
+;; -*- mode: scheme; -*-
+;; ViruscraftII Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define (make-mutator type buttons)
+  (list type buttons))
+
+(define (mutator-type m) (list-ref m 0))
+(define (mutator-buttons m) (list-ref m 1))
+
+(define (build-mutator game-type)
+  (make-mutator
+   game-type
+   (cond
+	((eq? game-type "shape")
+	 (list
+	  (build-shape-button 300 600 "cir")
+	  (build-shape-button 450 600 "tri")
+	  (build-shape-button 600 600 "gui")
+	  (build-shape-button 750 600 "squ")))
+	(else '()))))
+
+(define (mutator-render m ctx)
+  (cond
+   ((eq? (mutator-type m) "shape")
+	(for-each
+	 (lambda (button)
+	   (shape-button-render button ctx))
+	 (mutator-buttons m)))
+   (else 0)))
+
+(define (mutator-update-mouse m state x y)
+  (make-mutator
+   (mutator-type m)
+   (cond
+	((eq? (mutator-type m) "shape")
+	 (map
+	  (lambda (button)
+		(shape-button-update-mouse button state x y))
+	  (mutator-buttons m)))
+	(else (mutator-buttons m)))))
+
+(define (mutator-update m time delta)
+  (make-mutator
+   (mutator-type m)
+   (cond
+	((eq? (mutator-type m) "shape")
+	 (map
+	  (lambda (button)
+		(shape-button-update button time delta))
+	  (mutator-buttons m)))
+	(else (mutator-buttons m)))))
+
+;; --------------------------------------------------------------
+
+(define num-shape-levels 6)
+
+(define (make-shape-button x y w h level imgs imgs-active active)
+  (list x y w h level imgs imgs-active active))
+
+(define (build-shape-button x y shape)
+  (make-shape-button
+   x y 126 105 0
+   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
+		(fn-list shape " grey"))
+   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
+		(fn-list shape ""))
+   0))
+
+(define (shape-button-x m) (list-ref m 0))
+(define (shape-button-y m) (list-ref m 1))
+(define (shape-button-w m) (list-ref m 2))
+(define (shape-button-h m) (list-ref m 3))
+(define (shape-button-level m) (list-ref m 4))
+(define (shape-button-imgs m) (list-ref m 5))
+(define (shape-button-imgs-active m) (list-ref m 6))
+(define (shape-button-active m) (list-ref m 7))
+
+(define (shape-button-render m ctx)
+  (ctx.drawImage
+   (list-ref (shape-button-imgs m) (shape-button-level m))
+   (shape-button-x m)
+   (shape-button-y m))
+  (set! ctx.globalAlpha (shape-button-active m))
+  (ctx.drawImage
+   (list-ref (shape-button-imgs-active m) (shape-button-level m))
+   (shape-button-x m)
+   (shape-button-y m))
+  (set! ctx.globalAlpha 1.0))
+
+(define (shape-button-update-mouse m state x y)
+  (let ((clicked (and (eq? state "down")
+					  (> x (shape-button-x m))
+					  (< x (+ (shape-button-x m) (shape-button-w m)))
+					  (> y (shape-button-y m))
+					  (< y (+ (shape-button-y m) (shape-button-h m))))))				 
+	(make-shape-button
+	 (shape-button-x m)
+	 (shape-button-y m)
+	 (shape-button-w m)
+	 (shape-button-h m)
+	 (if clicked
+		 (min (+ (shape-button-level m) 1) (- num-shape-levels 1))
+		 (shape-button-level m))
+	 (shape-button-imgs m) 
+	 (shape-button-imgs-active m) 
+	 (if clicked 1 (shape-button-active m)))))
+
+(define (shape-button-update m time delta)
+  (make-shape-button
+   (shape-button-x m)
+   (shape-button-y m)
+   (shape-button-w m)
+   (shape-button-h m)
+   (shape-button-level m)
+   (shape-button-imgs m) 
+   (shape-button-imgs-active m) 
+   (* (shape-button-active m) 0.95)))
+
+;; ------------------------------------------
+
+(define (fn-list a b)
+  (build-list
+   num-shape-levels
+   (lambda (i)
+	 (string-append "button " a " " (+ i 1) b ".png"))))
+
+(define (mutator-filenames)
+  (map
+   (lambda (fn)
+	 (string-append "buttons/" fn))
+   (append
+	(fn-list "tri" "")
+	(fn-list "cir" "")
+	(fn-list "gui" "")
+	(fn-list "squ" "")
+	(fn-list "tri" " grey")
+	(fn-list "cir" " grey")
+	(fn-list "gui" " grey")
+	(fn-list "squ" " grey")
+	(list
+	 "dice tri.png"
+	 "dice cir.png"
+	 "dice gui.png"
+	 "dice squ.png"
+	 "dice shadow 1.png"
+	 "dice shadow 2.png"
+	 "dice shadow 3.png"
+	 "dice shadow 4.png"))))
+
+
+	

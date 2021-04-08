@@ -89,6 +89,7 @@
 (load "scm/host.jscm")
 (load "scm/world.jscm")
 (load "scm/levels.jscm")
+(load "scm/mutator.jscm")
 
 (define (button-sound)
   (play-sound "button.wav"))
@@ -307,50 +308,50 @@
 			 c)))
 	  (game-modify-buttons
 	   (append
-		(if (eq? game-type "shape")
-			;; ---------------------------------------------
-			(list		  
-			 (image-button
-			  "" 180 180 "pulse" (find-image "triangle-button.png")
-			  (lambda (c)
-				(button-sound)	   
-				(game-modify-data
-				 (lambda (d) (world-receptor-button d 'tri))
-				 c)))
+		;; (if (eq? game-type "shape")
+		;; 	;; ---------------------------------------------
+		;; 	(list		  
+		;; 	 (image-button
+		;; 	  "" 180 180 "pulse" (find-image "triangle-button.png")
+		;; 	  (lambda (c)
+		;; 		(button-sound)	   
+		;; 		(game-modify-data
+		;; 		 (lambda (d) (world-receptor-button d 'tri))
+		;; 		 c)))
 
-			 (image-button
-			  "" 180 300 "pulse" (find-image "square-button.png")
-			  (lambda (c)
-				(button-sound)	   
-				(game-modify-data
-				 (lambda (d) (world-receptor-button d 'squ))
-				 c)))
+		;; 	 (image-button
+		;; 	  "" 180 300 "pulse" (find-image "square-button.png")
+		;; 	  (lambda (c)
+		;; 		(button-sound)	   
+		;; 		(game-modify-data
+		;; 		 (lambda (d) (world-receptor-button d 'squ))
+		;; 		 c)))
 			 
-			 (image-button
-			  "" 180 420 "pulse" (find-image "donut-button.png")
-			  (lambda (c)
-				(button-sound)	   
-				(game-modify-data
-				 (lambda (d) (world-receptor-button d 'cir))
-				 c)))
+		;; 	 (image-button
+		;; 	  "" 180 420 "pulse" (find-image "donut-button.png")
+		;; 	  (lambda (c)
+		;; 		(button-sound)	   
+		;; 		(game-modify-data
+		;; 		 (lambda (d) (world-receptor-button d 'cir))
+		;; 		 c)))
 
-			 (image-button
-			  "" 180 540 "pulse" (find-image "guitar-button.png")
-			  (lambda (c)
-				(button-sound)	   
-				(game-modify-data
-				 (lambda (d) (world-receptor-button d 'gui))
-				 c))))
+		;; 	 (image-button
+		;; 	  "" 180 540 "pulse" (find-image "guitar-button.png")
+		;; 	  (lambda (c)
+		;; 		(button-sound)	   
+		;; 		(game-modify-data
+		;; 		 (lambda (d) (world-receptor-button d 'gui))
+		;; 		 c))))
 
-			;; ------------------------------------------
-			(list			   
-			 (image-button
-			  "" 180 350 "pulse" (find-image "mutate-button.png")
-			  (lambda (c)
-				(button-sound)	   
-				(game-modify-data
-				 (lambda (d) (world-receptor-button d 'none))
-				 c)))))
+		;; 	;; ------------------------------------------
+		;; 	(list			   
+		;; 	 (image-button
+		;; 	  "" 180 350 "pulse" (find-image "mutate-button.png")
+		;; 	  (lambda (c)
+		;; 		(button-sound)	   
+		;; 		(game-modify-data
+		;; 		 (lambda (d) (world-receptor-button d 'none))
+		;; 		 c)))))
 		
 		(list
 		 (rect-button
@@ -586,18 +587,9 @@
   (anim->filenames virus-variant-animation (list ""))
   (anim->filenames host-animation (list "_cir" "_gui" "_squ" "_tri"))
   (virus-receptor-filenames)
+  (mutator-filenames)
   (list
    "sprites/host/infected.png"
-   "square.png"
-   "triangle.png"
-   "donut.png"
-   "guitar.png"
-   "logos.png"
-   "square-button.png"
-   "triangle-button.png"
-   "donut-button.png"
-   "guitar-button.png"
-   "mutate-button.png"
    "logos.png"
    ))
 

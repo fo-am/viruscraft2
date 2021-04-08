@@ -15,8 +15,8 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type)
-  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type))
+(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator)
+  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
@@ -34,6 +34,8 @@
 (define (world-infection-timer w) (list-ref w 9))
 (define (world-grace w) (list-ref w 10))
 (define (world-game-type w) (list-ref w 11))
+(define (world-mutator w) (list-ref w 12))
+(define (world-modify-mutator w s) (list-replace w 12 s))
 
 (define virus-age-var 5)
 
@@ -92,6 +94,7 @@
 	 0 ;; infection timer
 	 #t ;; grace
 	 game-type
+	 (build-mutator game-type)
 	 ))))
 
 (define (world-spawn-hosts host host-list count w)
@@ -322,39 +325,41 @@
 	  (world-update-state 
 	   (make-world
 		(if (eq? (world-state w) "state-running")
-		  (world-virus-update w infection-list time delta)
-		  (world-viruses w))
-	  (if (eq? (world-state w) "state-running")
-		  (world-host-update w infection-list time delta)
-		  (world-hosts w))
-	  models
-	  (if (eq? (world-game-type w) "shape")
-		  (world-receptor-mixer w)
-		  (receptor-mixer-decrease-power
-		   (world-receptor-mixer w) delta))
-	  ;; update the variant(s) if they have changed
-	  (index-map2
-	   (lambda (i m v)
-		 (if (model-new-variant? m)
-			 (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m))
-			 v))
-	   models
-	   (world-variant-viruses w))
-	  (world-level w)
-	  (+ (world-level-time w) delta)
-	  (world-level-params w)
-	  (world-state w)
-	  (if (> (world-infection-timer w) 0)
-		  (- (world-infection-timer w) delta)
-		  (param "world-infection-period"))
-	  (if (not (world-grace w))
-		  #f
-		  (if (> (length (world-hosts w)) 2) #f #t))
-	  (world-game-type w))
-	 time delta))))
+			(world-virus-update w infection-list time delta)
+			(world-viruses w))
+		(if (eq? (world-state w) "state-running")
+			(world-host-update w infection-list time delta)
+			(world-hosts w))
+		models
+		(if (eq? (world-game-type w) "shape")
+			(world-receptor-mixer w)
+			(receptor-mixer-decrease-power
+			 (world-receptor-mixer w) delta))
+		;; update the variant(s) if they have changed
+		(index-map2
+		 (lambda (i m v)
+		   (if (model-new-variant? m)
+			   (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m))
+			   v))
+		 models
+		 (world-variant-viruses w))
+		(world-level w)
+		(+ (world-level-time w) delta)
+		(world-level-params w)
+		(world-state w)
+		(if (> (world-infection-timer w) 0)
+			(- (world-infection-timer w) delta)
+			(param "world-infection-period"))
+		(if (not (world-grace w))
+			#f
+			(if (> (length (world-hosts w)) 2) #f #t))
+		(world-game-type w)
+		(mutator-update (world-mutator w) time delta))
+	   time delta))))
 
 (define (world-update-mouse w state x y)
-  w)
+  (world-modify-mutator
+   w (mutator-update-mouse (world-mutator w) state x y)))
 
 (define (world-receptor-button w receptor)
   (if (eq? (world-game-type w) "shape")
@@ -380,7 +385,6 @@
   (let ((h (* 100 (list-ref (receptor-mixer-values
 							 (world-receptor-mixer w)) i))))
 	(ctx.fillRect x (- (+ 100 y) h) 20 h)))
-
 
 (define (render-message text)
   (set! ctx.font "normal 80pt Dosis")
@@ -495,7 +499,7 @@
    (world-models w)
    (world-variant-viruses w))
   
-  
+  (mutator-render (world-mutator w) ctx)
   )
 
 (define (world-end-game-timer w)
