@@ -15,9 +15,11 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (define dice-roll-duration 0.5)
+(define face-change-duration 0.25)
+(define face-flip-duration 0.1)
 
-(define (make-dice-button x y w h selection roll imgs shadow-imgs active clicked)
-  (list x y w h selection roll imgs shadow-imgs active clicked))
+(define (make-dice-button x y w h selection roll imgs shadow-imgs active clicked t)
+  (list x y w h selection roll imgs shadow-imgs active clicked t))
 
 (define (dice-shake)
   (list (random-range 0 4)
@@ -39,7 +41,7 @@
 		 "dice shadow 2.png"
 		 "dice shadow 3.png"
 		 "dice shadow 4.png"))
-   0 #f))
+   0 #f 0))
 
 (define (dice-button-x d) (list-ref d 0))
 (define (dice-button-y d) (list-ref d 1))
@@ -51,23 +53,29 @@
 (define (dice-button-shadow-imgs d) (list-ref d 7))
 (define (dice-button-active d) (list-ref d 8))
 (define (dice-button-clicked d) (list-ref d 9))
+(define (dice-button-t d) (list-ref d 10))
 
 (define (draw-dice m x i ctx)
+  (let ((t (dice-button-active m)))
   (cond
    ((< (dice-button-active m) dice-roll-duration)
 	(ctx.save)
 	(ctx.translate (+ (shape-button-x m) x) (shape-button-y m))
 	(ctx.translate 62 72)
-	(ctx.rotate (- (* (rndf) 0.4) 0.2))
+	(ctx.rotate (* 0.4
+				   (sin (* (+ t i) 40))
+				   (- 1 (/ (dice-button-active m) dice-roll-duration))))
 	(ctx.translate -62 -72)
 	(ctx.drawImage
 	 (list-ref (dice-button-imgs m) (list-ref (dice-button-roll m) i))
 	 0 0)
 	(ctx.restore)
 	(ctx.drawImage
-	 (list-ref (dice-button-shadow-imgs m) (random-range 0 3))
+	 ;; use the current roll to match the lower frame rate
+	 (list-ref (dice-button-shadow-imgs m)
+			   (list-ref (dice-button-roll m) i))
 	 (+ (shape-button-x m) x 20)
-	 (+ (shape-button-y m) 120)))
+	 (+ (shape-button-y m) 130)))
    (else
 	(ctx.drawImage
 	 (list-ref (dice-button-imgs m) (list-ref (dice-button-roll m) i))
@@ -76,7 +84,7 @@
 	(ctx.drawImage
 	 (list-ref (dice-button-shadow-imgs m) i)
 	 (+ (shape-button-x m) x 20)
-	 (+ (shape-button-y m) 120)))))
+	 (+ (shape-button-y m) 130))))))
 
 (define (dice-button-render m ctx)
   (draw-dice m 0 0 ctx)
@@ -99,7 +107,8 @@
 	 (dice-button-imgs m) 
 	 (dice-button-shadow-imgs m) 
 	 (if clicked 0 (dice-button-active m))
-	 clicked)))
+	 clicked
+	 (dice-button-t m))))
 
 (define (dice-button-update m mixer time delta)
   (make-dice-button
@@ -115,11 +124,15 @@
 	   ((eq? shape 'cir) 2)
 	   (else 3)))
 	(receptor-mixer-values mixer))
-   (if (< (dice-button-active m) dice-roll-duration)
-	   (dice-shake)
+   (if (< (dice-button-active m) face-change-duration)
+	   (if (> (dice-button-t m) face-flip-duration) 
+		   (dice-shake)
+		   (dice-button-roll m))
 	   (dice-button-selection m))
    (dice-button-imgs m) 
    (dice-button-shadow-imgs m) 
    (+ (dice-button-active m) delta)
-   #f))
+   #f
+   (if (> (dice-button-t m) face-flip-duration)
+	   0 (+ (dice-button-t m) delta))))
 
