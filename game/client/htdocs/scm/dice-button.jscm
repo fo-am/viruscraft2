@@ -1,0 +1,125 @@
+;; -*- mode: scheme; -*-
+;; ViruscraftII Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define dice-roll-duration 0.5)
+
+(define (make-dice-button x y w h selection roll imgs shadow-imgs active clicked)
+  (list x y w h selection roll imgs shadow-imgs active clicked))
+
+(define (dice-shake)
+  (list (random-range 0 4)
+		(random-range 0 4)
+		(random-range 0 4)))
+
+(define (build-dice-button x y)
+  (make-dice-button
+   x y 326 105 (list 0 0 0) (list 0 0 0)
+   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
+		(list
+		 "dice tri.png"
+		 "dice squ.png"
+		 "dice cir.png"
+		 "dice gui.png"))
+   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
+		(list
+		 "dice shadow 1.png"
+		 "dice shadow 2.png"
+		 "dice shadow 3.png"
+		 "dice shadow 4.png"))
+   0 #f))
+
+(define (dice-button-x d) (list-ref d 0))
+(define (dice-button-y d) (list-ref d 1))
+(define (dice-button-w d) (list-ref d 2))
+(define (dice-button-h d) (list-ref d 3))
+(define (dice-button-selection d) (list-ref d 4))
+(define (dice-button-roll d) (list-ref d 5))
+(define (dice-button-imgs d) (list-ref d 6))
+(define (dice-button-shadow-imgs d) (list-ref d 7))
+(define (dice-button-active d) (list-ref d 8))
+(define (dice-button-clicked d) (list-ref d 9))
+
+(define (draw-dice m x i ctx)
+  (cond
+   ((< (dice-button-active m) dice-roll-duration)
+	(ctx.save)
+	(ctx.translate (+ (shape-button-x m) x) (shape-button-y m))
+	(ctx.translate 62 72)
+	(ctx.rotate (- (* (rndf) 0.4) 0.2))
+	(ctx.translate -62 -72)
+	(ctx.drawImage
+	 (list-ref (dice-button-imgs m) (list-ref (dice-button-roll m) i))
+	 0 0)
+	(ctx.restore)
+	(ctx.drawImage
+	 (list-ref (dice-button-shadow-imgs m) (random-range 0 3))
+	 (+ (shape-button-x m) x 20)
+	 (+ (shape-button-y m) 120)))
+   (else
+	(ctx.drawImage
+	 (list-ref (dice-button-imgs m) (list-ref (dice-button-roll m) i))
+	 (+ (shape-button-x m) x)
+	 (shape-button-y m))
+	(ctx.drawImage
+	 (list-ref (dice-button-shadow-imgs m) i)
+	 (+ (shape-button-x m) x 20)
+	 (+ (shape-button-y m) 120)))))
+
+(define (dice-button-render m ctx)
+  (draw-dice m 0 0 ctx)
+  (draw-dice m 110 1 ctx)
+  (draw-dice m 220 2 ctx))
+
+(define (dice-button-update-mouse m state x y)
+  (let ((clicked (and (eq? state "down")
+					  (> x (dice-button-x m))
+					  (< x (+ (dice-button-x m) (dice-button-w m)))
+					  (> y (dice-button-y m))
+					  (< y (+ (dice-button-y m) (dice-button-h m))))))				 
+	(make-dice-button
+	 (dice-button-x m)
+	 (dice-button-y m)
+	 (dice-button-w m)
+	 (dice-button-h m)
+	 (dice-button-selection m)
+	 (dice-button-roll m)
+	 (dice-button-imgs m) 
+	 (dice-button-shadow-imgs m) 
+	 (if clicked 0 (dice-button-active m))
+	 clicked)))
+
+(define (dice-button-update m mixer time delta)
+  (make-dice-button
+   (dice-button-x m)
+   (dice-button-y m)
+   (dice-button-w m)
+   (dice-button-h m)
+   (map
+	(lambda (shape)
+	  (cond
+	   ((eq? shape 'tri) 0)
+	   ((eq? shape 'squ) 1)
+	   ((eq? shape 'cir) 2)
+	   (else 3)))
+	(receptor-mixer-values mixer))
+   (if (< (dice-button-active m) dice-roll-duration)
+	   (dice-shake)
+	   (dice-button-selection m))
+   (dice-button-imgs m) 
+   (dice-button-shadow-imgs m) 
+   (+ (dice-button-active m) delta)
+   #f))
+

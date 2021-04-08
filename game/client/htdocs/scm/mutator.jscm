@@ -14,6 +14,9 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+(load "scm/shape-button.jscm")
+(load "scm/dice-button.jscm")
+
 (define (make-mutator type buttons event)
   (list type buttons event))
 
@@ -27,11 +30,13 @@
    (cond
 	((eq? game-type "shape")
 	 (list
-	  (build-shape-button 300 600 "cir")
-	  (build-shape-button 450 600 "tri")
-	  (build-shape-button 600 600 "gui")
-	  (build-shape-button 750 600 "squ")))
-	(else '()))
+	  (build-shape-button 300 600 "tri")
+	  (build-shape-button 450 600 "squ")
+	  (build-shape-button 600 600 "cir")
+	  (build-shape-button 750 600 "gui")))
+	(else
+	 (build-dice-button 500 550)
+	 ))
    #f))
 
 (define (mutator-render m ctx)
@@ -41,7 +46,9 @@
 	 (lambda (button)
 	   (shape-button-render button ctx))
 	 (mutator-buttons m)))
-   (else 0)))
+   (else
+	(dice-button-render (mutator-buttons m) ctx))
+   ))
 
 (define (mutator-update-mouse m state x y)
   (let ((buttons
@@ -51,7 +58,8 @@
 			(lambda (button)
 			  (shape-button-update-mouse button state x y))
 			(mutator-buttons m)))
-		  (else (mutator-buttons m)))))
+		  (else
+		   (dice-button-update-mouse (mutator-buttons m) state x y)))))
 	
 	(make-mutator
 	 (mutator-type m)
@@ -64,7 +72,7 @@
 			  (shape-button-shape button)
 			  r))
 		#f buttons))
-	  (else #f)))))
+	  (else (dice-button-clicked buttons))))))
 
 (define (mutator-update m mixer time delta)
   (make-mutator
@@ -75,84 +83,7 @@
 	  (lambda (button)
 		(shape-button-update button mixer time delta))
 	  (mutator-buttons m)))
-	(else (mutator-buttons m)))
-   #f))
-
-;; --------------------------------------------------------------
-
-(define num-shape-levels 7)
-
-(define (make-shape-button x y w h shape level imgs imgs-active active clicked)
-  (list x y w h shape level imgs imgs-active active clicked))
-
-(define (build-shape-button x y shape)
-  (make-shape-button
-   x y 126 105 (string->symbol shape) 0
-   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
-		(fn-list shape " grey"))
-   (map (lambda (fn) (find-image (string-append "buttons/" fn)))
-		(fn-list shape ""))
-   0 #f))
-
-(define (shape-button-x m) (list-ref m 0))
-(define (shape-button-y m) (list-ref m 1))
-(define (shape-button-w m) (list-ref m 2))
-(define (shape-button-h m) (list-ref m 3))
-(define (shape-button-shape m) (list-ref m 4))
-(define (shape-button-level m) (list-ref m 5))
-(define (shape-button-imgs m) (list-ref m 6))
-(define (shape-button-imgs-active m) (list-ref m 7))
-(define (shape-button-active m) (list-ref m 8))
-(define (shape-button-clicked m) (list-ref m 9))
-
-(define (shape-button-render m ctx)
-  (ctx.drawImage
-   (list-ref (shape-button-imgs m) (shape-button-level m))
-   (shape-button-x m)
-   (shape-button-y m))
-  (set! ctx.globalAlpha (shape-button-active m))
-  (ctx.drawImage
-   (list-ref (shape-button-imgs-active m) (shape-button-level m))
-   (shape-button-x m)
-   (shape-button-y m))
-  (set! ctx.globalAlpha 1.0))
-
-(define (shape-button-update-mouse m state x y)
-  (let ((clicked (and (eq? state "down")
-					  (> x (shape-button-x m))
-					  (< x (+ (shape-button-x m) (shape-button-w m)))
-					  (> y (shape-button-y m))
-					  (< y (+ (shape-button-y m) (shape-button-h m))))))				 
-	(make-shape-button
-	 (shape-button-x m)
-	 (shape-button-y m)
-	 (shape-button-w m)
-	 (shape-button-h m)
-	 (shape-button-shape m)
-	 (shape-button-level m)
-	 (shape-button-imgs m) 
-	 (shape-button-imgs-active m) 
-	 (if clicked 1 (shape-button-active m))
-	 clicked)))
-
-(define (shape-button-update m mixer time delta)
-  (make-shape-button
-   (shape-button-x m)
-   (shape-button-y m)
-   (shape-button-w m)
-   (shape-button-h m)
-   (shape-button-shape m)
-   (floor (* (list-ref
-			  (receptor-mixer-values mixer)
-			  (cond
-			   ((eq? (shape-button-shape m) 'tri) 0)
-			   ((eq? (shape-button-shape m) 'squ) 1)
-			   ((eq? (shape-button-shape m) 'cir) 2)
-			   (else 3)))
-			 (- num-shape-levels 1)))
-   (shape-button-imgs m) 
-   (shape-button-imgs-active m) 
-   (* (shape-button-active m) 0.95)
+	(else (dice-button-update (mutator-buttons m) mixer time delta)))
    #f))
 
 ;; ------------------------------------------

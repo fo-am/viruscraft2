@@ -449,31 +449,6 @@
 		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
 									   " SECONDS TO GO!")))
 
-  (cond
-   ((eq? (world-game-type w) "shape")
-	0)
-   (else
-	(ctx.beginPath)
-	(ctx.rect 250 300 20 100)
-	(ctx.stroke)
-	(if (< (receptor-mixer-power (world-receptor-mixer w)) 0.5)
- 		(set! ctx.fillStyle "#000")
- 		(set! ctx.fillStyle "#f00"))
-	(let ((h (* 100 (receptor-mixer-power (world-receptor-mixer w)))))
-	  (ctx.fillRect 250 (- (+ 100 300) h) 20 h))
-	(set! ctx.fillStyle "#000")
-	(index-for-each
-	 (lambda (i shape)
-	   (ctx.drawImage
-		(find-image
-		 (cond
-		  ((eq? shape 'tri) "triangle.png")
-		  ((eq? shape 'squ) "square.png")
-		  ((eq? shape 'cir) "donut.png")
-		  (else "guitar.png")))
-		(+ 150 (* i 50)) 450))
-	 (receptor-mixer-values (world-receptor-mixer w)))))
-
   ;; variant
   (index-for-each2
    (lambda (i model variant)
