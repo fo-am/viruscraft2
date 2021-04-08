@@ -80,7 +80,7 @@
 
 ;; --------------------------------------------------------------
 
-(define num-shape-levels 6)
+(define num-shape-levels 7)
 
 (define (make-shape-button x y w h shape level imgs imgs-active active clicked)
   (list x y w h shape level imgs imgs-active active clicked))
@@ -161,7 +161,7 @@
   (build-list
    num-shape-levels
    (lambda (i)
-	 (string-append "button " a " " (+ i 1) b ".png"))))
+	 (string-append "button " a " " i b ".png"))))
 
 (define (mutator-filenames)
   (map

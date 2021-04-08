@@ -82,7 +82,9 @@
 				 (receptor-mixer-values m))))
 	   (map (lambda (v) (/ v max)) (receptor-mixer-values m)))))
 
-(define mixer-minimum 0.05)
+;;(define mixer-minimum 0.05)
+;; linear version
+(define mixer-minimum 0)
 
 (define (receptor-mixer-clamp m)
   (receptor-mixer-modify-values
@@ -91,7 +93,7 @@
 		(if (< p mixer-minimum) 0 p))
 	  (receptor-mixer-values m))))
   
-(define (receptor-mixer-increase m n)
+(define (receptor-mixer-increase-non-linear m n)
   (receptor-mixer-normalise
    (receptor-mixer-modify-values
 	m (index-map
@@ -100,6 +102,20 @@
 								(* r 1.2)
 								(/ r 1.2))))
 	   (receptor-mixer-values m)))))
+
+;; linear version - more understandible
+(define mixer-inc (/ 1 5))
+
+(define (receptor-mixer-increase m n)
+  (let ((maxed (>= (list-ref (receptor-mixer-values m) n) 1)))
+	(receptor-mixer-modify-values
+	 m (index-map
+		(lambda (i r)
+		  (max mixer-minimum
+			   (if (eq? n i)
+				   (min 1 (+ r mixer-inc))
+				   (if maxed (- r mixer-inc) r))))
+		(receptor-mixer-values m)))))
 
 (define (receptor-mixer-mutate m)
   (receptor-mixer-modify-power
