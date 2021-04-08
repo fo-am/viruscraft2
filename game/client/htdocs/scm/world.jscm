@@ -354,7 +354,9 @@
 			#f
 			(if (> (length (world-hosts w)) 2) #f #t))
 		(world-game-type w)
-		(mutator-update (world-mutator w) time delta))
+		(mutator-update
+		 (world-mutator w)
+		 (world-receptor-mixer w) time delta))
 	   time delta))))
 
 (define (world-update-mouse w state x y)
@@ -430,6 +432,8 @@
      (virus-render e ctx))
    (world-viruses w))
 
+  (mutator-render (world-mutator w) ctx)
+
   (set! ctx.font "normal 30pt Dosis")
   (ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 100 120) 
 				
@@ -447,13 +451,7 @@
 
   (cond
    ((eq? (world-game-type w) "shape")
-	;; render receptor type bars
-	(set! ctx.fillStyle "#000")
-	(render-receptor-bar w 250 130 0)
-	(render-receptor-bar w 250 250 1)
-	(render-receptor-bar w 250 370 2)
-	(render-receptor-bar w 250 490 3)
-	(set! ctx.fillStyle "#f00"))
+	0)
    (else
 	(ctx.beginPath)
 	(ctx.rect 250 300 20 100)
@@ -503,7 +501,6 @@
    (world-models w)
    (world-variant-viruses w))
   
-  (mutator-render (world-mutator w) ctx)
   )
 
 (define (world-end-game-timer w)

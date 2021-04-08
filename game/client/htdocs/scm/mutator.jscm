@@ -66,14 +66,14 @@
 		#f buttons))
 	  (else #f)))))
 
-(define (mutator-update m time delta)
+(define (mutator-update m mixer time delta)
   (make-mutator
    (mutator-type m)
    (cond
 	((eq? (mutator-type m) "shape")
 	 (map
 	  (lambda (button)
-		(shape-button-update button time delta))
+		(shape-button-update button mixer time delta))
 	  (mutator-buttons m)))
 	(else (mutator-buttons m)))
    #f))
@@ -129,22 +129,27 @@
 	 (shape-button-w m)
 	 (shape-button-h m)
 	 (shape-button-shape m)
-	 (if clicked
-		 (min (+ (shape-button-level m) 1) (- num-shape-levels 1))
-		 (shape-button-level m))
+	 (shape-button-level m)
 	 (shape-button-imgs m) 
 	 (shape-button-imgs-active m) 
 	 (if clicked 1 (shape-button-active m))
 	 clicked)))
 
-(define (shape-button-update m time delta)
+(define (shape-button-update m mixer time delta)
   (make-shape-button
    (shape-button-x m)
    (shape-button-y m)
    (shape-button-w m)
    (shape-button-h m)
    (shape-button-shape m)
-   (shape-button-level m)
+   (floor (* (list-ref
+			  (receptor-mixer-values mixer)
+			  (cond
+			   ((eq? (shape-button-shape m) 'tri) 0)
+			   ((eq? (shape-button-shape m) 'squ) 1)
+			   ((eq? (shape-button-shape m) 'cir) 2)
+			   (else 3)))
+			 (- num-shape-levels 1)))
    (shape-button-imgs m) 
    (shape-button-imgs-active m) 
    (* (shape-button-active m) 0.95)
