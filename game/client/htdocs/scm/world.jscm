@@ -358,8 +358,12 @@
 	   time delta))))
 
 (define (world-update-mouse w state x y)
-  (world-modify-mutator
-   w (mutator-update-mouse (world-mutator w) state x y)))
+  (let ((mutator (mutator-update-mouse (world-mutator w) state x y)))
+	(world-modify-mutator 
+	 (if (mutator-event mutator)
+		 (world-receptor-button w (mutator-event mutator))
+		 w)
+	 mutator)))
 
 (define (world-receptor-button w receptor)
   (if (eq? (world-game-type w) "shape")
