@@ -425,7 +425,7 @@
 
 (define (render-explanation text)
   (set! ctx.font "normal 40pt Dosis")
-  (wrap-text ctx text 0 350 1000 50))
+  (wrap-text ctx text 0 350 1000 60))
 
 (define panel-col "#f2f2f2")
 (define bg-col "#e3e2db")

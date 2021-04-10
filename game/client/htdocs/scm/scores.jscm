@@ -89,39 +89,46 @@
 	  ;; the player won
 	  (string-append
 	   (choose
-		(list "Well done! " "You rock! " "Excellent! "))
-	   (if (< (scores-final-hosts) 2) " You only just made it! " 
-		   (if (< (scores-final-hosts) 6)
-			   "Your host population was getting a bit low at the end. "
-			   (if (< (scores-max-hosts) 10)
-				   "Your hosts had a hard time but you made it!" "")))
-	   (if (< (scores-infections) 1)
-		   "WOW - there were no infections! "
-		   (if (< (scores-infections) 10)
-			   "You hardly had any infections." ""))
-	   (if (> (scores-mutations) 20) "Try using less mutation next time. "
-		   (if (< (scores-mutations) 5) "You only mutated when you had to. " ""))
-	   (if (< (scores-max-viruses) 10)
-		   "You kept virus counts low. "
-		   (if (> (scores-max-viruses) 25)
-			   "You might find it easier by keeping virus counts lower. " "")))
-
-	   (string-append
-		(choose
-		 (list "Bad luck. " "Thats a shame. " "Better luck next time! "))
-		(if (< (scores-mutations) 1)
-			"Use the buttons at the bottom to mutate your host. "
-			(if (< (scores-mutations) 10)
-				"Mutate more - to start with your host receptors match the virus spike protein shapes. "
-				""))		
-		(if (< (scores-duration) 20)
-			"It's not always that hard. Try mutating sooner next time. "
-			(if (< (scores-duration) 30)
-				"Keep an eye on the virus spike protein shapes. "
-				(if (> (scores-duration) 40)
-					"You nearly made it! " "")))		
-		(if (< (scores-max-hosts) 10)
-			"You need to increase your host population a bit to make it easier to survive. " "")
-		(if (> (scores-max-viruses) 25)
-			"Its easier if you can keep the number of viruses down to a minimum. " ""))))
+		(list "Well done! " "You rock! " "Excellent! "))	   
+	   (choose
+		(append
+		 (if (< (scores-final-hosts) 2) (list "You only just made it!")
+			 (if (< (scores-final-hosts) 6)
+				 (list "Your host population was getting a bit low at the end.")
+				 (if (< (scores-max-hosts) 10)
+					 (list "Your hosts had a hard time but you made it!") '())))
+		 (if (< (scores-infections) 1)
+			 (list "WOW - there were no infections!")
+			 (if (< (scores-infections) 10)
+				 (list "You hardly had any infections.") '()))
+		 (if (> (scores-mutations) 20)
+			 (list "Try using less mutation next time.")
+			 (if (< (scores-mutations) 5)
+				 (list "You only mutated when you had to.") '()))
+		 (if (< (scores-max-viruses) 10)
+			 (list "You kept virus counts low.")
+			 (if (> (scores-max-viruses) 25)
+				 (list "You might find it easier by keeping virus counts lower.") '())))))
+	  
+	  ;; game over
+	  (string-append
+	   (choose
+		(list "Bad luck. " "Thats a shame. " "Better luck next time! "))
+	   (choose
+		(append		 
+		 (if (< (scores-mutations) 1)
+			 (list "Use the buttons at the bottom to mutate your host.")
+			 (if (< (scores-mutations) 10)
+				 (list "Mutate more - to start with your host receptors match the virus spike protein shapes.")
+				 '()))
+		 (if (< (scores-duration) 20)
+			 (list "It's not always that hard. Try mutating sooner next time.")
+			 (if (< (scores-duration) 30)
+				 (list "Keep an eye on the virus spike protein shapes.")
+				 (if (> (scores-duration) 40)
+					 (list "You nearly made it!") '())))		
+		 (if (< (scores-max-hosts) 10)
+			 (list "You need to increase your host population a bit to make it easier to survive.") '())
+		 (if (> (scores-max-viruses) 25)
+			 (list "Its easier if you can keep the number of viruses down to a minimum.") '()))))))
 
