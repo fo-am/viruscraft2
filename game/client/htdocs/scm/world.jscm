@@ -41,6 +41,7 @@
 
 (define (build-world game-type level player-id time)
   (reset-scores!)
+  (set! help-stack '())
   (let ((mixer (make-receptor-mixer game-type))
 		(level-params (generate-level-params level)))
 	(let ((models (if (or (eq? game-type "hidden")
@@ -320,6 +321,8 @@
 (define (world-update w time delta)
   (update-scores-max-hosts! (length (world-hosts w)))
   (update-scores-max-viruses! (length (world-viruses w)))
+  (set! help-stack (help-bubble-stack-update help-stack time))
+
   (let ((model (choose (world-models w))))
 	(let ((infection-list
 		   (if (and (not (world-grace w))
@@ -430,6 +433,7 @@
 (define panel-col "#f2f2f2")
 (define bg-col "#e3e2db")
 (define panel-width 400)
+(define help-stack '())    
 
 (define (world-render w ctx time)
 
@@ -496,11 +500,19 @@
 	   ))
    (world-models w)
    (world-variant-viruses w))
-  
-  )
+
+  (render-bubble-stack! help-stack ctx))
 
 (define (world-end-game-timer w)
   0)
 
 (define (world-game-id w)
   0)
+
+(define (do-help! time)
+  (set! help-stack 
+		(make-help-bubble-stack 
+		 (list
+		  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
+		  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
+		 time #t #f)))

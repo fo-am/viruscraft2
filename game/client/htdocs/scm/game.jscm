@@ -84,6 +84,7 @@
 (load "scm/entity-renderer.jscm")
 
 (load "scm/scores.jscm")
+(load "scm/help-bubbles.jscm")
 (load "scm/receptors.jscm")
 (load "scm/model.jscm")
 (load "scm/virus.jscm")
@@ -360,6 +361,13 @@
 		  (lambda (c)
 			(button-sound)
 			(nightjar-intro game)))
+
+		 (rect-button
+		  "?" 100 (+ default-button-y 185) 60 60 #f
+		  (lambda (c)
+			(button-sound)
+			(do-help! (/ (game-time c) 1000))
+			c))
 		 
 		 )) c))))))
 
@@ -592,6 +600,9 @@
   (list
    "sprites/host/infected.png"
    "logos.png"
+   "help-bubble.png"
+   "help-bubble-n.png"
+   "help-bubble-r.png"
    ))
 
  (lambda ()
