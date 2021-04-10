@@ -40,6 +40,7 @@
 (define virus-age-var 5)
 
 (define (build-world game-type level player-id time)
+  (reset-scores!)
   (let ((mixer (make-receptor-mixer game-type))
 		(level-params (generate-level-params level)))
 	(let ((models (if (or (eq? game-type "hidden")
@@ -101,6 +102,7 @@
   (cond
    ((zero? count) host-list)
    (else
+	(update-scores-hosts-spawned! 1)
     (world-spawn-hosts
      host
      (ordered-list-insert
@@ -129,18 +131,18 @@
 	    (lambda (host r)
 	      ;; hosts cannot be infected more than once
 	      (if (not (host-virus host))
-		  ;; if close enough
-		  (if (and (< (v2dist (entity-pos virus) (entity-pos host))
-			      check-dist)
-			   ;; and compatible receptor check
-				   (eq?
-					;; there is only one set of receptors - the model's
-					(choose variant)
-					(choose (host-receptors host))))				  		      
-		      ;; copy the host into the infection list
-		      (cons (list (entity-id host) virus) r)
-		      r)
-		  r))
+			  ;; if close enough
+			  (if (and (< (v2dist (entity-pos virus) (entity-pos host))
+						  check-dist)
+					   ;; and compatible receptor check
+					   (eq?
+						;; there is only one set of receptors - the model's
+						(choose variant)
+						(choose (host-receptors host))))				  		      
+				  ;; copy the host into the infection list
+				  (cons (list (entity-id host) virus) r)
+				  r)
+			  r))
 	    r
 	    host-list)
 	   r))
@@ -175,6 +177,7 @@
 	  (build-list
 	   (param "virus-cell-spawn-count")
 	   (lambda (_)
+		 (update-scores-viruses-spawned! 1)
 	     (make-virus-at
 	      (v2add (rndcirc2d) (entity-pos host))
 	      (* (rndf) virus-age-var)))))
@@ -190,7 +193,9 @@
 	  (cond
 	   ;; a succesful infection
 	   ((world-virus-in-infection-list?
-		 (entity-id virus) infection-list) r)
+		 (entity-id virus) infection-list)
+		(update-scores-infections! 1)
+		r)
 	   ;; death via old age
 	   ((eq? (virus-state virus) 'state-died) r)
 	   ;; normal update
@@ -284,16 +289,23 @@
 	 ((eq? state "state-running")
 	  (cond 
 	   ((zero? (length (world-hosts w)))
+		(update-scores-duration! (world-level-time w)) 
+		(update-scores-final-hosts! (length (world-hosts w)))
+		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
 		 (world-modify-state w "state-game-over")
 		 0))
 	   ((> (world-level-time w) (param "world-level-time"))
+		(update-scores-duration! (world-level-time w)) 
+		(update-scores-survived! #t)
+		(update-scores-final-hosts! (length (world-hosts w)))
+		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
 		 (world-modify-state w "state-level-complete")
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
-	  (if (> (world-level-time w) 5)
+	  (if (> (world-level-time w) 10)
 		  (world-modify-state w "state-new-level")
 		  w))
 	 ((eq? state "state-new-level")
@@ -306,6 +318,8 @@
 
 
 (define (world-update w time delta)
+  (update-scores-max-hosts! (length (world-hosts w)))
+  (update-scores-max-viruses! (length (world-viruses w)))
   (let ((model (choose (world-models w))))
 	(let ((infection-list
 		   (if (and (not (world-grace w))
@@ -368,18 +382,22 @@
 	 mutator)))
 
 (define (world-receptor-button w receptor)
-  (if (eq? (world-game-type w) "shape")
-	  (world-modify-receptor-mixer
+  (cond
+   ((eq? (world-game-type w) "shape")
+	(update-scores-mutations! 0.2) ;; one complete up/down ~= 1 mutation 
+	(world-modify-receptor-mixer
 	   w (receptor-mixer-increase
 		  (world-receptor-mixer w)
 		  (cond
 		   ((eq? receptor 'tri) 0)
 		   ((eq? receptor 'squ) 1)
 		   ((eq? receptor 'cir) 2)
-		   (else 3))))
-	  (world-modify-receptor-mixer
-	   w (receptor-mixer-mutate
-		  (world-receptor-mixer w)))))	   
+		   (else 3)))))
+   (else
+	(update-scores-mutations! 1)
+	(world-modify-receptor-mixer
+	 w (receptor-mixer-mutate
+		(world-receptor-mixer w))))))
 
 (define (render-receptor-bar w x y i)
   (ctx.beginPath)
@@ -393,18 +411,21 @@
   (set! ctx.font "normal 80pt Dosis")
   (let ((m (ctx.measureText text)))
 	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
-		  (y 600)
+		  (y 150)
 		  (w (+ m.width 60))
 		  (h 120))
-	  (set! ctx.fillStyle "#fff")
-	  (ctx.fillRect x y w h)  
-	  (ctx.beginPath)
-	  (ctx.rect x y w h)
-	  (set! ctx.strokeStyle "#000")
-	  (ctx.stroke)
-	  (set! ctx.fillStyle "#000")
+;;	  (set! ctx.fillStyle "#fff")
+;;	  (ctx.fillRect x y w h)  
+;;	  (ctx.beginPath)
+;;	  (ctx.rect x y w h)
+;;	  (set! ctx.strokeStyle "#000")
+;;	  (ctx.stroke)
+;;	  (set! ctx.fillStyle "#000")
 	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
 
+(define (render-explanation text)
+  (set! ctx.font "normal 40pt Dosis")
+  (wrap-text ctx text 0 350 1000 50))
 
 (define panel-col "#f2f2f2")
 (define bg-col "#e3e2db")
@@ -432,13 +453,18 @@
   (mutator-render (world-mutator w) ctx)
 
   (set! ctx.font "normal 30pt Dosis")
-  (ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60) 
-				
+  (when (eq? (world-state w) "state-running")
+		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60))
+
+  (ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
+  
   (when (eq? (world-state w) "state-game-over")
-		(render-message "GAME OVER"))
+		(render-message "GAME OVER")
+		(render-explanation (get-scores-analysis)))
 
   (when (eq? (world-state w) "state-level-complete")
-		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!")))
+		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!"))
+		(render-explanation (get-scores-analysis)))
 
   (when (and
 		 (eq? (world-state w) "state-running")

@@ -1,0 +1,127 @@
+;; -*- mode: scheme; -*-
+;; Why We Love Wasps Copyright (C) 2019 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;; lasted time
+;; number of mutations
+;; number cells spawned
+;; number of viruses spawned
+;; number of infections
+;; hosts at the end
+;; viruses at the end
+
+(define (game-scores total survived duration mutations hosts-spawned viruses-spawned
+					 infections max-hosts max-viruses
+					 final-hosts final-viruses)
+  (list total survived duration mutations hosts-spawned viruses-spawned infections
+		max-hosts max-viruses final-hosts final-viruses))
+
+;; add free starting cell
+(define current-scores (game-scores 0 #f 0 0 0 0 0 0 0 0 0))
+
+(define (reset-scores!)
+  (set! scores-why "")
+  (set! current-scores (game-scores 0 #f 0 0 0 0 0 0 0 0 0)))
+
+(define (update-scores i v)
+  (set! current-scores
+	(list-replace
+	 current-scores i (+ (list-ref current-scores i) v))))
+
+(define (update-total i v)
+  (set! current-scores
+	(list-replace
+	 current-scores i (max 0 (+ (list-ref current-scores i) v)))))
+
+(define (update-scores-total! v) (update-scores 0 v))	
+(define (update-scores-survived! v) (update-scores 1 v))	
+(define (update-scores-duration! v) (update-scores 2 v))	
+(define (update-scores-mutations! v)
+  (update-scores-total! -v) (update-scores 3 v))	
+(define (update-scores-hosts-spawned! v)
+  (update-scores-total! 1) (update-scores 4 v))	
+(define (update-scores-viruses-spawned! v) (update-scores 5 v))	
+(define (update-scores-infections! v)
+  (update-scores-total! -2)
+  (update-scores 6 v))	
+(define (update-scores-max-hosts! v)
+  (when (> v (scores-max-hosts))
+	(set! current-scores (list-replace current-scores 7 v))))
+(define (update-scores-max-viruses! v)
+  (when (> v (scores-max-viruses))
+	(set! current-scores (list-replace current-scores 8 v))))
+(define (update-scores-final-hosts! v) (update-scores 9 v))	
+(define (update-scores-final-viruses! v) (update-scores 10 v))	
+
+(define (scores-total) (list-ref current-scores 0))	
+(define (scores-survived) (list-ref current-scores 1))	
+(define (scores-duration) (list-ref current-scores 2))	
+(define (scores-mutations) (list-ref current-scores 3))	
+(define (scores-hosts-spawned) (list-ref current-scores 4))	
+(define (scores-viruses-spawned) (list-ref current-scores 5))	
+(define (scores-infections) (list-ref current-scores 6))	
+(define (scores-max-hosts) (list-ref current-scores 7))	
+(define (scores-max-viruses) (list-ref current-scores 8))	    	
+(define (scores-final-hosts) (list-ref current-scores 9))    	
+(define (scores-final-viruses) (list-ref current-scores 10))    	
+
+(define scores-why "")
+
+(define (get-scores-analysis)
+  (when (eq? scores-why "")
+		(set! scores-why (scores-analysis)))
+  scores-why)
+
+(define (scores-analysis)
+  (if (scores-survived)
+	  ;; the player won
+	  (string-append
+	   (choose
+		(list "Well done! " "You rock! " "Excellent! "))
+	   (if (< (scores-final-hosts) 2) " You only just made it! " 
+		   (if (< (scores-final-hosts) 6)
+			   "Your host population was getting a bit low at the end. "
+			   (if (< (scores-max-hosts) 10)
+				   "Your hosts had a hard time but you made it!" "")))
+	   (if (< (scores-infections) 1)
+		   "WOW - there were no infections! "
+		   (if (< (scores-infections) 10)
+			   "You hardly had any infections." ""))
+	   (if (> (scores-mutations) 20) "Try using less mutation next time. "
+		   (if (< (scores-mutations) 5) "You only mutated when you had to. " ""))
+	   (if (< (scores-max-viruses) 10)
+		   "You kept virus counts low. "
+		   (if (> (scores-max-viruses) 25)
+			   "You might find it easier by keeping virus counts lower. " "")))
+
+	   (string-append
+		(choose
+		 (list "Bad luck. " "Thats a shame. " "Better luck next time! "))
+		(if (< (scores-mutations) 1)
+			"Use the buttons at the bottom to mutate your host. "
+			(if (< (scores-mutations) 10)
+				"Mutate more - to start with your host receptors match the virus spike protein shapes. "
+				""))		
+		(if (< (scores-duration) 20)
+			"It's not always that hard. Try mutating sooner next time. "
+			(if (< (scores-duration) 30)
+				"Keep an eye on the virus spike protein shapes. "
+				(if (> (scores-duration) 40)
+					"You nearly made it! " "")))		
+		(if (< (scores-max-hosts) 10)
+			"You need to increase your host population a bit to make it easier to survive. " "")
+		(if (> (scores-max-viruses) 25)
+			"Its easier if you can keep the number of viruses down to a minimum. " ""))))
+

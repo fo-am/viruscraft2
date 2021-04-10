@@ -101,7 +101,7 @@
 		(find-image "sprites/host/infected.png")))
 	  
 	  ((eq? state 'state-idle)
-	   (if (> (entity-timer h) (+ (rndf) (param "host-spawn-rate")))
+	   (if (> (entity-timer h) (+ (* (rndf) 4) (param "host-spawn-rate")))
 		   (host-modify-state (entity-modify-timer h 0) 'state-divide)
 		   h))
 	  ((eq? state 'state-divide)

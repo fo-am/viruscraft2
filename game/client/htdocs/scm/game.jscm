@@ -83,6 +83,7 @@
 (load "scm/entity-list.jscm")
 (load "scm/entity-renderer.jscm")
 
+(load "scm/scores.jscm")
 (load "scm/receptors.jscm")
 (load "scm/model.jscm")
 (load "scm/virus.jscm")
