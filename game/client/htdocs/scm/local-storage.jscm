@@ -17,6 +17,8 @@
 ;; use browser local storage for stuff
 ;; hopefully removing the need for a server in certain situations
 
+(define debug-params-mode #f)
+
 (define (make-param key value units)
   (list key value units))
 
@@ -78,11 +80,25 @@
     (local-load (string-append namespace "-params"))
     new-params)))
 
+(define fast-params (js "{}"))
+
+(define (check-and-add-params-fast! namespace new-params)
+  (set! fast-params (js "{}"))
+  (for-each
+   (lambda (param)
+	 (js "fast_params[param_key(param)]=param_value(param)"))
+   new-params))
+
 (define (local-setup-params namespace params)
   (when (not (local-exists? (string-append namespace "-params")))
-	(local-save (string-append namespace "-params") params))
-  (check-and-add-params! namespace params)
-  (setup-params-interface (local-load (string-append namespace "-params"))))
+		(local-save (string-append namespace "-params") params))
+  (cond
+   (debug-params-mode
+	(check-and-add-params! namespace params)
+	(setup-params-interface (local-load (string-append namespace "-params"))))
+   (else
+	(check-and-add-params-fast! namespace params))))
+		 
 
 (define (local-set-param namespace name value)
   (local-save
@@ -95,13 +111,17 @@
     (local-load (string-append namespace "-params")))))
 
 (define (local-get-param namespace name) 
-  (foldl
-   (lambda (kv r)
-     (if (eq? (car kv) name)
-	 (param-value kv) r))
-   #f
-   (local-load (string-append namespace "-params"))))
-
+  (cond
+   (debug-params-mode	
+	(foldl
+	 (lambda (kv r)
+	   (if (eq? (car kv) name)
+		   (param-value kv) r))
+	 #f
+	 (local-load (string-append namespace "-params"))))
+   (else
+	(js "fast_params[name]"))))
+   
 (define (local-param-exists? namespace name) 
   (foldl
    (lambda (kv r)
