@@ -23,7 +23,7 @@
 				   (/ (param "world-level-time") 6)
 				   (/ (param "world-level-time") 8))
 			 (- level 1))
-   (list-ref (list 1 2 3 8 12) (- level 1))))
+   (list-ref (list 1 2 3 8 8) (- level 1))))
 
 (define (level-params model-update-rate min-viruses)
   (list model-update-rate min-viruses))

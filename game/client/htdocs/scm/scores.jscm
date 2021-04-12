@@ -45,7 +45,7 @@
 	(list-replace
 	 current-scores i (max 0 (+ (list-ref current-scores i) v)))))
 
-(define (update-scores-total! v) (update-scores 0 v))	
+(define (update-scores-total! v) (update-total 0 v))	
 (define (update-scores-survived! v) (update-scores 1 v))	
 (define (update-scores-duration! v) (update-scores 2 v))	
 (define (update-scores-mutations! v)
@@ -119,7 +119,7 @@
 		 (if (< (scores-mutations) 1)
 			 (list "Use the buttons at the bottom to mutate your host.")
 			 (if (< (scores-mutations) 10)
-				 (list "Mutate more - to start with your host receptors match the virus spike protein shapes.")
+				 (list "Try mutating more - to start with your host receptors match the virus spike protein shapes.")
 				 '()))
 		 (if (< (scores-duration) 20)
 			 (list "It's not always that hard. Try mutating sooner next time.")
@@ -128,7 +128,7 @@
 				 (if (> (scores-duration) 40)
 					 (list "You nearly made it!") '())))		
 		 (if (< (scores-max-hosts) 10)
-			 (list "You need to increase your host population a bit to make it easier to survive.") '())
+			 (list "You need to increase your host population to make it easier to survive.") '())
 		 (if (> (scores-max-viruses) 25)
-			 (list "Its easier if you can keep the number of viruses down to a minimum.") '()))))))
+			 (list "Its easier if you can manage to keep the number of viruses down to a minimum.") '()))))))
 

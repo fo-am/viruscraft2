@@ -15,8 +15,8 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator)
-  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator))
+(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives)
+  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
@@ -36,10 +36,12 @@
 (define (world-game-type w) (list-ref w 11))
 (define (world-mutator w) (list-ref w 12))
 (define (world-modify-mutator w s) (list-replace w 12 s))
+(define (world-lives w) (list-ref w 13))
+(define (world-modify-lives w v) (list-replace w 13 v))
 
 (define virus-age-var 5)
 
-(define (build-world game-type level player-id time)
+(define (build-world game-type level player-id time lives)
   (reset-scores!)
   (set! help-stack '())
   (let ((mixer (make-receptor-mixer game-type))
@@ -97,6 +99,7 @@
 	 #t ;; grace
 	 game-type
 	 (build-mutator game-type)
+	 lives ;; lives
 	 ))))
 
 (define (world-spawn-hosts host host-list count w)
@@ -293,9 +296,9 @@
 		(update-scores-duration! (world-level-time w)) 
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
-		(world-modify-level-time
+		(world-modify-level-time		
 		 (world-modify-state w "state-game-over")
-		 0))
+		 0)) 
 	   ((> (world-level-time w) (param "world-level-time"))
 		(update-scores-duration! (world-level-time w)) 
 		(update-scores-survived! #t)
@@ -313,7 +316,10 @@
 	  (world-modify-state w "state-running"))
 	 ((eq? state "state-game-over")
 	  (if (> (world-level-time w) 10)
-		  (world-modify-state w "state-restart-game")
+		  (world-modify-state 
+		   w (if (< (world-lives w) 1)
+				 "state-restart-game"
+				 "state-restart-level"))
 		  w))	 
 	 (else w))))
 
@@ -341,9 +347,7 @@
 	  
 	  (world-update-state 
 	   (make-world
-		(if (eq? (world-state w) "state-running")
-			(world-virus-update w infection-list time delta)
-			(world-viruses w))
+		(world-virus-update w infection-list time delta)
 		(if (eq? (world-state w) "state-running")
 			(world-host-update w infection-list time delta)
 			(world-hosts w))
@@ -373,7 +377,8 @@
 		(world-game-type w)
 		(mutator-update
 		 (world-mutator w)
-		 (world-receptor-mixer w) time delta))
+		 (world-receptor-mixer w) time delta)
+		(world-lives w))
 	   time delta))))
 
 (define (world-update-mouse w state x y)
@@ -436,11 +441,8 @@
 (define help-stack '())    
 
 (define (world-render w ctx time)
-
-  (set! ctx.fillStyle bg-col)
-  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
-  (set! ctx.fillStyle panel-col)
-  (ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
+;;  (set! ctx.fillStyle bg-col)
+;;  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
 
   (set! ctx.strokeStyle "#000")
   (set! ctx.fillStyle "#000")
@@ -454,17 +456,52 @@
      (virus-render e ctx))
    (world-viruses w))
 
-  (mutator-render (world-mutator w) ctx)
+  (when (eq? (world-state w) "state-running")
+		(mutator-render (world-mutator w) ctx))
 
   (set! ctx.font "normal 30pt Dosis")
   (when (eq? (world-state w) "state-running")
-		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60))
+		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60)
+;;		(ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
+		(ctx.fillText (string-append "LIVES: " (world-lives w)) 30 110))
 
-  (ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
-  
-  (when (eq? (world-state w) "state-game-over")
-		(render-message "GAME OVER")
-		(render-explanation (get-scores-analysis)))
+
+  ;; variant
+  (when (eq? (world-state w) "state-running")
+		(set! ctx.fillStyle panel-col)
+		(ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
+		(index-for-each2
+		 (lambda (i model variant)
+		   (let ((y (+ (* i 300) 100))
+				 (mutation-time (- (model-period model) (model-timer model))))
+			 (when (< mutation-time 1)
+				   (set! ctx.globalAlpha (- 1 mutation-time))
+				   (ctx.drawImage (find-image "sprites/host/infected.png")
+								  1300 (+ 0 y))
+				   (set! ctx.globalAlpha 1))
+			 (set! ctx.fillStyle "#000")
+			 (set! ctx.font "normal 30pt Dosis")
+			 (ctx.fillText "Current virus:" 1300 (+ -10 y))  
+			 (when variant
+				   (if (eq? (world-game-type w) "hidden")
+					   (virus-render variant ctx)
+					   (virus-render-receptors variant ctx)))
+			 (ctx.fillText
+			  (string-append "Next mutation: "
+							 (trunc (model-timer model)))
+			  1280 (+ 230 y)) 
+			 ))
+		 (world-models w)
+		 (world-variant-viruses w)))
+
+    (when (eq? (world-state w) "state-game-over")
+		(cond
+		 ((< (world-lives w) 1)
+		  (render-message "GAME OVER")
+		  (render-explanation (get-scores-analysis)))
+		 (else
+		  (render-message (string-append (- (world-lives w) 1) " LIVES LEFT"))
+		  (render-explanation (get-scores-analysis)))))
 
   (when (eq? (world-state w) "state-level-complete")
 		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!"))
@@ -475,31 +512,6 @@
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
 		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
 									   " SECONDS TO GO!")))
-
-  ;; variant
-  (index-for-each2
-   (lambda (i model variant)
-	 (let ((y (+ (* i 300) 100))
-		   (mutation-time (- (model-period model) (model-timer model))))
-	   (when (< mutation-time 1)
-			 (set! ctx.globalAlpha (- 1 mutation-time))
-			 (ctx.drawImage (find-image "sprites/host/infected.png")
-							1300 (+ 0 y))
-			 (set! ctx.globalAlpha 1))
-	   (set! ctx.fillStyle "#000")
-	   (set! ctx.font "normal 30pt Dosis")
-	   (ctx.fillText "Current virus:" 1300 (+ -10 y))  
-	   (when variant
-			 (if (eq? (world-game-type w) "hidden")
-				 (virus-render variant ctx)
-				 (virus-render-receptors variant ctx)))
-	   (ctx.fillText
-		(string-append "Next mutation: "
-					   (trunc (model-timer model)))
-		1280 (+ 230 y)) 
-	   ))
-   (world-models w)
-   (world-variant-viruses w))
 
   (render-bubble-stack! help-stack ctx))
 

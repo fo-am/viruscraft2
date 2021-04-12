@@ -24,24 +24,23 @@
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
-(define stage-reached 4)
+(define stage-reached 0)
 
-(let ((v (local-load "viruscraft2-version")))
-  (msg "checking params")
-  (when (or (not v) (< v params-version))
-		(msg "making params")
-		(local-nuke)
-		(local-save "viruscraft2-version" params-version)
-		))
+;; (let ((v (local-load "viruscraft2-version")))
+;;   (msg "checking params")
+;;   (when (or (not v) (< v params-version))
+;; 		(msg "making params")
+;; 		(local-nuke)
+;; 		(local-save "viruscraft2-version" params-version)
+;; 		))
 
 (define (param name)
-  (string->number (local-get-param "viruscraft2" name)))
+  (string->number (local-get-param-fast "viruscraft2" name)))
 
 (define (string-param name)
-  (local-get-param "viruscraft2" name))
+  (local-get-param-fast "viruscraft2" name))
 
-
-(local-setup-params 
+(local-setup-params-fast
  "viruscraft2" 
  (list
   (make-param "start-level" 1 "seconds")
@@ -72,6 +71,15 @@
   (make-param "model-population-size" 100 "individuals")
   (make-param "model-hosts-per-update" 3 "hosts")
   ))
+
+(define (new-player?)
+  (not (local-exists? "viruscraft2-params")))
+
+(define (init-player-params!)
+  (local-setup-params
+   "viruscraft2" 
+   (list
+	(make-param "player-stage-reached" 0 "stage"))))
 
 (define start-level (param "start-level"))
 ;;(define installation-mode #t)
@@ -160,8 +168,38 @@
      (register-game c player-id location)))
   c)
 
-
 (define (nightjar-intro c)
+  (if (new-player?)
+	  (game-modify-render
+	   (lambda (ctx)
+		 (demo-render (game-data c) ctx)
+		 (set! ctx.fillStyle text-col)		
+		 (set! ctx.font "normal 120pt Dosis")
+		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
+		 (set! ctx.font "normal 30pt Dosis")
+		 (wrap-text ctx "Are you happy for us to store your player info (level reached) on your browser?" 0 340 1200 100)
+		 (set! ctx.font "normal 30pt Dosis")
+		 )
+	   
+	   (game-modify-buttons
+		(list
+		 
+		 (rect-button
+		  "PLAY" 
+		  default-button-x
+		  default-button-y
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(init-player-params!)
+			(button-sound)
+			(nightjar-main c)))
+		 
+		 )
+		c))
+	  (nightjar-main c)))
+
+(define (nightjar-main c)
   (game-modify-timeout
    (lambda ()
 	 (when (not ditto.load_resource_static)	
@@ -182,10 +220,6 @@
 		(set! ctx.font "normal 120pt Dosis")
 		(wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 		(set! ctx.font "normal 30pt Dosis")
-		(wrap-text ctx (string-append "Version " params-version) 0 340 1200 100)
-		(set! ctx.font "normal 30pt Dosis")
-		;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
-		;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)		
 		)
 	  
 	  (game-modify-buttons
@@ -280,7 +314,7 @@
 (define (nightjar-game-screen c player-id game-type)
   (game-modify-data
    (lambda (d)
-	 (build-world game-type start-level player-id (/ (game-time c) 1000)))
+	 (build-world game-type start-level player-id (/ (game-time c) 1000) 3))
    (game-modify-mouse-hook
 	(lambda (state c)
 	  (game-modify-data
@@ -299,10 +333,21 @@
 			(game-modify-data
 			 (lambda (d)
 			   (cond
+				((eq? (world-state d) "state-restart-level")
+				 ;; try again
+				 (build-world
+				  game-type (world-level d) player-id (/ t 1000)
+				  (- (world-lives d) 1)))
 				((eq? (world-state d) "state-new-level")
+				 (local-set-param
+				  "viruscraft2" "player-stage-reached"
+				  (+ 1 (string->number
+						(local-get-param
+						 "viruscraft2" "player-stage-reached"))))
 				 ;; new level
 				 (build-world
-				  game-type (+ (world-level (game-data c)) 1) player-id (/ t 1000)))
+				  game-type (+ (world-level (game-data c)) 1) player-id
+				  (/ t 1000) 3))
 				(else
 				 ;; normal update
 				 (world-update d (/ t 1000) (game-delta c))
