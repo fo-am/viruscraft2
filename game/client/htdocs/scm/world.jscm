@@ -511,10 +511,12 @@
 				   (if (eq? (world-game-type w) "hidden")
 					   (virus-render variant ctx)
 					   (virus-render-receptors variant ctx)))
-			 (ctx.fillText
-			  (string-append "Next mutation: "
-							 (trunc (model-timer model)))
-			  1280 (+ 230 y)) 
+			 ;; only show this when it's gonna happen before end of level
+			 (when (< (model-timer model) (- (param "world-level-time") (world-level-time w))) 
+				   (ctx.fillText
+					(string-append "Next mutation: "
+								   (trunc (model-timer model)))
+					1280 (+ 230 y)))
 			 ))
 		 (world-models w)
 		 (world-variant-viruses w)))
