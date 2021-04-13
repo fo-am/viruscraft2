@@ -46,7 +46,7 @@
  "viruscraft2" 
  (list
   (make-param "start-level" 1 "seconds")
-  (make-param "world-level-time" 60 "seconds")
+  (make-param "world-level-time" 10 "seconds")
   (make-param "world-num-levels" 5 "levels")
   (make-param "world-max-viruses" 30 "viruses")
   (make-param "world-start-hosts" 1 "host cells")
@@ -127,47 +127,60 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (register-game c player-id location)
+(define (register-game c player-id stage level lives)
+  (msg "started register game")
   (server-call-mutate
    "game"
    (list (list "player_id" player-id)
-		 (list "location" location)) 
+		 (list "stage" stage)
+		 (list "level" level))
    (lambda (c game-id)	 
      ;;(reset-scores!)
-     (nightjar-game-screen c game-id location)))
-  c)
+	 (msg (list "game id:" game-id))
+     (nightjar-game-screen c game-id stage level lives)))
+  (msg "waiting for game to register...")
+  (game-modify-data
+   (lambda (d)	 
+	 (world-modify-state d "state-waiting-for-restart"))
+   c))
+
+(define (score-list c)
+  (list
+   (list "game_id" (world-game-id (game-data c)))
+   (list "survived" (scores-survived))
+   (list "duration" (scores-duration))
+   (list "mutations" (scores-mutations))
+   (list "hosts_spawned" (scores-hosts-spawned))
+   (list "viruses_spawned" (scores-viruses-spawned))
+   (list "infections" (scores-infections))
+   (list "max_hosts" (scores-max-hosts))
+   (list "max_viruses" (scores-max-viruses))
+   (list "final_hosts" (scores-final-hosts))
+   (list "final_viruses" (scores-final-viruses))))
+
+(define (save-scores! c)
+  (msg "saving scores")
+  (server-call "score" (score-list c)))
 
 (define (send-update-scores c)
   (server-call-mutate
    "score"
-   (list
-    (list "game_id" (world-game-id (game-data c)))
-    (list "new_nests" 0)
-    (list "num_workers_laid" 0)
-    (list "num_workers_hatched" 0)
-    (list "cells_built" 0)
-    (list "events_survived" 0)
-    (list "num_reproductives_hatched" 0)
-    (list "energy_foraged" 0)
-    (list "survival_time" 0)
-    (list "forages" 0)
-    (list "score" 0)
-    )
+   (score-list c)
    (lambda (c score-pos)
-     (if ditto.load_resource_static
+	 (if ditto.load_resource_static
 		 (nightjar-end c 0)
-		 (nightjar-enter-name c (JSON.parse score-pos)))))
+		 (nightjar-enter-name c (JSON.parse score-pos)))))  
   c)
 
-(define (register c location)
-  ;; fixed one player per game...
+(define (register c stage)
+  ;; fixed one player per game... TODO:FIX
   (set! player-name "???")
   (server-call-mutate
    "player"
    '() 
    (lambda (c id)	 
      (set! player-id id)
-     (register-game c player-id location)))
+     (register-game c player-id stage 1 3)))
   c)
 
 (define (nightjar-intro c)
@@ -313,10 +326,10 @@
 		(nightjar-intro c))))
 	c)))
 
-(define (nightjar-game-screen c player-id stage)
+(define (nightjar-game-screen c game-id stage level lives)
   (game-modify-data
    (lambda (d)
-	 (build-world stage 1 player-id (/ (game-time c) 1000) 3))
+	 (build-world stage level game-id (/ (game-time c) 1000) lives))
    (game-modify-mouse-hook
 	(lambda (state c)
 	  (game-modify-data
@@ -330,81 +343,43 @@
 	   )
 	 (game-modify-update
 	  (lambda (t c)
-		(if (eq? (world-state (game-data c)) "state-restart-game")
-			(nightjar-intro c)			   
+		(let ((w (game-data c)))
+		  (cond
+		   ((eq? (world-state w) "state-restart-game")
+			;; exit game
+			(save-scores! c)
+			(nightjar-intro c)) 		   
+		   ((eq? (world-state w) "state-restart-level")
+			;; try again
+			(save-scores! c)
+			(register-game c game-id (world-stage w) (world-level w) (- (world-lives w) 1)))
+		   ((eq? (world-state w) "state-new-level")
+			;; new level
+			(save-scores! c)
+			(msg "new level")
+			(register-game c game-id (world-stage w) (+ (world-level w) 1) 3))
+		   ((eq? (world-state w) "state-new-stage")
+			;; todo: END OF GAME
+			;; if we haven't reached this stage already
+			(when (< (stage-reached) (+ (world-stage w) 1))
+				  ;; record the new stage reached
+				  (local-set-param
+				   "viruscraft2" "player-stage-reached"
+				   (+ 1 (world-stage w))))
+			;; new stage
+			(save-scores! c)
+			(register-game c game-id (+ (world-stage w) 1) 1 3))
+		   ;; don't do anything...
+		   ((eq? (world-state w) "state-waiting-for-restart") c)		   
+		   (else			   
 			(game-modify-data
 			 (lambda (d)
-			   (cond
-				((eq? (world-state d) "state-restart-level")
-				 ;; try again
-				 (build-world (world-stage d) (world-level d) player-id (/ t 1000)
-							  (- (world-lives d) 1)))
-				((eq? (world-state d) "state-new-level")
-				 ;; new level
-				 (build-world (world-stage d) (+ (world-level d) 1) player-id
-							  (/ t 1000) 3))
-				((eq? (world-state d) "state-new-stage")
-				 ;; record the new stage reached
-				 (local-set-param
-				  "viruscraft2" "player-stage-reached"
-				  (+ 1 (string->number
-						(local-get-param
-						 "viruscraft2" "player-stage-reached"))))
-				 ;; new stage
-				 (build-world (+ (world-stage d) 1) 1 player-id
-							  (/ t 1000) 3))
-				(else
-				 ;; normal update
-				 (world-update d (/ t 1000) (game-delta c))
-				 )))
-			 c)))
+			   ;; normal update
+			   (world-update d (/ t 1000) (game-delta c))
+			   )
+			 c)))))
 	  (game-modify-buttons
 	   (append
-		;; (if (eq? game-type "shape")
-		;; 	;; ---------------------------------------------
-		;; 	(list		  
-		;; 	 (image-button
-		;; 	  "" 180 180 "pulse" (find-image "triangle-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'tri))
-		;; 		 c)))
-
-		;; 	 (image-button
-		;; 	  "" 180 300 "pulse" (find-image "square-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'squ))
-		;; 		 c)))
-			 
-		;; 	 (image-button
-		;; 	  "" 180 420 "pulse" (find-image "donut-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'cir))
-		;; 		 c)))
-
-		;; 	 (image-button
-		;; 	  "" 180 540 "pulse" (find-image "guitar-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'gui))
-		;; 		 c))))
-
-		;; 	;; ------------------------------------------
-		;; 	(list			   
-		;; 	 (image-button
-		;; 	  "" 180 350 "pulse" (find-image "mutate-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'none))
-		;; 		 c)))))
-		
 		(list
 		 (rect-button
 		  "QUIT" 20 (+ default-button-y 185) 60 60 #f

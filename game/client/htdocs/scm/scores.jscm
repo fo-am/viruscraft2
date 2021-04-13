@@ -22,7 +22,8 @@
 ;; hosts at the end
 ;; viruses at the end
 
-(define (game-scores total survived duration mutations hosts-spawned viruses-spawned
+(define (game-scores total survived duration mutations hosts-spawned
+					 viruses-spawned
 					 infections max-hosts max-viruses
 					 final-hosts final-viruses)
   (list total survived duration mutations hosts-spawned viruses-spawned infections

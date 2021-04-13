@@ -15,35 +15,37 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage)
-  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage))
+(define (make-world game-id viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage)
+  (list game-id viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage))
 
-(define (world-viruses w) (list-ref w 0))
-(define (world-hosts w) (list-ref w 1))
-(define (world-modify-hosts w s) (list-replace w 1 s))
-(define (world-models w) (list-ref w 2))
-(define (world-receptor-mixer w) (list-ref w 3))
-(define (world-modify-receptor-mixer w s) (list-replace w 3 s))
-(define (world-variant-viruses w) (list-ref w 4))
-(define (world-level w) (list-ref w 5))
-(define (world-level-time w) (list-ref w 6))
-(define (world-modify-level-time w s) (list-replace w 6 s))
-(define (world-level-params w) (list-ref w 7))
-(define (world-state w) (list-ref w 8))
-(define (world-modify-state w s) (list-replace w 8 s))
-(define (world-infection-timer w) (list-ref w 9))
-(define (world-grace w) (list-ref w 10))
-(define (world-game-type w) (list-ref w 11))
-(define (world-mutator w) (list-ref w 12))
-(define (world-modify-mutator w s) (list-replace w 12 s))
-(define (world-lives w) (list-ref w 13))
-(define (world-stage w) (list-ref w 14))
+(define (world-game-id w) (list-ref w 0))
+(define (world-viruses w) (list-ref w 1))
+(define (world-hosts w) (list-ref w 2))
+(define (world-modify-hosts w s) (list-replace w 2 s))
+(define (world-models w) (list-ref w 3))
+(define (world-receptor-mixer w) (list-ref w 4))
+(define (world-modify-receptor-mixer w s) (list-replace w 4 s))
+(define (world-variant-viruses w) (list-ref w 5))
+(define (world-level w) (list-ref w 6))
+(define (world-level-time w) (list-ref w 7))
+(define (world-modify-level-time w s) (list-replace w 7 s))
+(define (world-level-params w) (list-ref w 8))
+(define (world-state w) (list-ref w 9))
+(define (world-modify-state w s) (list-replace w 9 s))
+(define (world-infection-timer w) (list-ref w 10))
+(define (world-grace w) (list-ref w 11))
+(define (world-game-type w) (list-ref w 12))
+(define (world-mutator w) (list-ref w 13))
+(define (world-modify-mutator w s) (list-replace w 13 s))
+(define (world-lives w) (list-ref w 14))
+(define (world-stage w) (list-ref w 15))
 
 (define virus-age-var 5)
+(define info-text-display-duration 2)
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
-(define (build-world stage level player-id time lives)
+(define (build-world stage level game-id time lives)
   (let ((game-type (list-ref stage-types stage)))
 	(reset-scores!)
 	(set! help-stack '())
@@ -69,6 +71,7 @@
 						  0 model-virus-mutation-rate)))))
 		
 		(make-world
+		 game-id
 		 ;; we assume these become ordered lists because the ids increase?
 		 (build-list
 		  1
@@ -316,11 +319,11 @@
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
-	  (if (> (world-level-time w) 8)
+	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state w "state-new-level")
 		  w))
 	 ((eq? state "state-stage-complete")
-	  (if (> (world-level-time w) 8)
+	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state w "state-new-stage")
 		  w))
 	 ((eq? state "state-new-level")
@@ -328,7 +331,7 @@
 	 ((eq? state "state-new-stage")
 	  (world-modify-state w "state-running"))
 	 ((eq? state "state-game-over")
-	  (if (> (world-level-time w) 8)
+	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state 
 		   w (if (< (world-lives w) 1)
 				 "state-restart-game"
@@ -360,6 +363,7 @@
 	  
 	  (world-update-state 
 	   (make-world
+		(world-game-id w)
 		(world-virus-update w infection-list time delta)
 		(if (eq? (world-state w) "state-running")
 			(world-host-update w infection-list time delta)

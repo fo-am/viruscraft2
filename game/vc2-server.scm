@@ -70,18 +70,18 @@
         (pluto-response (scheme->json id)))))
    
    (register
-    (req 'game '(player_id location))
-    (lambda (player_id location)
-      (let* ((id (insert-game db player_id location)))
+    (req 'game '(player_id stage level))
+    (lambda (player_id stage level)
+      (let* ((id (insert-game db player_id stage level)))
         (pluto-response (scheme->json (list id))))))
 
    (register
-    (req 'score '(game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score))
-    (lambda (game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score)
-      (update-score db game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score)
+    (req 'score '(game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
+    (lambda (game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+      (update-score db game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
       (let ((rank (get-game-rank db game_id)))
-	(display game_id)(display " ")(display score)(display " ")(display rank)(newline)
-	(pluto-response (scheme->json rank)))))
+		(display (list game_id rank))(newline)
+		(pluto-response (scheme->json rank)))))
    
    (register
     (req 'hiscores '())

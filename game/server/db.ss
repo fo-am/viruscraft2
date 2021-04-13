@@ -37,23 +37,22 @@
 
 (define (setup db)
   (exec/ignore db "create table player ( id integer primary key autoincrement)")
-  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, location varchar, time_stamp varchar, new_nests integer, num_workers_laid integer, num_workers_hatched integer, cells_built integer, events_survived integer, num_reproductives_hatched integer, energy_foraged real, survival_time real, forages integer, score integer)")
+  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, stage integer, level integer, time_stamp varchar, survived integer, duration real, mutations integer, hosts_spawned integer, viruses_spawned integer, infections integer, max_hosts integer, max_viruses integer, final_hosts integer, final_viruses integer)")
   (exec/ignore db "create table player_name ( id integer primary key autoincrement, player_id integer, player_name text )")
   )
 
 (define (insert-player db)
   (insert db "INSERT INTO player VALUES (NULL)"))
 
-(define (insert-game db player_id location)
+(define (insert-game db player_id stage level)
   (insert
-   db "INSERT INTO game VALUES (NULL, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
-   player_id location (timestamp-now)))
+   db "INSERT INTO game VALUES (NULL, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
+   player_id stage level (timestamp-now)))
 
-(define (update-score db game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score)
+(define (update-score db game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
   (exec/ignore
-   db "update game set new_nests=?, num_workers_laid=?, num_workers_hatched=?, cells_built=?, events_survived=?, num_reproductives_hatched=?, energy_foraged=?, survival_time=?, forages=?, score=? where id = ?"
-   new_nests num_workers_laid num_workers_hatched cells_built events_survived
-   num_reproductives_hatched energy_foraged survival_time forages score
+   db "update game set survived=?, duration=?, mutations=?, hosts_spawned=?, viruses_spawned=?, infections=?, max_hosts=?, max_viruses=?, final_hosts=?, final_viruses=? where id = ?"
+   survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses
    game_id))
 
 (define (insert-player-name db player_id player_name)
@@ -64,10 +63,10 @@
 
 ;; get a list of all the scores
 (define (get-game-scores db)
-  (let* ((s (select db "select g.new_nests from game as g
+  (let* ((s (select db "select g.stage, g.level, g.duration from game as g
                         join player_name as n on g.player_id=n.player_id
                         where n.player_name != '??'
-                        order by score")))
+                        order by stage desc, level desc, duration desc")))
     (if (null? s)
         '()
         (map
@@ -76,10 +75,10 @@
 
 ;; get the player name/scores ordered for the hiscores list
 (define (hiscores-select db)
-  (let ((r (select db "select n.player_name, g.new_nests, g.score, g.location from game as g
+  (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
                      join player_name as n on g.player_id=n.player_id        
                      where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
-                     order by score desc limit 10")))
+                     order by g.stage desc, g.level desc, d.duration desc limit 10")))
     (if (null? r) '() (cdr r))))
 
 (define (get-position v ol)
@@ -93,7 +92,8 @@
 (define (get-game-rank db game-id)
   (let ((s (select db "select count(*) from game as g 
                        join player_name as n on g.player_id=n.player_id 
-                       where n.player_name !='???' and g.score > (select score from game where id = ?) and 
+                       where n.player_name !='???' and 
+                       g.duration > (select duration from game where id = ?) and 
                        g.time_stamp > (select datetime('now', '-7 day'))" game-id)))
     (if (null? s)
 	999
