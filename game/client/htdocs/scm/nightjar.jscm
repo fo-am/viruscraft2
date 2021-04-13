@@ -110,6 +110,7 @@
     (set! image.onload
           (lambda ()
             (set! image-lib (cons (list fn image) image-lib))
+			(set! ctx.fillStyle "#000")
             (ctx.clearRect 0 0 screen-width screen-height)
             (centre-text ctx "Loading..." 0 240)
             (centre-text
