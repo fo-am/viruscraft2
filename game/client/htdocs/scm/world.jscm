@@ -386,7 +386,7 @@
 			(param "world-infection-period"))
 		(if (not (world-grace w))
 			#f
-			(if (> (length (world-hosts w)) 2) #f #t))
+			(if (> (length (world-hosts w)) 3) #f #t))
 		(world-game-type w)
 		(mutator-update
 		 (world-mutator w)
