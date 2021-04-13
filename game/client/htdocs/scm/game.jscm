@@ -24,7 +24,6 @@
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
-(define stage-reached 0)
 
 ;; (let ((v (local-load "viruscraft2-version")))
 ;;   (msg "checking params")
@@ -39,6 +38,9 @@
 
 (define (string-param name)
   (local-get-param-fast "viruscraft2" name))
+
+(define (stage-reached)
+  (string->number (local-get-param "viruscraft2" "player-stage-reached")))
 
 (local-setup-params-fast
  "viruscraft2" 
@@ -81,7 +83,7 @@
    (list
 	(make-param "player-stage-reached" 0 "stage"))))
 
-(define start-level (param "start-level"))
+;;(define start-level (param "start-level"))
 ;;(define installation-mode #t)
 
 (load "scm/ordered-list.jscm")
@@ -177,7 +179,7 @@
 		 (set! ctx.font "normal 120pt Dosis")
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 		 (set! ctx.font "normal 30pt Dosis")
-		 (wrap-text ctx "Are you happy for us to store your player info (level reached) on your browser?" 0 340 1200 100)
+		 (wrap-text ctx "Are you happy for us to store your player info (scores and level reached) on your browser?" 0 340 1200 60)
 		 (set! ctx.font "normal 30pt Dosis")
 		 )
 	   
@@ -232,39 +234,39 @@
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (register c "shape")))
+		   (register c 0)))
 
 		(rect-button
-		 (if (> stage-reached 0) "MUTATE" "????")
+		 (if (> (stage-reached) 0) "MUTATE" "????")
 		 (+ default-button-x 200)
 		 default-button-y
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 0) (register c "mutate")
+		   (if (> (stage-reached) 0) (register c 1)
 			   c)))
 
 		(rect-button
-		 (if (> stage-reached 1) "MULTIVARIANT" "????")
+		 (if (> (stage-reached) 1) "MULTIVARIANT" "????")
 		 (- default-button-x 200)
 		 (+ default-button-y 100)
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 1) (register c "multivariant")
+		   (if (> (stage-reached) 1) (register c 2)
 			   c)))
 
 		(rect-button
-		 (if (> stage-reached 2) "HIDDEN" "????")
+		 (if (> (stage-reached) 2) "HIDDEN" "????")
 		 (+ default-button-x 200)
 		 (+ default-button-y 100)
 		 default-button-width default-button-height
 		 "jumpy"
 		 (lambda (c)
 		   (button-sound)
-		   (if (> stage-reached 1) (register c "hidden")
+		   (if (> (stage-reached) 2) (register c 3)
 			   c)))
 		)
 	   c))))))
@@ -311,10 +313,10 @@
 		(nightjar-intro c))))
 	c)))
 
-(define (nightjar-game-screen c player-id game-type)
+(define (nightjar-game-screen c player-id stage)
   (game-modify-data
    (lambda (d)
-	 (build-world game-type start-level player-id (/ (game-time c) 1000) 3))
+	 (build-world stage 1 player-id (/ (game-time c) 1000) 3))
    (game-modify-mouse-hook
 	(lambda (state c)
 	  (game-modify-data
@@ -335,19 +337,22 @@
 			   (cond
 				((eq? (world-state d) "state-restart-level")
 				 ;; try again
-				 (build-world
-				  game-type (world-level d) player-id (/ t 1000)
-				  (- (world-lives d) 1)))
+				 (build-world (world-stage d) (world-level d) player-id (/ t 1000)
+							  (- (world-lives d) 1)))
 				((eq? (world-state d) "state-new-level")
+				 ;; new level
+				 (build-world (world-stage d) (+ (world-level d) 1) player-id
+							  (/ t 1000) 3))
+				((eq? (world-state d) "state-new-stage")
+				 ;; record the new stage reached
 				 (local-set-param
 				  "viruscraft2" "player-stage-reached"
 				  (+ 1 (string->number
 						(local-get-param
 						 "viruscraft2" "player-stage-reached"))))
-				 ;; new level
-				 (build-world
-				  game-type (+ (world-level (game-data c)) 1) player-id
-				  (/ t 1000) 3))
+				 ;; new stage
+				 (build-world (+ (world-stage d) 1) 1 player-id
+							  (/ t 1000) 3))
 				(else
 				 ;; normal update
 				 (world-update d (/ t 1000) (game-delta c))

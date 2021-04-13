@@ -15,8 +15,8 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives)
-  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives))
+(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage)
+  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage))
 
 (define (world-viruses w) (list-ref w 0))
 (define (world-hosts w) (list-ref w 1))
@@ -37,70 +37,74 @@
 (define (world-mutator w) (list-ref w 12))
 (define (world-modify-mutator w s) (list-replace w 12 s))
 (define (world-lives w) (list-ref w 13))
-(define (world-modify-lives w v) (list-replace w 13 v))
+(define (world-stage w) (list-ref w 14))
 
 (define virus-age-var 5)
 
-(define (build-world game-type level player-id time lives)
-  (reset-scores!)
-  (set! help-stack '())
-  (let ((mixer (make-receptor-mixer game-type))
-		(level-params (generate-level-params level)))
-	(let ((models (if (or (eq? game-type "hidden")
-						  (eq? game-type "multivariant"))
-					  (list
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						0 model-virus-mutation-rate)
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						(/ (level-params-model-update-rate level-params)
-						   2)
-						model-virus-mutation-rate))
-					  (list
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						0 model-virus-mutation-rate)))))
-	
-	(make-world
-	 ;; we assume these become ordered lists because the ids increase?
-	 (build-list
-	  1
-	  (lambda (_)
-		(make-virus
-		 (* (rndf) (param "virus-max-age"))
-		 )))
-	 (build-list
-	  (string->number (param "world-start-hosts"))
-	  (lambda (_)
-		(make-host
-		 (vec2 (/ screen-width 2) (/ screen-height 2))
-		 (mixer->receptors mixer)
-		 )))
-	 models
-	 mixer
-	 (index-map
-	   (lambda (i m)
-		 (make-virus-with-receptors
-		  (vec2 1400 (+ (* i 300) 190)) 0
-		  (build-list num-virus-receptors (lambda (_) 'tri))))
-	   models)	 
-	 level ;; level
-	 0 ;; level-time
-	 level-params
-	 (if (< level 11)
-		 "state-running" ;; state
-		 ;; todo: game complete
-		 "state-restart-game")
-	 0 ;; infection timer
-	 #t ;; grace
-	 game-type
-	 (build-mutator game-type)
-	 lives ;; lives
-	 ))))
+(define stage-types (list "shape" "mutate" "multivariant" "hidden"))
+
+(define (build-world stage level player-id time lives)
+  (let ((game-type (list-ref stage-types stage)))
+	(reset-scores!)
+	(set! help-stack '())
+	(let ((mixer (make-receptor-mixer game-type))
+		  (level-params (generate-level-params level)))
+	  (let ((models (if (or (eq? game-type "hidden")
+							(eq? game-type "multivariant"))
+						(list
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  0 model-virus-mutation-rate)
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  (/ (level-params-model-update-rate level-params)
+							 2)
+						  model-virus-mutation-rate))
+						(list
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  0 model-virus-mutation-rate)))))
+		
+		(make-world
+		 ;; we assume these become ordered lists because the ids increase?
+		 (build-list
+		  1
+		  (lambda (_)
+			(make-virus
+			 (* (rndf) (param "virus-max-age"))
+			 )))
+		 (build-list
+		  (string->number (param "world-start-hosts"))
+		  (lambda (_)
+			(make-host
+			 (vec2 (/ screen-width 2) (/ screen-height 2))
+			 (mixer->receptors mixer)
+			 )))
+		 models
+		 mixer
+		 (index-map
+		  (lambda (i m)
+			(make-virus-with-receptors
+			 (vec2 1400 (+ (* i 300) 190)) 0
+			 (build-list num-virus-receptors (lambda (_) 'tri))))
+		  models)	 
+		 level ;; level
+		 0 ;; level-time
+		 level-params
+		 (if (< level 11)
+			 "state-running" ;; state
+			 ;; todo: game complete
+			 "state-restart-game")
+		 0 ;; infection timer
+		 #t ;; grace
+		 game-type
+		 (build-mutator game-type)
+		 lives ;; lives
+		 stage
+		 )))))
 
 (define (world-spawn-hosts host host-list count w)
   (cond
@@ -305,17 +309,26 @@
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
-		 (world-modify-state w "state-level-complete")
+		 (world-modify-state
+		  w (if (> (world-level w) (- (param "world-num-levels") 1))
+				"state-stage-complete"
+				"state-level-complete"))
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
-	  (if (> (world-level-time w) 10)
+	  (if (> (world-level-time w) 8)
 		  (world-modify-state w "state-new-level")
+		  w))
+	 ((eq? state "state-stage-complete")
+	  (if (> (world-level-time w) 8)
+		  (world-modify-state w "state-new-stage")
 		  w))
 	 ((eq? state "state-new-level")
 	  (world-modify-state w "state-running"))
+	 ((eq? state "state-new-stage")
+	  (world-modify-state w "state-running"))
 	 ((eq? state "state-game-over")
-	  (if (> (world-level-time w) 10)
+	  (if (> (world-level-time w) 8)
 		  (world-modify-state 
 		   w (if (< (world-lives w) 1)
 				 "state-restart-game"
@@ -378,7 +391,8 @@
 		(mutator-update
 		 (world-mutator w)
 		 (world-receptor-mixer w) time delta)
-		(world-lives w))
+		(world-lives w)
+		(world-stage w))
 	   time delta))))
 
 (define (world-update-mouse w state x y)
@@ -507,6 +521,10 @@
 		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!"))
 		(render-explanation (get-scores-analysis)))
 
+  (when (eq? (world-state w) "state-stage-complete")
+		(render-message (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!"))
+		(render-explanation (get-scores-analysis)))
+  
   (when (and
 		 (eq? (world-state w) "state-running")
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
