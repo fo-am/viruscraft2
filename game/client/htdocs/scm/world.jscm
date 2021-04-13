@@ -429,6 +429,11 @@
 							 (world-receptor-mixer w)) i))))
 	(ctx.fillRect x (- (+ 100 y) h) 20 h)))
 
+(define panel-col "#f2f2f2")
+(define bg-col "#e3e2db")
+(define panel-width 400)
+(define help-stack '())    
+
 (define (render-message text)
   (set! ctx.font "normal 80pt Dosis")
   (let ((m (ctx.measureText text)))
@@ -436,23 +441,29 @@
 		  (y 150)
 		  (w (+ m.width 60))
 		  (h 120))
-;;	  (set! ctx.fillStyle "#fff")
-;;	  (ctx.fillRect x y w h)  
-;;	  (ctx.beginPath)
-;;	  (ctx.rect x y w h)
-;;	  (set! ctx.strokeStyle "#000")
-;;	  (ctx.stroke)
-;;	  (set! ctx.fillStyle "#000")
+	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.fillStyle panel-col)  
+	  (ctx.fillRect 0 y screen-width h)  
+	  (set! ctx.globalAlpha 1.0)
+	  (set! ctx.fillStyle "#000")  
 	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
 
-(define (render-explanation text)
+(define (render-explanation title text)
+  (set! ctx.font "normal 80pt Dosis")
+  (let ((m (ctx.measureText title)))
+	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
+		  (y 150)
+		  (w (+ m.width 60))
+		  (h 120))
+	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.fillStyle panel-col)  
+	  (ctx.fillRect 0 150 screen-width 300)  
+	  (set! ctx.globalAlpha 1.0)
+	  (set! ctx.fillStyle "#000")  
+	  (ctx.fillText title (+ x 30) (- (+ y h) 20))))
   (set! ctx.font "normal 40pt Dosis")
   (wrap-text ctx text 0 350 1000 60))
 
-(define panel-col "#f2f2f2")
-(define bg-col "#e3e2db")
-(define panel-width 400)
-(define help-stack '())    
 
 (define (world-render w ctx time)
 ;;  (set! ctx.fillStyle bg-col)
@@ -507,23 +518,25 @@
 			 ))
 		 (world-models w)
 		 (world-variant-viruses w)))
-
-    (when (eq? (world-state w) "state-game-over")
+  
+  (when (eq? (world-state w) "state-game-over")
 		(cond
 		 ((< (world-lives w) 1)
-		  (render-message "GAME OVER")
-		  (render-explanation (get-scores-analysis)))
+		  (render-explanation "GAME OVER" (get-scores-analysis)))
 		 (else
-		  (render-message (string-append (- (world-lives w) 1) " LIVES LEFT"))
-		  (render-explanation (get-scores-analysis)))))
+		  (render-explanation
+		   (string-append (- (world-lives w) 1) " LIVES LEFT")
+		   (get-scores-analysis)))))
 
   (when (eq? (world-state w) "state-level-complete")
-		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!"))
-		(render-explanation (get-scores-analysis)))
+		(render-explanation
+		 (string-append "LEVEL " (world-level w) " COMPLETE!")
+		 (get-scores-analysis)))
 
-  (when (eq? (world-state w) "state-stage-complete")
-		(render-message (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!"))
-		(render-explanation (get-scores-analysis)))
+  (when (eq? (world-state w) "state-stage-complete")		
+		(render-explanation
+		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
+		 (get-scores-analysis)))
   
   (when (and
 		 (eq? (world-state w) "state-running")
