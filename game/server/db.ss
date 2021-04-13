@@ -37,22 +37,22 @@
 
 (define (setup db)
   (exec/ignore db "create table player ( id integer primary key autoincrement)")
-  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, stage integer, level integer, time_stamp varchar, survived integer, duration real, mutations integer, hosts_spawned integer, viruses_spawned integer, infections integer, max_hosts integer, max_viruses integer, final_hosts integer, final_viruses integer)")
+  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, time_stamp varchar, stage integer, level integer, survived integer, duration real, mutations integer, hosts_spawned integer, viruses_spawned integer, infections integer, max_hosts integer, max_viruses integer, final_hosts integer, final_viruses integer)")
   (exec/ignore db "create table player_name ( id integer primary key autoincrement, player_id integer, player_name text )")
   )
 
 (define (insert-player db)
   (insert db "INSERT INTO player VALUES (NULL)"))
 
-(define (insert-game db player_id stage level)
+(define (insert-game db player_id)
   (insert
-   db "INSERT INTO game VALUES (NULL, ?, ?, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
-   player_id stage level (timestamp-now)))
+   db "INSERT INTO game VALUES (NULL, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
+   player_id (timestamp-now)))
 
-(define (update-score db game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+(define (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
   (exec/ignore
-   db "update game set survived=?, duration=?, mutations=?, hosts_spawned=?, viruses_spawned=?, infections=?, max_hosts=?, max_viruses=?, final_hosts=?, final_viruses=? where id = ?"
-   survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses
+   db "update game set stage=?, level=?, survived=?, duration=?, mutations=?, hosts_spawned=?, viruses_spawned=?, infections=?, max_hosts=?, max_viruses=?, final_hosts=?, final_viruses=? where id = ?"
+   stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses
    game_id))
 
 (define (insert-player-name db player_id player_name)
@@ -62,10 +62,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; get a list of all the scores
+(define (get-player-name db player-id)
+  (let* ((s (select db "select player_name from player_name where player_id = ?" player-id)))
+    (if (null? s)
+        "???"
+        (vector-ref (cadr s) 0))))
+
+;; get a list of all the scores
 (define (get-game-scores db)
   (let* ((s (select db "select g.stage, g.level, g.duration from game as g
                         join player_name as n on g.player_id=n.player_id
-                        where n.player_name != '??'
+                        where n.player_name != '???'
                         order by stage desc, level desc, duration desc")))
     (if (null? s)
         '()
@@ -78,7 +85,8 @@
   (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
                      join player_name as n on g.player_id=n.player_id        
                      where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
-                     order by g.stage desc, g.level desc, d.duration desc limit 10")))
+                     order by g.stage desc, g.level desc, g.duration desc limit 10")))
+	(display r)(newline)
     (if (null? r) '() (cdr r))))
 
 (define (get-position v ol)

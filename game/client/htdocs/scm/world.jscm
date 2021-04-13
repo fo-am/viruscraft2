@@ -300,7 +300,8 @@
 	 ((eq? state "state-running")
 	  (cond 
 	   ((zero? (length (world-hosts w)))
-		(update-scores-duration! (world-level-time w)) 
+		(msg "recording level time")
+		(update-scores-duration! (dbg (world-level-time w)))
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time		

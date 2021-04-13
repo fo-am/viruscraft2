@@ -70,15 +70,15 @@
         (pluto-response (scheme->json id)))))
    
    (register
-    (req 'game '(player_id stage level))
-    (lambda (player_id stage level)
-      (let* ((id (insert-game db player_id stage level)))
-        (pluto-response (scheme->json (list id))))))
-
+    (req 'game '(player_id))
+    (lambda (player_id)
+      (let* ((id (insert-game db player_id)))
+        (pluto-response (scheme->json id)))))
+   
    (register
-    (req 'score '(game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
-    (lambda (game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
-      (update-score db game_id survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+    (req 'score '(game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
+    (lambda (game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+      (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
       (let ((rank (get-game-rank db game_id)))
 		(display (list game_id rank))(newline)
 		(pluto-response (scheme->json rank)))))
@@ -101,7 +101,14 @@
     (req 'player-name '(player_id player_name))
     (lambda (player_id player_name)
       (insert-player-name db player_id player_name)
-      (pluto-response (scheme->json '()))))))
+      (pluto-response (scheme->json '()))))
+
+   (register
+    (req 'get-player-name '(player_id))
+    (lambda (player_id)      
+      (pluto-response
+	   (scheme->json
+		(get-player-name db player_id)))))))
 
 (define (start request)
   (let ((values (url-query (request-uri request))))
