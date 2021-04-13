@@ -24,6 +24,12 @@
 (define end-game-time 7)
 (define installation-mode #f)
 
+;; delete old params if they are here
+(let ((v (local-load "viruscraft2-version")))
+  (when v
+		(msg "nuking local params")
+		(local-nuke)))
+
 ;; (let ((v (local-load "viruscraft2-version")))
 ;;   (msg "checking params")
 ;;   (when (or (not v) (< v params-version))
