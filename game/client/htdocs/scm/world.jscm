@@ -370,7 +370,8 @@
 			(world-host-update w infection-list time delta)
 			(world-hosts w))
 		models
-		(if (eq? (world-game-type w) "shape")
+		(if (or (eq? (world-game-type w) "shape")
+				(eq? (world-game-type w) "multivariant"))
 			(world-receptor-mixer w)
 			(receptor-mixer-decrease-power
 			 (world-receptor-mixer w) delta))
@@ -410,7 +411,8 @@
 
 (define (world-receptor-button w receptor)
   (cond
-   ((eq? (world-game-type w) "shape")
+   ((or (eq? (world-game-type w) "shape")
+		(eq? (world-game-type w) "multivariant"))
 	(update-scores-mutations! 0.2) ;; one complete up/down ~= 1 mutation 
 	(world-modify-receptor-mixer
 	   w (receptor-mixer-increase
