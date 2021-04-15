@@ -41,21 +41,23 @@
 	 time #t))
 
    
-   ((eq? (world-game-type w) "mutate")
+   ((eq? game-type "mutate")
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "Of course, organisms can't directly change receptor shapes." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Changes come from random mutations." 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "Click on the dice to mutate your receptor shapes." 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "The is the same mechanism the virus is using." 'one 850 500 "help-bubble.png" popup-duration))
+	 time #t))
+   
+   ((eq? game-type "multivariant")
 	(make-help-bubble-stack 
 	 (list
 	  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
 	  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
 	 time #t))
    
-   ((eq? (world-game-type w) "multivariant")
-	(make-help-bubble-stack 
-	 (list
-	  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
-	  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
-	 time #t))
-   
-   (else ;; (eq? (world-game-type w) "hidden")
+   (else ;; "hidden"
 	(make-help-bubble-stack 
 	 (list
 	  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
