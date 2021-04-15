@@ -255,107 +255,109 @@
 
 (define (nightjar-main c)
   (register-player!)
-  (game-modify-timeout
-   (lambda ()
-	 (when (not ditto.load_resource_static)	
-		   (set! window.location "/")))
-   (game-modify-data
-	(lambda (d)
-	  (make-new-demo))
-	(game-modify-update
-	 (lambda (t c)
-	   (game-modify-data
-		(lambda (d)
-		  (demo-update (game-data c) (/ t 1000) (game-delta c)))
-		c))
-	 (game-modify-render
-	  (lambda (ctx)
-		(demo-render (game-data c) ctx)
-		(set! ctx.fillStyle text-col)		
-		(set! ctx.font "normal 120pt Dosis")
-		(wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
-		(set! ctx.font "normal 30pt Dosis")
-		)
-	  
-	  (game-modify-buttons
-	   (list
-		(rect-button
-		 "SHAPE"
-		 (+ default-button-x 200)
-		 (- default-button-y 200)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (register-new-game c 0)))
+  (game-modify-mouse-hook
+   (lambda (state c) c)
+   (game-modify-timeout
+	(lambda ()
+	  (when (not ditto.load_resource_static)	
+			(set! window.location "/")))
+	(game-modify-data
+	 (lambda (d)
+	   (make-new-demo))
+	 (game-modify-update
+	  (lambda (t c)
+		(game-modify-data
+		 (lambda (d)
+		   (demo-update (game-data c) (/ t 1000) (game-delta c)))
+		 c))
+	  (game-modify-render
+	   (lambda (ctx)
+		 (demo-render (game-data c) ctx)
+		 (set! ctx.fillStyle text-col)		
+		 (set! ctx.font "normal 120pt Dosis")
+		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
+		 (set! ctx.font "normal 30pt Dosis")
+		 )
+	   
+	   (game-modify-buttons
+		(list
+		 (rect-button
+		  "SHAPE"
+		  (+ default-button-x 200)
+		  (- default-button-y 200)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(register-new-game c 0)))
 
-		(rect-button
-		 (if (> (stage-reached) 0) "MUTATE" "????")
-		 (+ default-button-x 200)
-		 (- default-button-y 100)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> (stage-reached) 0) (register-new-game c 1)
-			   c)))
+		 (rect-button
+		  (if (> (stage-reached) 0) "MUTATE" "????")
+		  (+ default-button-x 200)
+		  (- default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 0) (register-new-game c 1)
+				c)))
 
-		(rect-button
-		 (if (> (stage-reached) 1) "MULTIVARIANT" "????")
-		 (+ default-button-x 200)
-		 (+ default-button-y 0)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> (stage-reached) 1) (register-new-game c 2)
-			   c)))
+		 (rect-button
+		  (if (> (stage-reached) 1) "MULTIVARIANT" "????")
+		  (+ default-button-x 200)
+		  (+ default-button-y 0)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 1) (register-new-game c 2)
+				c)))
 
-		(rect-button
-		 (if (> (stage-reached) 2) "HIDDEN" "????")
-		 (+ default-button-x 200)
-		 (+ default-button-y 100)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> (stage-reached) 2) (register-new-game c 3)
-			   c)))
+		 (rect-button
+		  (if (> (stage-reached) 2) "HIDDEN" "????")
+		  (+ default-button-x 200)
+		  (+ default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 2) (register-new-game c 3)
+				c)))
 
 
-		(rect-button
-		 "HOW TO PLAY"
-		 (- default-button-x 200)
-		 (- default-button-y 100)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (nightjar-about c)))
-			   
-		(rect-button
-		 "LEADERBOARD"
-		 (- default-button-x 200)
-		 (+ default-button-y 0)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (msg (eq? player-name "???"))
-		   (cond
-			((eq? player-name "???")
-			 (nightjar-enter-name c 0))
-			(else
-			 (server-call-mutate
-			  "hiscores"
-			  (list)
-			  (lambda (c scores)
-				(msg scores)
-				(nightjar-hiscores c (JSON.parse scores))))
-			 c))))
-		
-		)
-	   c))))))
+		 (rect-button
+		  "HOW TO PLAY"
+		  (- default-button-x 200)
+		  (- default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(nightjar-about c)))
+		 
+		 (rect-button
+		  "LEADERBOARD"
+		  (- default-button-x 200)
+		  (+ default-button-y 0)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(msg (eq? player-name "???"))
+			(cond
+			 ((eq? player-name "???")
+			  (nightjar-enter-name c 0))
+			 (else
+			  (server-call-mutate
+			   "hiscores"
+			   (list)
+			   (lambda (c scores)
+				 (msg scores)
+				 (nightjar-hiscores c (JSON.parse scores))))
+			  c))))
+		 
+		 )
+		c)))))))
 
 
 (define (nightjar-about c)
@@ -396,7 +398,7 @@
 	  "jumpy"
 	  (lambda (c)
 		(button-sound)
-		(nightjar-intro c))))
+		(nightjar-main c))))
 	c)))
 
 (define (nightjar-game-screen c game-id stage level lives)
@@ -422,7 +424,7 @@
 		   ((eq? (world-state w) "state-restart-game")
 			;; exit game
 			(save-scores! game-id (world-stage w) (world-level w))
-			(nightjar-intro c)) 		   
+			(nightjar-main c)) 		   
 		   ((eq? (world-state w) "state-restart-level")
 			;; try again
 			(nightjar-game-screen c game-id (world-stage w) (world-level w) (- (world-lives w) 1)))
@@ -462,7 +464,7 @@
 			  (update-scores-final-hosts! (length (world-hosts w)))
 			  (update-scores-final-viruses! (length (world-viruses w)))
 			  (save-scores! game-id (world-stage w) (world-level w))
-			  (nightjar-intro game))))
+			  (nightjar-main game))))
 
 		 (rect-button
 		  "?" 100 (+ default-button-y 185) 60 60 #f

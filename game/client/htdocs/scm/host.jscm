@@ -127,7 +127,7 @@
 (define (host-update h time delta world new-virus)
   (let ((virus (host-virus h))
 		(move (v2add	   
-			   (world-petri-vel (entity-pos h))
+			   (world-bounds-vel (entity-pos h))
 			   (host-shove h (world-hosts world)))))
     (host-modify-virus
 	 (host-modify-dir

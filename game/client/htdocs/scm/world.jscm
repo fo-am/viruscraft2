@@ -284,10 +284,10 @@
 (define (world-bounds-vel pos)
   (v2mul
    (cond
-	((< (vx pos) 0) (vec2 1 0))
-	((> (vx pos) screen-width) (vec2 -1 0))
-	((< (vy pos) 0) (vec2 0 1))
-	((> (vy pos) screen-height) (vec2 0 -1))
+	((< (vx pos) 100) (vec2 1 0))
+	((> (vx pos) (- screen-width panel-width 200)) (vec2 -1 0))
+	((< (vy pos) 100) (vec2 0 1))
+	((> (vy pos) (- screen-height 200)) (vec2 0 -1))
 	(else (vec2 0 0)))
    4))
 
@@ -491,6 +491,12 @@
 
   (set! ctx.strokeStyle "#000")
   (set! ctx.fillStyle "#000")
+
+;;  (ctx.beginPath)
+;;  (ctx.rect 100 100
+;;			(- screen-width panel-width 200)
+;;			(- screen-height 200))
+;;  (ctx.stroke)
 
   (for-each
    (lambda (e)
