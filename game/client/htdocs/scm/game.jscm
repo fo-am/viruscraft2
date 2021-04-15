@@ -19,24 +19,15 @@
 (load "scm/nightjar.jscm")
 (load "scm/local-storage.jscm")
 
-(define params-version 6)
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
 
 ;; delete old params if they are here
-(let ((v (local-load "viruscraft2-version")))
-  (when v
-		(msg "nuking local params")
-		(local-nuke)))
-
-;; (let ((v (local-load "viruscraft2-version")))
-;;   (msg "checking params")
-;;   (when (or (not v) (< v params-version))
-;; 		(msg "making params")
-;; 		(local-nuke)
-;; 		(local-save "viruscraft2-version" params-version)
-;; 		))
+;(let ((v (local-load "viruscraft2-version")))
+;  (when v
+;		(msg "nuking local params")
+;		(local-nuke)))
 
 (define (param name)
   (string->number (local-get-param-fast "viruscraft2" name)))
@@ -49,6 +40,12 @@
 
 (define (player-id)
   (string->number (local-get-param "viruscraft2" "player-id")))
+
+(define (help-seen)
+  (string->number (local-get-param "viruscraft2" "help-seen")))
+
+(define (inc-help-seen!)
+  (local-set-param "viruscraft2" "help-seen" (+ (help-seen) 1)))
 
 (local-setup-params-fast
  "viruscraft2" 
@@ -90,7 +87,21 @@
    "viruscraft2" 
    (list
 	(make-param "player-stage-reached" 0 "stage")
-	(make-param "player-id" -1 "number"))))
+	(make-param "player-id" -1 "number")
+	(make-param "help-seen" -1 "number"))))
+
+(define params-version 22)
+
+(define (init-params!)
+  (let ((v (local-load "viruscraft2-version")))
+	(msg "checking params")
+	(when (or (not v) (< v params-version))
+		  (msg "resetting params")
+		  (local-nuke)
+		  (init-player-params!)
+		  (local-save "viruscraft2-version" params-version)
+		  )))
+
 
 ;;(define start-level (param "start-level"))
 ;;(define installation-mode #t)
@@ -111,6 +122,7 @@
 (load "scm/world.jscm")
 (load "scm/levels.jscm")
 (load "scm/mutator.jscm")
+(load "scm/game-help.jscm")
 
 (define (button-sound)
   (play-sound "button.wav"))
@@ -217,6 +229,7 @@
 	  (nightjar-main c)))
 
 (define (register-player!)
+  (init-params!)
   (cond
    ((eq? (player-id) -1)
 	(server-call-mutate
@@ -395,11 +408,11 @@
 	(lambda (state c)
 	  (game-modify-data
 	   (lambda (d)
-		 (world-update-mouse (game-data c) state (game-mx c) (game-my c)))
+		 (world-update-mouse (game-data c) state (game-mx c) (game-my c) (/ (game-time c) 1000)))
 	   c))   
 	(game-modify-render
 	 (lambda (ctx)
-	   (world-render (game-data c) ctx (game-time c))
+	   (world-render (game-data c) ctx (/ (game-time c) 1000))
 	   (set! ctx.font "normal 20pt Dosis")
 	   )
 	 (game-modify-update
@@ -455,7 +468,9 @@
 		  "?" 100 (+ default-button-y 185) 60 60 #f
 		  (lambda (c)
 			(button-sound)
-			(do-help! (/ (game-time c) 1000))
+			(set! help-stack (build-help
+							  (world-game-type (game-data c))
+							  (/ (game-time c) 1000)))
 			c))
 		 
 		 )) c))))))
@@ -722,6 +737,7 @@
    "help-bubble.png"
    "help-bubble-n.png"
    "help-bubble-r.png"
+   "help-bubble-lt.png"
    ))
 
  (lambda ()

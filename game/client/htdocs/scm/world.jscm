@@ -45,10 +45,19 @@
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
+(define (build-help-stack game-type stage time)
+  (cond
+   ((< (help-seen) stage)
+	(inc-help-seen!)
+	;; the first time we autotrigger help, make it the intro 
+	(build-help (if (eq? game-type "shape") "intro" game-type) time))
+   (else '())))
+
 (define (build-world stage level game-id time lives)
   (let ((game-type (list-ref stage-types stage)))
 	(reset-scores!)
-	(set! help-stack '())
+	;; auto trigger the help if we haven't seen it yet
+	(set! help-stack (build-help-stack game-type stage time))
 	(let ((mixer (make-receptor-mixer game-type))
 		  (level-params (generate-level-params level)))
 	  (let ((models (if (or (eq? game-type "hidden")
@@ -401,27 +410,31 @@
 		(world-stage w))
 	   time delta))))
 
-(define (world-update-mouse w state x y)
+(define (world-update-mouse w state x y time)
   (let ((mutator (mutator-update-mouse (world-mutator w) state x y)))
 	(world-modify-mutator 
 	 (if (mutator-event mutator)
-		 (world-receptor-button w (mutator-event mutator))
+		 (world-receptor-button w (mutator-event mutator) time)
 		 w)
 	 mutator)))
 
-(define (world-receptor-button w receptor)
+(define (world-receptor-button w receptor time)
   (cond
    ((or (eq? (world-game-type w) "shape")
 		(eq? (world-game-type w) "multivariant"))
 	(update-scores-mutations! 0.2) ;; one complete up/down ~= 1 mutation 
-	(world-modify-receptor-mixer
-	   w (receptor-mixer-increase
-		  (world-receptor-mixer w)
-		  (cond
-		   ((eq? receptor 'tri) 0)
-		   ((eq? receptor 'squ) 1)
-		   ((eq? receptor 'cir) 2)
-		   (else 3)))))
+	(let ((m (receptor-mixer-increase
+			  (world-receptor-mixer w)
+			  (cond
+			   ((eq? receptor 'tri) 0)
+			   ((eq? receptor 'squ) 1)
+			   ((eq? receptor 'cir) 2)
+			   (else 3)))))
+	  ;; check for the help system gui full condition...
+	  (when (and (not (null? help-stack))
+				 (list-equal? (receptor-mixer-values m) (list 0 0 0 1)))
+			(set! help-stack (help-bubble-stack-trigger help-stack 'guitar time)))
+	  (world-modify-receptor-mixer w m)))
    (else
 	(update-scores-mutations! 1)
 	(world-modify-receptor-mixer
@@ -561,10 +574,3 @@
 (define (world-game-id w)
   0)
 
-(define (do-help! time)
-  (set! help-stack 
-		(make-help-bubble-stack 
-		 (list
-		  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
-		  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
-		 time #t #f)))

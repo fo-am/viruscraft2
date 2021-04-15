@@ -30,7 +30,7 @@
 (define (build-model-virus rate)
   (make-model-virus
    ;;(generate-receptors num-virus-receptors)
-   (mutate-receptors (build-list num-virus-receptors (lambda (_) 'tri)) rate)
+   (build-list num-virus-receptors (lambda (_) 'tri))
    0))
 
 (define (model-virus-spawn v rate)
@@ -52,7 +52,7 @@
    v (build-list
       (- virus-popsize (length v))
       (lambda (_)
-	(model-virus-spawn (choose v) rate)))))
+		(model-virus-spawn (choose v) rate)))))
 
 (define (viruses-decimate v threshold)
   (cadr
