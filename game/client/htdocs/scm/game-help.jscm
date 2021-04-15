@@ -39,7 +39,6 @@
 	  (make-help-bubble "The virus will adapt, you need to keep ahead of it." 'four 950 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "You need to survive for one minute." 'five 200 20 "help-bubble-lt.png" popup-duration))
 	 time #t))
-
    
    ((eq? game-type "mutate")
 	(make-help-bubble-stack 
@@ -53,13 +52,15 @@
    ((eq? game-type "multivariant")
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
-	  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
+	  (make-help-bubble "In the real world there are muliple virus variants." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This means hosts need to adapt to more than one." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Can you keep up?" 'none 400 300 "help-bubble-n.png" popup-duration))
 	 time #t))
    
    (else ;; "hidden"
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
-	  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
+	  (make-help-bubble "Viruses are small, smaller than the wavelength of visible light." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This means we can see them, or see their receptor shapes." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This is the most realistic version of the game, and the hardest!" 'none 400 300 "help-bubble-n.png" popup-duration))
 	 time #t))))
