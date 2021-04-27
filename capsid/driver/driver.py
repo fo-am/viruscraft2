@@ -1,14 +1,14 @@
 import smbus, time, random
 
 bus = smbus.SMBus(1)
-ADDR = 0x0a
+ADDR = [0x0d,0x0e,0x0f,0x10,0x11,0x12]
 
-def write(reg,val):
-    bus.write_byte_data(ADDR,reg,val)
+def write(dev,reg,val):
+    bus.write_byte_data(ADDR[dev],reg,val)
     time.sleep(0.05)
 
-def read(reg):
-    v = bus.read_byte_data(ADDR,reg)
+def read(dev,reg):
+    v = bus.read_byte_data(ADDR[dev],reg)
     time.sleep(0.05)
     return v
 
@@ -16,9 +16,10 @@ REG_VERSION=0
 REG_ALIVE=1
 REG_ADDR=2
 REG_MODE=3
-MODE_NORMAL=0
-MODE_CALI=1
-MODE_DEMO=2
+MODE_POWER_OFF=0
+MODE_NORMAL=1
+MODE_CALI=2
+MODE_DEMO=3
 REG_LED=4
 REG_SHOW_ID=5 # 0,1,2,3 or anything else = hide all 
 REG_SERVO_SPEED=6
@@ -63,15 +64,16 @@ default_d_show_angle=10
 #write(REG_SERVO_D_SHOW,0)
 #write(REG_EESAVE,1)
 
-write(REG_MODE,MODE_NORMAL)
+for dev in range(0,len(ADDR)): 
+    write(dev,REG_MODE,MODE_NORMAL)
+    time.sleep(0.2)
 
 last=5
 while True:    
     chosen = random.randrange(0,6)
-    if chosen!=last:
-        try:
-            write(REG_SHOW_ID,chosen)
-        except:
-            print("i2c error")
-        last=chosen
-    time.sleep(1)
+    try:
+        write(random.randrange(0,len(ADDR)),
+              REG_SHOW_ID,chosen)
+    except:
+        print("i2c error")
+    time.sleep(0.1)
