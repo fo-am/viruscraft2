@@ -19,29 +19,35 @@
 (load "scm/nightjar.jscm")
 (load "scm/local-storage.jscm")
 
-(define params-version 6)
-(define player-id -1)
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
-(define stage-reached 4)
 
-(let ((v (local-load "viruscraft2-version")))
-  (msg "checking params")
-  (when (or (not v) (< v params-version))
-		(msg "making params")
-		(local-nuke)
-		(local-save "viruscraft2-version" params-version)
-		))
+;; delete old params if they are here
+;(let ((v (local-load "viruscraft2-version")))
+;  (when v
+;		(msg "nuking local params")
+;		(local-nuke)))
 
 (define (param name)
-  (string->number (local-get-param "viruscraft2" name)))
+  (string->number (local-get-param-fast "viruscraft2" name)))
 
 (define (string-param name)
-  (local-get-param "viruscraft2" name))
+  (local-get-param-fast "viruscraft2" name))
 
+(define (stage-reached)
+  (string->number (local-get-param "viruscraft2" "player-stage-reached")))
 
-(local-setup-params 
+(define (player-id)
+  (string->number (local-get-param "viruscraft2" "player-id")))
+
+(define (help-seen)
+  (string->number (local-get-param "viruscraft2" "help-seen")))
+
+(define (inc-help-seen!)
+  (local-set-param "viruscraft2" "help-seen" (+ (help-seen) 1)))
+
+(local-setup-params-fast
  "viruscraft2" 
  (list
   (make-param "start-level" 1 "seconds")
@@ -73,7 +79,31 @@
   (make-param "model-hosts-per-update" 3 "hosts")
   ))
 
-(define start-level (param "start-level"))
+(define (new-player?)
+  (not (local-exists? "viruscraft2-params")))
+
+(define (init-player-params!)
+  (local-setup-params
+   "viruscraft2" 
+   (list
+	(make-param "player-stage-reached" 0 "stage")
+	(make-param "player-id" -1 "number")
+	(make-param "help-seen" -1 "number"))))
+
+(define params-version 22)
+
+(define (init-params!)
+  (let ((v (local-load "viruscraft2-version")))
+	(msg "checking params")
+	(when (or (not v) (< v params-version))
+		  (msg "resetting params")
+		  (local-nuke)
+		  (init-player-params!)
+		  (local-save "viruscraft2-version" params-version)
+		  )))
+
+
+;;(define start-level (param "start-level"))
 ;;(define installation-mode #t)
 
 (load "scm/ordered-list.jscm")
@@ -92,6 +122,7 @@
 (load "scm/world.jscm")
 (load "scm/levels.jscm")
 (load "scm/mutator.jscm")
+(load "scm/game-help.jscm")
 
 (define (button-sound)
   (play-sound "button.wav"))
@@ -117,123 +148,216 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (register-game c player-id location)
+(define (register-new-game c stage)
+  (register-game c (player-id) stage 1 3))
+
+(define (register-game c player-id stage level lives)
+  (msg "started register game")
   (server-call-mutate
    "game"
-   (list (list "player_id" player-id)
-		 (list "location" location)) 
+   (list (list "player_id" player-id))
    (lambda (c game-id)	 
-     ;;(reset-scores!)
-     (nightjar-game-screen c game-id location)))
-  c)
+	 (msg (list "game id:" game-id))
+     (nightjar-game-screen c game-id stage level lives)))
+  (msg "waiting for game to register...")
+  (game-modify-data
+   (lambda (d)	 
+	 (world-modify-state d "state-waiting-for-restart"))
+   c))
 
-(define (send-update-scores c)
-  (server-call-mutate
-   "score"
-   (list
-    (list "game_id" (world-game-id (game-data c)))
-    (list "new_nests" 0)
-    (list "num_workers_laid" 0)
-    (list "num_workers_hatched" 0)
-    (list "cells_built" 0)
-    (list "events_survived" 0)
-    (list "num_reproductives_hatched" 0)
-    (list "energy_foraged" 0)
-    (list "survival_time" 0)
-    (list "forages" 0)
-    (list "score" 0)
-    )
-   (lambda (c score-pos)
-     (if ditto.load_resource_static
-		 (nightjar-end c 0)
-		 (nightjar-enter-name c (JSON.parse score-pos)))))
-  c)
+(define (score-list game-id stage level)
+  (list
+   (list "game_id" game-id)
+   (list "stage" stage)
+   (list "level" level)
+   (list "survived" (scores-survived))
+   (list "duration" (scores-duration))
+   (list "mutations" (scores-mutations))
+   (list "hosts_spawned" (scores-hosts-spawned))
+   (list "viruses_spawned" (scores-viruses-spawned))
+   (list "infections" (scores-infections))
+   (list "max_hosts" (scores-max-hosts))
+   (list "max_viruses" (scores-max-viruses))
+   (list "final_hosts" (scores-final-hosts))
+   (list "final_viruses" (scores-final-viruses))))
 
-(define (register c location)
-  ;; fixed one player per game...
-  (set! player-name "???")
-  (server-call-mutate
-   "player"
-   '() 
-   (lambda (c id)	 
-     (set! player-id id)
-     (register-game c player-id location)))
-  c)
+(define (save-scores! game-id stage level)
+  (msg "saving scores")
+  ;; WTAF
+  (server-call "score" (score-list game-id stage level)))
+
+;; (define (send-update-scores c)
+;;   (server-call-mutate
+;;    "score"
+;;    (score-list c)
+;;    (lambda (c score-pos)
+;; 	 (if ditto.load_resource_static
+;; 		 (nightjar-end c 0)
+;; 		 (nightjar-enter-name c (JSON.parse score-pos)))))  
+;;   c)
 
 
 (define (nightjar-intro c)
-  (game-modify-timeout
-   (lambda ()
-	 (when (not ditto.load_resource_static)	
-		   (set! window.location "/")))
-   (game-modify-data
-	(lambda (d)
-	  (make-new-demo))
-	(game-modify-update
-	 (lambda (t c)
-	   (game-modify-data
-		(lambda (d)
-		  (demo-update (game-data c) (/ t 1000) (game-delta c)))
+  (if (new-player?)
+	  (game-modify-render
+	   (lambda (ctx)
+		 (demo-render (game-data c) ctx)
+		 (set! ctx.fillStyle text-col)		
+		 (set! ctx.font "normal 120pt Dosis")
+		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
+		 (set! ctx.font "normal 30pt Dosis")
+		 (wrap-text ctx "Are you happy for us to store your player info (scores and level reached) on your browser?" 0 340 1200 60)
+		 (set! ctx.font "normal 30pt Dosis")
+		 )
+	   
+	   (game-modify-buttons
+		(list
+		 
+		 (rect-button
+		  "PLAY" 
+		  default-button-x
+		  default-button-y
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(init-player-params!)
+			(button-sound)
+			(nightjar-main c)))
+		 
+		 )
 		c))
-	 (game-modify-render
-	  (lambda (ctx)
-		(demo-render (game-data c) ctx)
-		(set! ctx.fillStyle text-col)		
-		(set! ctx.font "normal 120pt Dosis")
-		(wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
-		(set! ctx.font "normal 30pt Dosis")
-		(wrap-text ctx (string-append "Version " params-version) 0 340 1200 100)
-		(set! ctx.font "normal 30pt Dosis")
-		;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
-		;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)		
-		)
-	  
-	  (game-modify-buttons
-	   (list
-		(rect-button
-		 "SHAPE"
-		 (- default-button-x 200)
-		 default-button-y
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (register c "shape")))
+	  (nightjar-main c)))
 
-		(rect-button
-		 (if (> stage-reached 0) "MUTATE" "????")
-		 (+ default-button-x 200)
-		 default-button-y
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> stage-reached 0) (register c "mutate")
-			   c)))
+(define (register-player!)
+  (init-params!)
+  (cond
+   ((eq? (player-id) -1)
+	(server-call-mutate
+	 "player"
+	 '() 
+	 (lambda (c id)	 
+	   (msg (list "new player id" id))
+	   ;; save it...
+	   (local-set-param "viruscraft2" "player-id" id)
+	   c)))
+   (else
+	(msg (list "returning player id" (player-id)))
+	(when (eq? player-name "???")
+		  (server-call-mutate
+		   "get-player-name"
+		   (list (list "player_id" (player-id)))
+		   (lambda (c name) 
+			 (msg (list "player name loaded:" (JSON.parse name)))
+			 ;; save it...
+			 (set! player-name (JSON.parse name))
+			 c)))
+	)))
 
-		(rect-button
-		 (if (> stage-reached 1) "MULTIVARIANT" "????")
-		 (- default-button-x 200)
-		 (+ default-button-y 100)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> stage-reached 1) (register c "multivariant")
-			   c)))
+(define (nightjar-main c)
+  (register-player!)
+  (game-modify-mouse-hook
+   (lambda (state c) c)
+   (game-modify-timeout
+	(lambda ()
+	  (when (not ditto.load_resource_static)	
+			(set! window.location "/")))
+	(game-modify-data
+	 (lambda (d)
+	   (make-new-demo))
+	 (game-modify-update
+	  (lambda (t c)
+		(game-modify-data
+		 (lambda (d)
+		   (demo-update (game-data c) (/ t 1000) (game-delta c)))
+		 c))
+	  (game-modify-render
+	   (lambda (ctx)
+		 (demo-render (game-data c) ctx)
+		 (set! ctx.fillStyle text-col)		
+		 (set! ctx.font "normal 120pt Dosis")
+		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
+		 (set! ctx.font "normal 30pt Dosis")
+		 )
+	   
+	   (game-modify-buttons
+		(list
+		 (rect-button
+		  "SHAPE"
+		  (+ default-button-x 200)
+		  (- default-button-y 200)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(register-new-game c 0)))
 
-		(rect-button
-		 (if (> stage-reached 2) "HIDDEN" "????")
-		 (+ default-button-x 200)
-		 (+ default-button-y 100)
-		 default-button-width default-button-height
-		 "jumpy"
-		 (lambda (c)
-		   (button-sound)
-		   (if (> stage-reached 1) (register c "hidden")
-			   c)))
-		)
-	   c))))))
+		 (rect-button
+		  (if (> (stage-reached) 0) "MUTATE" "????")
+		  (+ default-button-x 200)
+		  (- default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 0) (register-new-game c 1)
+				c)))
+
+		 (rect-button
+		  (if (> (stage-reached) 1) "MULTIVARIANT" "????")
+		  (+ default-button-x 200)
+		  (+ default-button-y 0)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 1) (register-new-game c 2)
+				c)))
+
+		 (rect-button
+		  (if (> (stage-reached) 2) "HIDDEN" "????")
+		  (+ default-button-x 200)
+		  (+ default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 2) (register-new-game c 3)
+				c)))
+
+
+		 (rect-button
+		  "HOW TO PLAY"
+		  (- default-button-x 200)
+		  (- default-button-y 100)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(nightjar-about c)))
+		 
+		 (rect-button
+		  "LEADERBOARD"
+		  (- default-button-x 200)
+		  (+ default-button-y 0)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(msg (eq? player-name "???"))
+			(cond
+			 ((eq? player-name "???")
+			  (nightjar-enter-name c 0))
+			 (else
+			  (server-call-mutate
+			   "hiscores"
+			   (list)
+			   (lambda (c scores)
+				 (msg scores)
+				 (nightjar-hiscores c (JSON.parse scores))))
+			  c))))
+		 
+		 )
+		c)))))))
 
 
 (define (nightjar-about c)
@@ -274,99 +398,81 @@
 	  "jumpy"
 	  (lambda (c)
 		(button-sound)
-		(nightjar-intro c))))
+		(nightjar-main c))))
 	c)))
 
-(define (nightjar-game-screen c player-id game-type)
+(define (nightjar-game-screen c game-id stage level lives)
   (game-modify-data
    (lambda (d)
-	 (build-world game-type start-level player-id (/ (game-time c) 1000)))
+	 (msg (list "building world" game-id))
+	 (build-world stage level game-id (/ (game-time c) 1000) lives))
    (game-modify-mouse-hook
 	(lambda (state c)
 	  (game-modify-data
 	   (lambda (d)
-		 (world-update-mouse (game-data c) state (game-mx c) (game-my c)))
+		 (world-update-mouse (game-data c) state (game-mx c) (game-my c) (/ (game-time c) 1000)))
 	   c))   
 	(game-modify-render
 	 (lambda (ctx)
-	   (world-render (game-data c) ctx (game-time c))
+	   (world-render (game-data c) ctx (/ (game-time c) 1000))
 	   (set! ctx.font "normal 20pt Dosis")
 	   )
 	 (game-modify-update
 	  (lambda (t c)
-		(if (eq? (world-state (game-data c)) "state-restart-game")
-			(nightjar-intro c)			   
+		(let ((w (game-data c)))
+		  (cond
+		   ((eq? (world-state w) "state-restart-game")
+			;; exit game
+			(save-scores! game-id (world-stage w) (world-level w))
+			(nightjar-main c)) 		   
+		   ((eq? (world-state w) "state-restart-level")
+			;; try again
+			(nightjar-game-screen c game-id (world-stage w) (world-level w) (- (world-lives w) 1)))
+		   ((eq? (world-state w) "state-new-level")
+			;; new level
+			(msg "new level")
+			(nightjar-game-screen c game-id (world-stage w) (+ (world-level w) 1) 3))
+		   ((eq? (world-state w) "state-new-stage")
+			;; todo: END OF GAME
+			;; if we haven't reached this stage already
+			(when (< (stage-reached) (+ (world-stage w) 1))
+				  ;; record the new stage reached
+				  (local-set-param
+				   "viruscraft2" "player-stage-reached"
+				   (+ 1 (world-stage w))))
+			;; new stage
+			(nightjar-game-screen c game-id (+ (world-stage w) 1) 1 3))
+		   ;; don't do anything...
+		   ((eq? (world-state w) "state-waiting-for-restart") c)		   
+		   (else			   
 			(game-modify-data
 			 (lambda (d)
-			   (cond
-				((eq? (world-state d) "state-new-level")
-				 ;; new level
-				 (build-world
-				  game-type (+ (world-level (game-data c)) 1) player-id (/ t 1000)))
-				(else
-				 ;; normal update
-				 (world-update d (/ t 1000) (game-delta c))
-				 )))
-			 c)))
+			   ;; normal update
+			   (world-update d (/ t 1000) (game-delta c))
+			   )
+			 c)))))
 	  (game-modify-buttons
 	   (append
-		;; (if (eq? game-type "shape")
-		;; 	;; ---------------------------------------------
-		;; 	(list		  
-		;; 	 (image-button
-		;; 	  "" 180 180 "pulse" (find-image "triangle-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'tri))
-		;; 		 c)))
-
-		;; 	 (image-button
-		;; 	  "" 180 300 "pulse" (find-image "square-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'squ))
-		;; 		 c)))
-			 
-		;; 	 (image-button
-		;; 	  "" 180 420 "pulse" (find-image "donut-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'cir))
-		;; 		 c)))
-
-		;; 	 (image-button
-		;; 	  "" 180 540 "pulse" (find-image "guitar-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'gui))
-		;; 		 c))))
-
-		;; 	;; ------------------------------------------
-		;; 	(list			   
-		;; 	 (image-button
-		;; 	  "" 180 350 "pulse" (find-image "mutate-button.png")
-		;; 	  (lambda (c)
-		;; 		(button-sound)	   
-		;; 		(game-modify-data
-		;; 		 (lambda (d) (world-receptor-button d 'none))
-		;; 		 c)))))
-		
 		(list
 		 (rect-button
 		  "QUIT" 20 (+ default-button-y 185) 60 60 #f
 		  (lambda (c)
 			(button-sound)
-			(nightjar-intro game)))
+			(let ((w (game-data c)))
+			  (msg "recording level time")
+			  (update-scores-duration! (dbg (world-level-time w)))
+			  (update-scores-final-hosts! (length (world-hosts w)))
+			  (update-scores-final-viruses! (length (world-viruses w)))
+			  (save-scores! game-id (world-stage w) (world-level w))
+			  (nightjar-main game))))
 
 		 (rect-button
 		  "?" 100 (+ default-button-y 185) 60 60 #f
 		  (lambda (c)
 			(button-sound)
-			(do-help! (/ (game-time c) 1000))
+			(set! help-stack (build-help
+							  (world-game-type (game-data c))
+							  (/ (game-time c) 1000)))
 			c))
 		 
 		 )) c))))))
@@ -474,6 +580,28 @@
 	 (wrap-text ctx "LEADERBOARD" 0 100 1300 100)
 	 (set! ctx.font "normal 30pt Dosis")
 	 
+     (wrap-text ctx "NAME" col1 170 1000 1)
+     (wrap-text ctx "STAGE" col2 170 1000 1)
+     (wrap-text ctx "LEVEL" col3 170 1000 1)
+     (wrap-text ctx "DURATION" col4 170 1000 1)
+     
+     (when scores
+	   (index-for-each
+	    (lambda (i e)
+	      (cond
+	       ((zero? i)
+			(set! ctx.font "normal 30pt pompiere")
+			(text-flashy-render ctx (list-ref e 0) col1 (+ 220 (* 45 i)) (game-time c))
+			(text-flashy-render ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* 45 i)) (game-time c))
+			(text-flashy-render ctx (number->string (list-ref e 2)) col3 (+ 220 (* 45 i)) (game-time c))
+			(text-flashy-render ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* 45 i)) (game-time c))
+			(set! ctx.font "normal 30pt pompiere"))
+	       (else
+			(wrap-text ctx (list-ref e 0) col1 (+ 220 (* 45 i)) 1000 1)
+			(wrap-text ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* 45 i)) 1000 1)
+			(wrap-text ctx (number->string (list-ref e 2)) col3 (+ 220 (* 45 i)) 1000 1)
+			(wrap-text ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* 45 i)) 1000 1))))
+	    scores))
 
 	 ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
 	 ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
@@ -564,22 +692,29 @@
 			  "Z" "X" "C" "V" "B" "N" "M"))
 
 	   (list
-		(rect-button "DELETE" (- default-button-x 200) default-button-y default-button-width default-button-height "jumpy"
+		(rect-button "DELETE" (- default-button-x 200) (+ default-button-y 150) default-button-width default-button-height "jumpy"
 					 (lambda (c)
 					   (button-sound)		      
 					   (type-delete c)
 					   c))
 
-		(rect-button "DONE"  (+ default-button-x 200) default-button-y default-button-width default-button-height "jumpy"
+		(rect-button "DONE"  (+ default-button-x 200) (+ default-button-y 150) default-button-width default-button-height "jumpy"
 					 (lambda (c)
 					   (button-sound)
-					   (server-call
+					   (server-call-mutate
 						"player-name"
 						(list
-						 (list "player_id" player-id)
-						 (list "player_name" player-name)))		       
-					   (button-sound)		       
-					   (nightjar-end game rank)))
+						 (list "player_id" (player-id))
+						 (list "player_name" player-name))
+						(lambda (c data)
+						  (server-call-mutate
+						   "hiscores"
+						   (list)
+						   (lambda (c scores)	      
+							 (msg scores)
+							 (nightjar-hiscores c (JSON.parse scores))))
+						  c))
+					   c))
 		))
 	  c)))))
 
@@ -599,10 +734,12 @@
   (mutator-filenames)
   (list
    "sprites/host/infected.png"
+   "sprites/hex-b-1.png"
    "logos.png"
    "help-bubble.png"
    "help-bubble-n.png"
    "help-bubble-r.png"
+   "help-bubble-lt.png"
    ))
 
  (lambda ()

@@ -36,6 +36,7 @@
   (when (not ditto.load_resource_static)
 	(let ((args (build-url-args argsl)))
 	  (set! args.fn name)
+	  (msg args)
 	  (let ((v ($.get "egglab" args)))
 	    (v.fail (lambda (jqXHR textStatus errorThrown)
 		      (msg textStatus)
@@ -109,6 +110,7 @@
     (set! image.onload
           (lambda ()
             (set! image-lib (cons (list fn image) image-lib))
+			(set! ctx.fillStyle "#000")
             (ctx.clearRect 0 0 screen-width screen-height)
             (centre-text ctx "Loading..." 0 240)
             (centre-text
@@ -484,7 +486,7 @@
        (lambda (i c)
 	 (set! ctx.fillStyle (rgb-to-hex
 			      (* 255 (sin (+ (* t -0.002) i)))
-			      (* 255 (sin (+ (* t -0.002) i)))
+			      0 ;; (* 255 (sin (+ (* t -0.002) i)))
 			      0))
 	 (set! cm (ctx.measureText c))
          (ctx.fillText c (+ x pos (- (/ screen-width 2) (/ m.width 2))) y)

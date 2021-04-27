@@ -26,9 +26,12 @@
 
 (define (build-mutator game-type)
   (make-mutator
-   game-type
+   (if (or (eq? game-type "shape")
+		   (eq? game-type "multivariant"))
+	   "shape" "mutator")
    (cond
-	((eq? game-type "shape")
+	((or (eq? game-type "shape")
+		 (eq? game-type "multivariant"))
 	 (list
 	  (build-shape-button 300 600 "tri")
 	  (build-shape-button 450 600 "squ")

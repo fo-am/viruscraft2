@@ -62,7 +62,8 @@
 
 (define (make-receptor-mixer game-type)
   (list game-type
-		(if (eq? game-type "shape")
+		(if (or (eq? game-type "shape")
+				(eq? game-type "multivariant"))
 			(list 1 0 0 0)
 			(build-list num-host-receptors (lambda (_) 'tri)))
 		0))
@@ -151,7 +152,8 @@
 			 (receptor-mixer-clamp m)))))
 
 (define (mixer->receptors m)
-  (if (eq? (receptor-mixer-game-type m) "shape")
+  (if (or (eq? (receptor-mixer-game-type m) "shape")
+		  (eq? (receptor-mixer-game-type m) "multivariant"))
 	  (build-list
 	   num-host-receptors
 	   (lambda (_)

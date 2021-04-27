@@ -70,18 +70,18 @@
         (pluto-response (scheme->json id)))))
    
    (register
-    (req 'game '(player_id location))
-    (lambda (player_id location)
-      (let* ((id (insert-game db player_id location)))
-        (pluto-response (scheme->json (list id))))))
-
+    (req 'game '(player_id))
+    (lambda (player_id)
+      (let* ((id (insert-game db player_id)))
+        (pluto-response (scheme->json id)))))
+   
    (register
-    (req 'score '(game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score))
-    (lambda (game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score)
-      (update-score db game_id new_nests num_workers_laid num_workers_hatched cells_built events_survived num_reproductives_hatched energy_foraged survival_time forages score)
+    (req 'score '(game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
+    (lambda (game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+      (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
       (let ((rank (get-game-rank db game_id)))
-	(display game_id)(display " ")(display score)(display " ")(display rank)(newline)
-	(pluto-response (scheme->json rank)))))
+		(display (list game_id rank))(newline)
+		(pluto-response (scheme->json rank)))))
    
    (register
     (req 'hiscores '())
@@ -101,7 +101,14 @@
     (req 'player-name '(player_id player_name))
     (lambda (player_id player_name)
       (insert-player-name db player_id player_name)
-      (pluto-response (scheme->json '()))))))
+      (pluto-response (scheme->json '()))))
+
+   (register
+    (req 'get-player-name '(player_id))
+    (lambda (player_id)      
+      (pluto-response
+	   (scheme->json
+		(get-player-name db player_id)))))))
 
 (define (start request)
   (let ((values (url-query (request-uri request))))

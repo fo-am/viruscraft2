@@ -15,89 +15,108 @@
 ;; You should have received a copy of the GNU Affero General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(define (make-world viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator)
-  (list viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator))
+(define (make-world game-id viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage)
+  (list game-id viruses hosts models receptor-mixer variant-viruses level level-time level-params state infection-timer grace game-type mutator lives stage))
 
-(define (world-viruses w) (list-ref w 0))
-(define (world-hosts w) (list-ref w 1))
-(define (world-modify-hosts w s) (list-replace w 1 s))
-(define (world-models w) (list-ref w 2))
-(define (world-receptor-mixer w) (list-ref w 3))
-(define (world-modify-receptor-mixer w s) (list-replace w 3 s))
-(define (world-variant-viruses w) (list-ref w 4))
-(define (world-level w) (list-ref w 5))
-(define (world-level-time w) (list-ref w 6))
-(define (world-modify-level-time w s) (list-replace w 6 s))
-(define (world-level-params w) (list-ref w 7))
-(define (world-state w) (list-ref w 8))
-(define (world-modify-state w s) (list-replace w 8 s))
-(define (world-infection-timer w) (list-ref w 9))
-(define (world-grace w) (list-ref w 10))
-(define (world-game-type w) (list-ref w 11))
-(define (world-mutator w) (list-ref w 12))
-(define (world-modify-mutator w s) (list-replace w 12 s))
+(define (world-game-id w) (list-ref w 0))
+(define (world-viruses w) (list-ref w 1))
+(define (world-hosts w) (list-ref w 2))
+(define (world-modify-hosts w s) (list-replace w 2 s))
+(define (world-models w) (list-ref w 3))
+(define (world-receptor-mixer w) (list-ref w 4))
+(define (world-modify-receptor-mixer w s) (list-replace w 4 s))
+(define (world-variant-viruses w) (list-ref w 5))
+(define (world-level w) (list-ref w 6))
+(define (world-level-time w) (list-ref w 7))
+(define (world-modify-level-time w s) (list-replace w 7 s))
+(define (world-level-params w) (list-ref w 8))
+(define (world-state w) (list-ref w 9))
+(define (world-modify-state w s) (list-replace w 9 s))
+(define (world-infection-timer w) (list-ref w 10))
+(define (world-grace w) (list-ref w 11))
+(define (world-game-type w) (list-ref w 12))
+(define (world-mutator w) (list-ref w 13))
+(define (world-modify-mutator w s) (list-replace w 13 s))
+(define (world-lives w) (list-ref w 14))
+(define (world-stage w) (list-ref w 15))
 
 (define virus-age-var 5)
+(define info-text-display-duration 2)
 
-(define (build-world game-type level player-id time)
-  (reset-scores!)
-  (set! help-stack '())
-  (let ((mixer (make-receptor-mixer game-type))
-		(level-params (generate-level-params level)))
-	(let ((models (if (or (eq? game-type "hidden")
-						  (eq? game-type "multivariant"))
-					  (list
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						0 model-virus-mutation-rate)
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						(/ (level-params-model-update-rate level-params)
-						   2)
-						model-virus-mutation-rate))
-					  (list
-					   (build-model
-						model-virus-popsize
-						(level-params-model-update-rate level-params)
-						0 model-virus-mutation-rate)))))
-	
-	(make-world
-	 ;; we assume these become ordered lists because the ids increase?
-	 (build-list
-	  1
-	  (lambda (_)
-		(make-virus
-		 (* (rndf) (param "virus-max-age"))
-		 )))
-	 (build-list
-	  (string->number (param "world-start-hosts"))
-	  (lambda (_)
-		(make-host
-		 (vec2 (/ screen-width 2) (/ screen-height 2))
-		 (mixer->receptors mixer)
-		 )))
-	 models
-	 mixer
-	 (index-map
-	   (lambda (i m)
-		 (make-virus-with-receptors
-		  (vec2 1400 (+ (* i 300) 190)) 0
-		  (build-list num-virus-receptors (lambda (_) 'tri))))
-	   models)	 
-	 level ;; level
-	 0 ;; level-time
-	 level-params
-	 (if (< level 11)
-		 "state-running" ;; state
-		 ;; todo: game complete
-		 "state-restart-game")
-	 0 ;; infection timer
-	 #t ;; grace
-	 game-type
-	 (build-mutator game-type)
-	 ))))
+(define stage-types (list "shape" "mutate" "multivariant" "hidden"))
+
+(define (build-help-stack game-type stage time)
+  (cond
+   ((< (help-seen) stage)
+	(inc-help-seen!)
+	;; the first time we autotrigger help, make it the intro 
+	(build-help (if (eq? game-type "shape") "intro" game-type) time))
+   (else '())))
+
+(define (build-world stage level game-id time lives)
+  (let ((game-type (list-ref stage-types stage)))
+	(reset-scores!)
+	;; auto trigger the help if we haven't seen it yet
+	(set! help-stack (build-help-stack game-type stage time))
+	(let ((mixer (make-receptor-mixer game-type))
+		  (level-params (generate-level-params level)))
+	  (let ((models (if (or (eq? game-type "hidden")
+							(eq? game-type "multivariant"))
+						(list
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  0 model-virus-mutation-rate)
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  (/ (level-params-model-update-rate level-params)
+							 2)
+						  model-virus-mutation-rate))
+						(list
+						 (build-model
+						  model-virus-popsize
+						  (level-params-model-update-rate level-params)
+						  0 model-virus-mutation-rate)))))
+		
+		(make-world
+		 game-id
+		 ;; we assume these become ordered lists because the ids increase?
+		 (build-list
+		  1
+		  (lambda (_)
+			(make-virus
+			 (* (rndf) (param "virus-max-age"))
+			 )))
+		 (build-list
+		  (string->number (param "world-start-hosts"))
+		  (lambda (_)
+			(make-host
+			 (vec2 (/ screen-width 2) (/ screen-height 2))
+			 (mixer->receptors mixer)
+			 )))
+		 models
+		 mixer
+		 (index-map
+		  (lambda (i m)
+			(make-virus-with-receptors
+			 (vec2 1400 (+ (* i 300) 190)) 0
+			 (build-list num-virus-receptors (lambda (_) 'tri))))
+		  models)	 
+		 level ;; level
+		 0 ;; level-time
+		 level-params
+		 (if (< level 11)
+			 "state-running" ;; state
+			 ;; todo: game complete
+			 "state-restart-game")
+		 0 ;; infection timer
+		 #t ;; grace
+		 game-type
+		 (build-mutator game-type)
+		 lives ;; lives
+		 stage
+		 )))))
 
 (define (world-spawn-hosts host host-list count w)
   (cond
@@ -265,10 +284,10 @@
 (define (world-bounds-vel pos)
   (v2mul
    (cond
-	((< (vx pos) 0) (vec2 1 0))
-	((> (vx pos) screen-width) (vec2 -1 0))
-	((< (vy pos) 0) (vec2 0 1))
-	((> (vy pos) screen-height) (vec2 0 -1))
+	((< (vx pos) 100) (vec2 1 0))
+	((> (vx pos) (- screen-width panel-width 200)) (vec2 -1 0))
+	((< (vy pos) 100) (vec2 0 1))
+	((> (vy pos) (- screen-height 200)) (vec2 0 -1))
 	(else (vec2 0 0)))
    4))
 
@@ -290,30 +309,43 @@
 	 ((eq? state "state-running")
 	  (cond 
 	   ((zero? (length (world-hosts w)))
-		(update-scores-duration! (world-level-time w)) 
+		(msg "recording level time")
+		(update-scores-duration! (dbg (world-level-time w)))
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
-		(world-modify-level-time
+		(world-modify-level-time		
 		 (world-modify-state w "state-game-over")
-		 0))
+		 0)) 
 	   ((> (world-level-time w) (param "world-level-time"))
 		(update-scores-duration! (world-level-time w)) 
 		(update-scores-survived! #t)
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
-		 (world-modify-state w "state-level-complete")
+		 (world-modify-state
+		  w (if (> (world-level w) (- (param "world-num-levels") 1))
+				"state-stage-complete"
+				"state-level-complete"))
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
-	  (if (> (world-level-time w) 10)
+	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state w "state-new-level")
+		  w))
+	 ((eq? state "state-stage-complete")
+	  (if (> (world-level-time w) info-text-display-duration)
+		  (world-modify-state w "state-new-stage")
 		  w))
 	 ((eq? state "state-new-level")
 	  (world-modify-state w "state-running"))
+	 ((eq? state "state-new-stage")
+	  (world-modify-state w "state-running"))
 	 ((eq? state "state-game-over")
-	  (if (> (world-level-time w) 10)
-		  (world-modify-state w "state-restart-game")
+	  (if (> (world-level-time w) info-text-display-duration)
+		  (world-modify-state 
+		   w (if (< (world-lives w) 1)
+				 "state-restart-game"
+				 "state-restart-level"))
 		  w))	 
 	 (else w))))
 
@@ -341,14 +373,14 @@
 	  
 	  (world-update-state 
 	   (make-world
-		(if (eq? (world-state w) "state-running")
-			(world-virus-update w infection-list time delta)
-			(world-viruses w))
+		(world-game-id w)
+		(world-virus-update w infection-list time delta)
 		(if (eq? (world-state w) "state-running")
 			(world-host-update w infection-list time delta)
 			(world-hosts w))
 		models
-		(if (eq? (world-game-type w) "shape")
+		(if (or (eq? (world-game-type w) "shape")
+				(eq? (world-game-type w) "multivariant"))
 			(world-receptor-mixer w)
 			(receptor-mixer-decrease-power
 			 (world-receptor-mixer w) delta))
@@ -369,33 +401,40 @@
 			(param "world-infection-period"))
 		(if (not (world-grace w))
 			#f
-			(if (> (length (world-hosts w)) 2) #f #t))
+			(if (> (length (world-hosts w)) 3) #f #t))
 		(world-game-type w)
 		(mutator-update
 		 (world-mutator w)
-		 (world-receptor-mixer w) time delta))
+		 (world-receptor-mixer w) time delta)
+		(world-lives w)
+		(world-stage w))
 	   time delta))))
 
-(define (world-update-mouse w state x y)
+(define (world-update-mouse w state x y time)
   (let ((mutator (mutator-update-mouse (world-mutator w) state x y)))
 	(world-modify-mutator 
 	 (if (mutator-event mutator)
-		 (world-receptor-button w (mutator-event mutator))
+		 (world-receptor-button w (mutator-event mutator) time)
 		 w)
 	 mutator)))
 
-(define (world-receptor-button w receptor)
+(define (world-receptor-button w receptor time)
   (cond
-   ((eq? (world-game-type w) "shape")
+   ((or (eq? (world-game-type w) "shape")
+		(eq? (world-game-type w) "multivariant"))
 	(update-scores-mutations! 0.2) ;; one complete up/down ~= 1 mutation 
-	(world-modify-receptor-mixer
-	   w (receptor-mixer-increase
-		  (world-receptor-mixer w)
-		  (cond
-		   ((eq? receptor 'tri) 0)
-		   ((eq? receptor 'squ) 1)
-		   ((eq? receptor 'cir) 2)
-		   (else 3)))))
+	(let ((m (receptor-mixer-increase
+			  (world-receptor-mixer w)
+			  (cond
+			   ((eq? receptor 'tri) 0)
+			   ((eq? receptor 'squ) 1)
+			   ((eq? receptor 'cir) 2)
+			   (else 3)))))
+	  ;; check for the help system gui full condition...
+	  (when (and (not (null? help-stack))
+				 (list-equal? (receptor-mixer-values m) (list 0 0 0 1)))
+			(set! help-stack (help-bubble-stack-trigger help-stack 'guitar time)))
+	  (world-modify-receptor-mixer w m)))
    (else
 	(update-scores-mutations! 1)
 	(world-modify-receptor-mixer
@@ -410,6 +449,11 @@
 							 (world-receptor-mixer w)) i))))
 	(ctx.fillRect x (- (+ 100 y) h) 20 h)))
 
+(define panel-col "#f2f2f2")
+(define bg-col "#e3e2db")
+(define panel-width 400)
+(define help-stack '())    
+
 (define (render-message text)
   (set! ctx.font "normal 80pt Dosis")
   (let ((m (ctx.measureText text)))
@@ -417,33 +461,42 @@
 		  (y 150)
 		  (w (+ m.width 60))
 		  (h 120))
-;;	  (set! ctx.fillStyle "#fff")
-;;	  (ctx.fillRect x y w h)  
-;;	  (ctx.beginPath)
-;;	  (ctx.rect x y w h)
-;;	  (set! ctx.strokeStyle "#000")
-;;	  (ctx.stroke)
-;;	  (set! ctx.fillStyle "#000")
+	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.fillStyle panel-col)  
+	  (ctx.fillRect 0 y screen-width h)  
+	  (set! ctx.globalAlpha 1.0)
+	  (set! ctx.fillStyle "#000")  
 	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
 
-(define (render-explanation text)
+(define (render-explanation title text)
+  (set! ctx.font "normal 80pt Dosis")
+  (let ((m (ctx.measureText title)))
+	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
+		  (y 150)
+		  (w (+ m.width 60))
+		  (h 120))
+	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.fillStyle panel-col)  
+	  (ctx.fillRect 0 150 screen-width 300)  
+	  (set! ctx.globalAlpha 1.0)
+	  (set! ctx.fillStyle "#000")  
+	  (ctx.fillText title (+ x 30) (- (+ y h) 20))))
   (set! ctx.font "normal 40pt Dosis")
   (wrap-text ctx text 0 350 1000 60))
 
-(define panel-col "#f2f2f2")
-(define bg-col "#e3e2db")
-(define panel-width 400)
-(define help-stack '())    
 
 (define (world-render w ctx time)
-
-  (set! ctx.fillStyle bg-col)
-  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
-  (set! ctx.fillStyle panel-col)
-  (ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
+;;  (set! ctx.fillStyle bg-col)
+;;  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
 
   (set! ctx.strokeStyle "#000")
   (set! ctx.fillStyle "#000")
+
+;;  (ctx.beginPath)
+;;  (ctx.rect 100 100
+;;			(- screen-width panel-width 200)
+;;			(- screen-height 200))
+;;  (ctx.stroke)
 
   (for-each
    (lambda (e)
@@ -454,52 +507,70 @@
      (virus-render e ctx))
    (world-viruses w))
 
-  (mutator-render (world-mutator w) ctx)
+  (when (eq? (world-state w) "state-running")
+		(mutator-render (world-mutator w) ctx))
 
   (set! ctx.font "normal 30pt Dosis")
   (when (eq? (world-state w) "state-running")
-		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60))
+		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60)
+;;		(ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
+		(ctx.fillText (string-append "LIVES: " (world-lives w)) 30 110))
 
-  (ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
+
+  ;; variant
+  (when (eq? (world-state w) "state-running")
+		(set! ctx.fillStyle panel-col)
+		(ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
+		(index-for-each2
+		 (lambda (i model variant)
+		   (let ((y (+ (* i 300) 100))
+				 (mutation-time (- (model-period model) (model-timer model))))
+			 (when (< mutation-time 1)
+				   (set! ctx.globalAlpha (- 1 mutation-time))
+				   (ctx.drawImage (find-image "sprites/host/infected.png")
+								  1300 (+ 0 y))
+				   (set! ctx.globalAlpha 1))
+			 (set! ctx.fillStyle "#000")
+			 (set! ctx.font "normal 30pt Dosis")
+			 (ctx.fillText "Current virus:" 1300 (+ -10 y))  
+			 (when variant
+				   (if (eq? (world-game-type w) "hidden")
+					   (virus-render variant ctx)
+					   (virus-render-receptors variant ctx)))
+			 ;; only show this when it's gonna happen before end of level
+			 (when (< (model-timer model) (- (param "world-level-time") (world-level-time w))) 
+				   (ctx.fillText
+					(string-append "Next mutation: "
+								   (trunc (model-timer model)))
+					1280 (+ 230 y)))
+			 ))
+		 (world-models w)
+		 (world-variant-viruses w)))
   
   (when (eq? (world-state w) "state-game-over")
-		(render-message "GAME OVER")
-		(render-explanation (get-scores-analysis)))
+		(cond
+		 ((< (world-lives w) 1)
+		  (render-explanation "GAME OVER" (get-scores-analysis)))
+		 (else
+		  (render-explanation
+		   (string-append (- (world-lives w) 1) " LIVES LEFT")
+		   (get-scores-analysis)))))
 
   (when (eq? (world-state w) "state-level-complete")
-		(render-message (string-append "LEVEL " (world-level w) " COMPLETE!"))
-		(render-explanation (get-scores-analysis)))
+		(render-explanation
+		 (string-append "LEVEL " (world-level w) " COMPLETE!")
+		 (get-scores-analysis)))
 
+  (when (eq? (world-state w) "state-stage-complete")		
+		(render-explanation
+		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
+		 (get-scores-analysis)))
+  
   (when (and
 		 (eq? (world-state w) "state-running")
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
 		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
 									   " SECONDS TO GO!")))
-
-  ;; variant
-  (index-for-each2
-   (lambda (i model variant)
-	 (let ((y (+ (* i 300) 100))
-		   (mutation-time (- (model-period model) (model-timer model))))
-	   (when (< mutation-time 1)
-			 (set! ctx.globalAlpha (- 1 mutation-time))
-			 (ctx.drawImage (find-image "sprites/host/infected.png")
-							1300 (+ 0 y))
-			 (set! ctx.globalAlpha 1))
-	   (set! ctx.fillStyle "#000")
-	   (set! ctx.font "normal 30pt Dosis")
-	   (ctx.fillText "Current virus:" 1300 (+ -10 y))  
-	   (when variant
-			 (if (eq? (world-game-type w) "hidden")
-				 (virus-render variant ctx)
-				 (virus-render-receptors variant ctx)))
-	   (ctx.fillText
-		(string-append "Next mutation: "
-					   (trunc (model-timer model)))
-		1280 (+ 230 y)) 
-	   ))
-   (world-models w)
-   (world-variant-viruses w))
 
   (render-bubble-stack! help-stack ctx))
 
@@ -509,10 +580,3 @@
 (define (world-game-id w)
   0)
 
-(define (do-help! time)
-  (set! help-stack 
-		(make-help-bubble-stack 
-		 (list
-		  (make-help-bubble "Blah blah." 'one 380 300 "help-bubble.png" 4)
-		  (make-help-bubble "Two blah blah!!" 'two 400 130 "help-bubble.png" 2))
-		 time #t #f)))

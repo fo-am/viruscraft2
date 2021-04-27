@@ -1,0 +1,66 @@
+;; -*- mode: scheme; -*-
+; ------------------------------------------------
+;; Copyright (C) 2021 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define popup-duration 5)
+
+(define (build-help game-type time)
+  (cond
+   ((eq? game-type "intro") 
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "Hey - it looks like you're trying to survive a pandemic?" 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "To make your hosts immune, click on the guitar shape until it's the only one full" 'guitar 850 500 "help-bubble.png" 999999)
+	  (make-help-bubble "Well done, your hosts are now immune." 'three 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "They all have guitar shaped receptors." 'three 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Keep an eye on the virus spike protein shapes here." 'five 950 150 "help-bubble-r.png" popup-duration)
+	  (make-help-bubble "The virus will adapt, you need to keep ahead of it." 'four 950 150 "help-bubble-r.png" popup-duration)
+	  (make-help-bubble "You need to survive for one minute." 'five 200 20 "help-bubble-lt.png" popup-duration))
+	 time #t))
+
+   ((eq? game-type "shape") 
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "Click on the shapes to change your host receptors" 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "Keep an eye on the virus spike protein shapes here." 'five 950 150 "help-bubble-r.png" popup-duration)
+	  (make-help-bubble "The virus will adapt, you need to keep ahead of it." 'four 950 150 "help-bubble-r.png" popup-duration)
+	  (make-help-bubble "You need to survive for one minute." 'five 200 20 "help-bubble-lt.png" popup-duration))
+	 time #t))
+   
+   ((eq? game-type "mutate")
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "Of course, organisms can't directly change receptor shapes." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Changes come from random mutations." 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "Click on the dice to mutate your receptor shapes." 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "The is the same mechanism the virus is using." 'one 850 500 "help-bubble.png" popup-duration))
+	 time #t))
+   
+   ((eq? game-type "multivariant")
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "In the real world there are muliple virus variants." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This means hosts need to adapt to more than one." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Can you keep up?" 'none 400 300 "help-bubble-n.png" popup-duration))
+	 time #t))
+   
+   (else ;; "hidden"
+	(make-help-bubble-stack 
+	 (list
+	  (make-help-bubble "Viruses are smaller than the wavelength of visible light." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This means we can't see their receptor shapes." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This is the most realistic and hardest version of the game!" 'none 400 300 "help-bubble-n.png" popup-duration))
+	 time #t))))

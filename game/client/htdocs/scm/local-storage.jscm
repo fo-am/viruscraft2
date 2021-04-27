@@ -78,11 +78,23 @@
     (local-load (string-append namespace "-params"))
     new-params)))
 
+(define fast-params (js "{}"))
+
+(define (check-and-add-params-fast! namespace new-params)
+  (set! fast-params (js "{}"))
+  (for-each
+   (lambda (param)
+	 (js "fast_params[param_key(param)]=param_value(param)"))
+   new-params))
+
 (define (local-setup-params namespace params)
   (when (not (local-exists? (string-append namespace "-params")))
-	(local-save (string-append namespace "-params") params))
+		(local-save (string-append namespace "-params") params))
   (check-and-add-params! namespace params)
   (setup-params-interface (local-load (string-append namespace "-params"))))
+		 
+(define (local-setup-params-fast namespace params)
+  (check-and-add-params-fast! namespace params))
 
 (define (local-set-param namespace name value)
   (local-save
@@ -94,14 +106,17 @@
 		  kv))
     (local-load (string-append namespace "-params")))))
 
+(define (local-get-param-fast namespace name)
+  (js "fast_params[name]"))
+
 (define (local-get-param namespace name) 
   (foldl
    (lambda (kv r)
-     (if (eq? (car kv) name)
-	 (param-value kv) r))
+	 (if (eq? (car kv) name)
+		 (param-value kv) r))
    #f
    (local-load (string-append namespace "-params"))))
-
+   
 (define (local-param-exists? namespace name) 
   (foldl
    (lambda (kv r)

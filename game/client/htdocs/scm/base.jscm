@@ -47,6 +47,7 @@
 (define (fmod a b) (js "Number((a - (Math.floor(a / b) * b)).toPrecision(8));"))
 (define (fabs x) (Math.abs x))
 (define (string->number x) (parseFloat x))
+(define (number->string x) (+ "" x))
 
 (define (random n)
   (Math.floor (* (Math.random) n)))
