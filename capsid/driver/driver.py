@@ -1,5 +1,9 @@
 import smbus, time, random
 
+from gpiozero import LED
+
+power_pin = LED(14)
+
 bus = smbus.SMBus(1)
 ADDR = [0x0a,
         0x0d,
@@ -125,10 +129,6 @@ def flash_all():
         write(ADDR[dev],REG_LED,choice)
         time.sleep(0.1)
 
-# turn all on
-for dev in range(0,len(ADDR)): 
-    write(ADDR[dev],REG_MODE,MODE_NORMAL)
-    time.sleep(0.2)
 
 def cali():
     calibrate(0x0a,[10,90,0,50],[70,40,60,0])  # <- doge plug a
@@ -141,10 +141,37 @@ def cali():
     calibrate(0x11,[10,90,0,50],[70,40,60,0])       
     calibrate(0x12,[10,90,0,50],[80,30,60,0])
 
-cali()    
+def test_power():
+    while True:
+        power_pin.on()
+        print("on")
+        time.sleep(1)
+        power_pin.off()
+        print("off")
+        time.sleep(1)
+
+power_pin.on()
+
+# boot
+while True:
+
+    write(0x0c,0x04,1)
+    time.sleep(0.5)
+
+    write(0x0c,0x04,0)
+    time.sleep(0.5)
+
+# turn all servos on
+#for dev in range(0,len(ADDR)): 
+#    write(ADDR[dev],REG_MODE,MODE_NORMAL)
+#    time.sleep(0.2)
+
+#cali()    
 
 #calibrate(0x0b,[10,90,0,70],[80,30,60,10])
 #test_one(0x0d)
 
-test_all()
+#test_all()
 #flash_all()
+
+
