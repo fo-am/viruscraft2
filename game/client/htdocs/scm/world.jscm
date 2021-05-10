@@ -45,6 +45,13 @@
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
+(define (update-robot-virus shape-list)
+  (let ((xhttp (js "new XMLHttpRequest()")))
+    (xhttp.open "POST" "http://192.168.1.93:8889/shapes" true)
+    (xhttp.setRequestHeader "Content-type" "text/plain")
+    (xhttp.send
+     (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))
+  
 (define (build-help-stack game-type stage time)
   (cond
    ((< (help-seen) stage)
@@ -387,9 +394,11 @@
 		;; update the variant(s) if they have changed
 		(index-map2
 		 (lambda (i m v)
-		   (if (model-new-variant? m)
-			   (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m))
-			   v))
+		   (cond
+		    ((model-new-variant? m)
+		     (update-robot-virus (model-variant m))
+		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
+		    (else v)))
 		 models
 		 (world-variant-viruses w))
 		(world-level w)

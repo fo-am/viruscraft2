@@ -163,6 +163,7 @@ class robot_virus:
         print("setting "+str(addr)+" to "+str(shape_id))
 
     def shape_to_id(self,shape_str):
+        print("["+shape_str+"]")
         if shape_str=="squ": return 0
         if shape_str=="tri": return 1
         if shape_str=="gui": return 2
@@ -173,12 +174,13 @@ class robot_virus:
         tris_per_shape = int(len(self.addresses)/len(shapes))
         if tris_per_shape<1: tris_per_shape=1
         tris = copy.copy(self.addresses)
+        print(shapes)
         for shape in shapes:
-            print(shape)
             for tri_num in range(0,tris_per_shape):
                 if len(tris)>0:
                     choice = tris[random.randrange(0,len(tris))]
-                    tris.remove(choice)                    
+                    tris.remove(choice)
+                    print(shape)
                     self.set_triangle(choice,self.shape_to_id(shape))
 
 
