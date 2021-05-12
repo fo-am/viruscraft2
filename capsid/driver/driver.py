@@ -6,12 +6,23 @@ from gpiozero import LED
 
 bus = smbus.SMBus(1)
 
+max_tries = 30
+
+do_reboot = False
+
 def write(dev,reg,val):
-    try:
-        bus.write_byte_data(dev,reg,val)
-        time.sleep(0.05)
-    except:
-        print("i2c error writing: "+str(dev))
+    global do_reboot
+    tries = 0
+    while tries<max_tries:
+        try:
+            bus.write_byte_data(dev,reg,val)
+            time.sleep(0.05)
+            return
+        except:
+            time.sleep(0.05)
+            tries+=1
+    do_reboot=True
+    print("i2c error writing: "+str(dev))
 
 def read(dev,reg):
     try:
@@ -27,7 +38,16 @@ def read(dev,reg):
 
 class robot_virus:
     def __init__(self,addresses):
-        self.addresses = addresses
+        self.addresses = [0x0a,
+                          0x0b,
+                          0x0c,
+                          0x0d,
+                          0x0e,
+                          0x0f,
+                          0x10,
+                          0x11,
+                          0x12,
+                          0x13]
         # well ok rpi - I have to pretend everything is an LED?
         self.power_pin = LED(14)
 
@@ -113,17 +133,18 @@ class robot_virus:
                 if choice>3: choice=0
 
             # clear just in case
-            write(self.addresses[dev],self.REG_MODE,2)
-            time.sleep(0.1)
-            write(self.addresses[dev],self.REG_MODE,1)
-            time.sleep(0.05)
+            #write(self.addresses[dev],self.REG_MODE,2)
+            #time.sleep(0.1)
+            #write(self.addresses[dev],self.REG_MODE,1)
+            #time.sleep(0.05)
             write(self.addresses[dev],self.REG_SHOW_ID,random.randrange(0,5))
             time.sleep(1)
             
-    def flash_all(self):
+    def flash_all(self,count):
         choice=0
         dev=0
-        while True:    
+        c=0
+        while c<count:    
             dev=dev+1
             if dev>=len(self.addresses):
                 dev=0
@@ -143,11 +164,17 @@ class robot_virus:
         self.calibrate(0x10,[10,90,0,60],[80,30,60,0]) # <- fixed 4 show distance
         self.calibrate(0x11,[10,90,0,50],[70,40,60,0])       
         self.calibrate(0x12,[10,90,0,50],[80,30,60,0])
+        self.calibrate(0x13,[10,90,0,50],[80,30,60,0])
 
-    def boot(self):
+    def reboot(self):
+        self.power_pin.off()
+        time.sleep(0.5)
+        self.boot(False)
+        
+    def boot(self,do_cali=True):
         self.power_pin.on()
         time.sleep(0.5)
-        #self.cali()
+        if do_cali: self.cali()
         #turn all servos on
         for dev in range(0,len(self.addresses)): 
             write(self.addresses[dev],self.REG_MODE,self.MODE_NORMAL)
@@ -163,7 +190,6 @@ class robot_virus:
         print("setting "+str(addr)+" to "+str(shape_id))
 
     def shape_to_id(self,shape_str):
-        print("["+shape_str+"]")
         if shape_str=="squ": return 0
         if shape_str=="tri": return 1
         if shape_str=="gui": return 2
@@ -171,19 +197,21 @@ class robot_virus:
         return 4
     
     def distribute_shapes(self,shapes):
+        global do_reboot
         tris_per_shape = int(len(self.addresses)/len(shapes))
         if tris_per_shape<1: tris_per_shape=1
         tris = copy.copy(self.addresses)
-        print(shapes)
         for shape in shapes:
             for tri_num in range(0,tris_per_shape):
                 if len(tris)>0:
                     choice = tris[random.randrange(0,len(tris))]
-                    tris.remove(choice)
-                    print(shape)
+                    tris.remove(choice)                    
                     self.set_triangle(choice,self.shape_to_id(shape))
-
-
-
+                    if do_reboot:
+                        print("rebooting")
+                        self.reboot()
+                        do_reboot = False
+                    time.sleep(0.5)
+            
 
         
