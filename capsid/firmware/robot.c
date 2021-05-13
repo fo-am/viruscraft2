@@ -15,15 +15,24 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
 #include <util/delay.h>
 #include "usiTwiSlave.h"
 #include "servo.h"
+#include "crc.h"
 #include <stdint.h>
 #include <avr/eeprom.h>
 
 #define LED PB0
-#define I2C_ADDR 0x0a
-#define FIRMWARE_VERSION 1
+#define I2C_ADDR 0x0f
+#define FIRMWARE_VERSION 5
+
+// changlog: 5
+// * crc checking all writes
+// * new servo defaults
+// * watchdog timer
+
+#define CRC_NONCE 0x42
 
 //            attiny84
 //              ____
@@ -48,32 +57,36 @@
 #define REG_SERVO_INTERPOLATION 7
 #define REG_SERVO_START 8
 
+#define REG_CRC_STATE 0xfa
+#define REG_CRCL 0xfb
+#define REG_CRCH 0xfc
+
 #define REG_EEINIT 0xfd
 #define REG_EESAVE 0xfe
 
 // 0x08 Servo 0 angle
-// 0x09 Servo 0 active
+// 0x09 Servo 0 high_power
 // 0x0a Servo 0 hide angle
 // 0x0b Servo 0 show angle  --> 30
 
 // 0x0c Servo 1 angle
-// 0x0d Servo 1 active
+// 0x0d Servo 1 high_power
 // 0x0e Servo 1 hide angle
 // 0x0f Servo 1 show angle
 
 // 0x10 Servo 2 angle
-// 0x11 Servo 2 active
+// 0x11 Servo 2 high_power
 // 0x12 Servo 2 hide angle
 // 0x13 Servo 2 show angle
 
 // 0x14 Servo 3 angle
-// 0x15 Servo 3 active
+// 0x15 Servo 3 high_power
 // 0x16 Servo 3 hide angle
 // 0x17 Servo 3 show angle
 
 // high level controls i2c registers
 #define REG_SERVO_ANGLE 0
-#define REG_SERVO_ACTIVE 1     // power down to save current consumption
+#define REG_SERVO_HIGH_POWER 1     // power down to save current consumption
 #define REG_SERVO_HIDE_ANGLE 2
 #define REG_SERVO_SHOW_ANGLE 3
 #define REG_SERVO_SIZE 4
@@ -88,9 +101,16 @@
 unsigned char EEMEM ee_servo[EE_SERVO_SIZE]={ [0 ... EE_SERVO_SIZE-1] = 0 };
 
 uint8_t alive_counter=0;
-// 0=normal 1=calibration (all servos restracted position) 2=waggle test
+// 0=powerdown
+// 1=normal
+// 2=calibration (all servos restracted position)
+// 3=waggle test
 uint8_t mode=0;
 uint8_t led_state=0;
+uint8_t update_ee=0;
+
+uint8_t crc_state=0;
+uint16_t crc_check=0;
 
 int hide_angle[SERVO_NUM];
 int show_angle[SERVO_NUM];
@@ -99,17 +119,15 @@ servo_state servo[SERVO_NUM];
 
 void init_defaults() {
   // defaults
-  hide_angle[0]=15;
-  show_angle[0]=60;
-  
+  hide_angle[0]=10;
   hide_angle[1]=90;
-  show_angle[1]=45;
-
   hide_angle[2]=0;
-  show_angle[2]=45;
+  hide_angle[3]=70;
 
-  hide_angle[3]=50;
-  show_angle[3]=10;
+  show_angle[0]=80;
+  show_angle[1]=30;
+  show_angle[2]=60;
+  show_angle[3]=0;
 
   for (unsigned int s = 0; s<SERVO_NUM; s++) { 
     servo_state_init(&servo[s],s);
@@ -127,7 +145,7 @@ void show(int id) {
 uint8_t read_servo(unsigned int servo_id, unsigned int i) {
   switch (i) {
   case REG_SERVO_ANGLE: return 0;
-  case REG_SERVO_ACTIVE: return servo[servo_id].active;
+  case REG_SERVO_HIGH_POWER: return servo[servo_id].high_power;
   case REG_SERVO_HIDE_ANGLE:  return hide_angle[servo_id];
   case REG_SERVO_SHOW_ANGLE:  return show_angle[servo_id];
   default: return 0;
@@ -137,7 +155,7 @@ uint8_t read_servo(unsigned int servo_id, unsigned int i) {
 void write_servo(unsigned int servo_id, unsigned int i, uint8_t value) {
   switch (i) {
   case REG_SERVO_ANGLE: break;
-  case REG_SERVO_ACTIVE: servo[servo_id].active=value; break;
+  case REG_SERVO_HIGH_POWER: servo[servo_id].high_power=value; break;
   case REG_SERVO_HIDE_ANGLE: hide_angle[servo_id]=value; break;
   case REG_SERVO_SHOW_ANGLE: show_angle[servo_id]=value; break;
   default: break;
@@ -147,13 +165,21 @@ void write_servo(unsigned int servo_id, unsigned int i, uint8_t value) {
 uint8_t i2c_read(uint8_t reg) {
   switch (reg) {
   case REG_VERSION: return FIRMWARE_VERSION; 
-  case REG_ALIVE: return alive_counter++; 
+  case REG_ALIVE: {
+	// gives us a way to see if we've reset recently
+	if (alive_counter<255) {
+	  alive_counter++;
+	}
+  }
   case REG_ADDR:  return I2C_ADDR; 
   case REG_MODE: return mode; 
   case REG_LED: return led_state; 
   case REG_SHOW_ID: return current;
   case REG_SERVO_SPEED: return servo[0].speed;
   case REG_SERVO_INTERPOLATION: return servo[0].interpolation;
+  case REG_CRC_STATE: return crc_state;
+  case REG_CRCL: return crc_check; 
+  case REG_CRCH: return crc_check<<8;
   default:
     if (reg>=REG_SERVO_A && reg<REG_SERVO_B) {
       return read_servo(0,reg-REG_SERVO_A);
@@ -172,6 +198,29 @@ uint8_t i2c_read(uint8_t reg) {
 }
 
 void i2c_write(uint8_t reg, uint8_t value) {
+  // write into crc registers directly
+  if (reg==REG_CRCH) {
+	uint16_t temp = value;
+	crc_check = (crc_check & ~0xff00) | (temp << 8);
+	return;
+  }
+  if (reg==REG_CRCL) {
+	crc_check = (crc_check & ~0xff) | (value & 0xff);
+	return;
+  }
+
+  // check crc
+  uint8_t buf[3];
+  buf[0]=CRC_NONCE;
+  buf[1]=reg;
+  buf[2]=value;
+  if (crc16(buf,sizeof(buf))!=crc_check) {
+	crc_state=1;
+	return;
+  }
+  crc_state=0;
+  // all matches, go ahead...
+  
   switch (reg) {
   case REG_MODE: mode=value; break; 
   case REG_LED: led_state=value; break; 
@@ -185,28 +234,9 @@ void i2c_write(uint8_t reg, uint8_t value) {
       servo[s].interpolation=value;
     break;
   case REG_EEINIT:
-	init_defaults(); // fallthrough
-  case REG_EESAVE: {
-	unsigned int pos = 0;
-	for (unsigned int servo_id=0; servo_id<4; servo_id++) {
-	  for (unsigned int addr=0; addr<REG_SERVO_SIZE; addr++) {
-		eeprom_update_byte(&ee_servo[pos++],read_servo(servo_id,addr));
-	  }
-	  PORTB |= _BV(LED);
-	  _delay_ms(100);
-	  PORTB &= ~_BV(LED);
-	  _delay_ms(100);
-	  PORTB |= _BV(LED);
-	  _delay_ms(100);
-	  PORTB &= ~_BV(LED);
-	  _delay_ms(100);
-	  PORTB |= _BV(LED);
-	  _delay_ms(100);
-	  PORTB &= ~_BV(LED);
-	  _delay_ms(100);
-	}
-	return 0x01;
-	}	
+	init_defaults();
+	// fallthrough
+  case REG_EESAVE: update_ee=1; break;	
   default:
     if (reg>=REG_SERVO_A && reg<REG_SERVO_B) {
       write_servo(0,reg-REG_SERVO_A,value);
@@ -242,6 +272,7 @@ int main() {
 
   servo_init();
   usiTwiSlaveInit(I2C_ADDR, i2c_read, i2c_write);
+  wdt_enable(WDTO_2S);
   sei();
   
   DDRB |= _BV(LED); // led output  
@@ -257,13 +288,13 @@ int main() {
   
   while (1) {
 	// calibration mode
-	if (mode==1) {
+	if (mode==2) {
 	  for (unsigned int s = 0; s<SERVO_NUM; s++) { 
 	  	servo_modify(&servo[s],hide_angle[s],10);
 	  }
 	}
 
-	if (mode==2) {
+	if (mode==3) {
 	  if (counter>100) {
 		unsigned int old_waggle = waggle;
 		waggle=(waggle+1)%4;
@@ -273,19 +304,38 @@ int main() {
 	  }
   	  counter++;
 	}
-	
+
 	if (led_state==1) {
 	  PORTB |= _BV(LED);
 	} else {
 	  PORTB &= ~_BV(LED);
 	}
-        
-    for (unsigned int s = 0; s<4; s++) { 
-      servo_update(&servo[s]);
-    }
-    
+	
+	for (unsigned int s = 0; s<4; s++) { 
+	  servo_update(&servo[s]);
+	}
+
+	if (update_ee==1) {
+	  update_ee=0;
+	  unsigned int pos = 0;
+	  for (unsigned int servo_id=0; servo_id<4; servo_id++) {
+		for (unsigned int addr=0; addr<REG_SERVO_SIZE; addr++) {
+		  eeprom_update_byte(&ee_servo[pos++],read_servo(servo_id,addr));
+		}
+	  }
+	  PORTB |= _BV(LED);
+	  _delay_ms(50);
+	  PORTB &= ~_BV(LED);
+	  _delay_ms(50);
+	  PORTB |= _BV(LED);
+	  _delay_ms(50);
+	  PORTB &= ~_BV(LED);
+	  _delay_ms(50);
+	}
+	
     counter++;
-    _delay_ms(10);    
+    _delay_ms(10);
+	wdt_reset();
   }
 }
 
@@ -293,6 +343,6 @@ int i=0;
 
 
 ISR(TIM1_COMPA_vect) {
-  servo_pulse_update();
+  servo_pulse_update(mode);
 }
 
