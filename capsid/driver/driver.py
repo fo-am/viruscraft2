@@ -1,4 +1,4 @@
-import smbus, time, random, copy
+import smbus, time, random, copy, crc
 from gpiozero import LED
 
 ##############################################
@@ -6,24 +6,39 @@ from gpiozero import LED
 
 bus = smbus.SMBus(1)
 
-max_tries = 30
+max_tries = 5
 
 do_reboot = False
 
-def write(dev,reg,val):
+def lo_write(dev,reg,val):
     global do_reboot
     tries = 0
     while tries<max_tries:
         try:
             bus.write_byte_data(dev,reg,val)
-            time.sleep(0.05)
+            time.sleep(0.01)
             return
         except:
-            time.sleep(0.05)
+            print("retry")
+            time.sleep(0.25)
             tries+=1
     do_reboot=True
     print("i2c error writing: "+str(dev))
 
+
+def write(dev,reg,val):
+    while True:
+        check = crc.crc16([0x42,reg,val])
+        REG_CRCL = 0xfb
+        REG_CRCH = 0xfc
+        REG_CRC_STATUS = 0xfa
+        lo_write(dev,REG_CRCL,check&0xff)
+        lo_write(dev,REG_CRCH,check>>8)
+        lo_write(dev,reg,val)
+        if not read(dev,REG_CRC_STATUS): return
+        print("crc failed, retry...")
+        time.sleep(0.1)
+    
 def read(dev,reg):
     try:
         v = bus.read_byte_data(dev,reg)
@@ -38,16 +53,18 @@ def read(dev,reg):
 
 class robot_virus:
     def __init__(self,addresses):
-        self.addresses = [0x0a,
-                          0x0b,
-                          0x0c,
-                          0x0d,
-                          0x0e,
-                          0x0f,
-                          0x10,
-                          0x11,
-                          0x12,
-                          0x13]
+        self.addresses = [
+            0x0a,
+            0x0b,
+            0x0c,
+            0x0d,
+            0x0e,
+            0x0f,
+            0x10,
+            0x11,
+            0x12,
+            0x13
+        ]
         # well ok rpi - I have to pretend everything is an LED?
         self.power_pin = LED(14)
 
@@ -164,7 +181,7 @@ class robot_virus:
         self.calibrate(0x10,[10,90,0,60],[80,30,60,0]) # <- fixed 4 show distance
         self.calibrate(0x11,[10,90,0,50],[70,40,60,0])       
         self.calibrate(0x12,[10,90,0,50],[80,30,60,0])
-        self.calibrate(0x13,[10,90,0,50],[80,30,60,0])
+        self.calibrate(0x13,[10,90,0,70],[80,30,60,0])
 
     def reboot(self):
         self.power_pin.off()
@@ -180,6 +197,10 @@ class robot_virus:
             write(self.addresses[dev],self.REG_MODE,self.MODE_NORMAL)
             time.sleep(0.2)
 
+    def clear_triangle(self,addr):
+        write(addr,self.REG_MODE,2)
+        time.sleep(0.1)
+        write(addr,self.REG_MODE,1)
 
     def set_triangle(self,addr,shape_id):
         # clear just in case
@@ -187,7 +208,8 @@ class robot_virus:
         time.sleep(0.1)
         write(addr,self.REG_MODE,1)
         write(addr,self.REG_SHOW_ID,shape_id)
-        print("setting "+str(addr)+" to "+str(shape_id))
+        time.sleep(0.5)
+        #print("setting "+str(addr)+" to "+str(shape_id))
 
     def shape_to_id(self,shape_str):
         if shape_str=="squ": return 0
@@ -195,6 +217,11 @@ class robot_virus:
         if shape_str=="gui": return 2
         if shape_str=="cir": return 3
         return 4
+
+    def clear_shapes(self):
+        for addr in self.addresses:
+            self.clear_triangle(addr)
+
     
     def distribute_shapes(self,shapes):
         global do_reboot
@@ -211,7 +238,7 @@ class robot_virus:
                         print("rebooting")
                         self.reboot()
                         do_reboot = False
-                    time.sleep(0.5)
+                    #time.sleep(0.5)
             
 
         
