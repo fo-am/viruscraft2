@@ -47,7 +47,7 @@
 
 (define (update-robot-virus shape-list)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://192.168.1.93:8889/shapes" true)
+    (xhttp.open "POST" "http://192.168.1.107:8889/shapes" true)
     (xhttp.setRequestHeader "Content-type" "text/plain")
     (xhttp.send
      (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))

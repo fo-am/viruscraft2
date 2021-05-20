@@ -9,14 +9,8 @@ from driver import robot_virus
 global transmitter
 
 # sudo lsof -i:8888 
-# virus = robot_virus([0x0a,
-#                      0x0d,
-#                      0x0e,
-#                      0x0f,
-#                      #0x11,
-#                      0x12])
 
-virus = robot_virus([0x0c])
+virus = robot_virus()
 
 virus.boot()
 
@@ -36,7 +30,6 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if self.path=="/shapes":
             data_len = int(self.headers['Content-Length'])
             data_string = self.rfile.read(data_len)
-            print("data_string is: "+data_string)
             virus.distribute_shapes(data_string.strip().split(' '))
             self.send_response(200)
             return

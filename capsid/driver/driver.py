@@ -27,6 +27,7 @@ def lo_write(dev,reg,val):
 
 
 def write(dev,reg,val):
+    tries = 0
     while True:
         check = crc.crc16([0x42,reg,val])
         REG_CRCL = 0xfb
@@ -35,8 +36,9 @@ def write(dev,reg,val):
         lo_write(dev,REG_CRCL,check&0xff)
         lo_write(dev,REG_CRCH,check>>8)
         lo_write(dev,reg,val)
-        if not read(dev,REG_CRC_STATUS): return
+        if not read(dev,REG_CRC_STATUS) or tries>max_tries: return
         print("crc failed, retry...")
+        tries+=1
         time.sleep(0.1)
     
 def read(dev,reg):
@@ -45,29 +47,35 @@ def read(dev,reg):
         time.sleep(0.05)
         return v
     except:
-        print("i2c error reading: "+str(dev))
+        #print("i2c error reading: "+str(dev))
         return 0
 
+
+# return all addresses present
+def scan_i2c():
+    ret = []
+    for scan in range(0,5):
+        # i2c range: 0x07 -> 0x78 - reserve 0x7x for the sensors
+        for addr in range(0x07,0x6f):
+            # attempt reading the version        
+            if read(addr,0x00)>0:
+                if not addr in ret:
+                    ret.append(addr)            
+    return ret
+    
 ###################################################
 # controller for a robot virus
 
 class robot_virus:
-    def __init__(self,addresses):
-        self.addresses = [
-            0x0a,
-            0x0b,
-            0x0c,
-            0x0d,
-            0x0e,
-            0x0f,
-            0x10,
-            0x11,
-            0x12,
-            0x13
-        ]
+    def __init__(self):
+        self.addresses = []
         # well ok rpi - I have to pretend everything is an LED?
         self.power_pin = LED(14)
 
+    def scan_addresses(self):
+        self.addresses = scan_i2c()
+        print("found: ")
+        print(self.addresses)
 
     REG_VERSION=0
     REG_ALIVE=1
@@ -172,30 +180,37 @@ class robot_virus:
 
 
     def cali(self):
-        self.calibrate(0x0a,[10,90,0,50],[70,40,60,0])  # <- dodgy plug a
-        self.calibrate(0x0b,[10,90,0,70],[80,30,60,10])
-        self.calibrate(0x0c,[0,90,0,50],[60,40,60,0])       
-        self.calibrate(0x0d,[10,100,0,60],[80,30,60,0]) 
-        self.calibrate(0x0e,[10,90,0,50],[80,30,60,0])
-        self.calibrate(0x0f,[10,90,0,50],[80,30,60,0])
-        self.calibrate(0x10,[10,90,0,60],[80,30,60,0]) # <- fixed 4 show distance
-        self.calibrate(0x11,[10,90,0,50],[70,40,60,0])       
-        self.calibrate(0x12,[10,90,0,50],[80,30,60,0])
-        self.calibrate(0x13,[10,90,0,70],[80,30,60,0])
+        if 0x0a in self.addresses:
+            self.calibrate(0x0a,[10,90,0,50],[70,40,60,0])  # <- dodgy plug a
+        if 0x0b in self.addresses:
+            self.calibrate(0x0b,[10,90,0,70],[80,30,60,10])
+        if 0x0c in self.addresses:
+            self.calibrate(0x0c,[0,90,0,70],[60,40,60,0])       
+        if 0x0d in self.addresses:
+            self.calibrate(0x0d,[10,100,0,60],[80,30,60,0]) 
+        if 0x0e in self.addresses:
+            self.calibrate(0x0e,[10,90,0,50],[80,30,60,0])
+        if 0x0f in self.addresses:
+            self.calibrate(0x0f,[10,90,0,50],[80,30,60,0])
+        if 0x10 in self.addresses:
+            self.calibrate(0x10,[10,90,0,60],[80,30,60,0]) # <- fixed 4 show distance
+        if 0x11 in self.addresses:
+            self.calibrate(0x11,[10,90,0,50],[70,40,60,0])       
+        if 0x12 in self.addresses:
+            self.calibrate(0x12,[10,90,0,70],[80,30,60,0])
+        if 0x13 in self.addresses:
+            self.calibrate(0x13,[10,90,0,70],[80,30,60,0])
 
     def reboot(self):
         self.power_pin.off()
         time.sleep(0.5)
-        self.boot(False)
+        self.boot(True)
         
     def boot(self,do_cali=True):
         self.power_pin.on()
         time.sleep(0.5)
+        self.scan_addresses()
         if do_cali: self.cali()
-        #turn all servos on
-        for dev in range(0,len(self.addresses)): 
-            write(self.addresses[dev],self.REG_MODE,self.MODE_NORMAL)
-            time.sleep(0.2)
 
     def clear_triangle(self,addr):
         write(addr,self.REG_MODE,2)
@@ -203,18 +218,31 @@ class robot_virus:
         write(addr,self.REG_MODE,1)
 
     def set_triangle(self,addr,shape_id):
+        global do_reboot
         # clear just in case
         write(addr,self.REG_MODE,2)
+        if do_reboot:
+            print("rebooting")
+            self.reboot()
+            do_reboot = False
         time.sleep(0.1)
         write(addr,self.REG_MODE,1)
+        if do_reboot:
+            print("rebooting")
+            self.reboot()
+            do_reboot = False
         write(addr,self.REG_SHOW_ID,shape_id)
+        if do_reboot:
+            print("rebooting")
+            self.reboot()
+            do_reboot = False
         time.sleep(0.5)
         #print("setting "+str(addr)+" to "+str(shape_id))
 
     def shape_to_id(self,shape_str):
         if shape_str=="squ": return 0
-        if shape_str=="tri": return 1
-        if shape_str=="gui": return 2
+        if shape_str=="gui": return 1
+        if shape_str=="tri": return 2
         if shape_str=="cir": return 3
         return 4
 
@@ -223,8 +251,12 @@ class robot_virus:
             self.clear_triangle(addr)
 
     
-    def distribute_shapes(self,shapes):
+    def distribute_shapes(self,shapes):               
         global do_reboot
+        if len(self.addresses)<1:
+            print("rebooting")
+            self.reboot()
+            return
         tris_per_shape = int(len(self.addresses)/len(shapes))
         if tris_per_shape<1: tris_per_shape=1
         tris = copy.copy(self.addresses)
