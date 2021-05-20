@@ -12,7 +12,8 @@ global transmitter
 
 virus = robot_virus()
 
-virus.boot()
+virus.boot(True)
+
 
 class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def send_response(self, *args, **kwargs):

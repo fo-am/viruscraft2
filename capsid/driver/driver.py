@@ -19,11 +19,10 @@ def lo_write(dev,reg,val):
             time.sleep(0.01)
             return
         except:
-            print("retry")
             time.sleep(0.25)
             tries+=1
     do_reboot=True
-    print("i2c error writing: "+str(dev))
+    print("i2c error writing: "+hex(dev))
 
 
 def write(dev,reg,val):
@@ -37,9 +36,8 @@ def write(dev,reg,val):
         lo_write(dev,REG_CRCH,check>>8)
         lo_write(dev,reg,val)
         if not read(dev,REG_CRC_STATUS) or tries>max_tries: return
-        print("crc failed, retry...")
+        print("crc failed, retry... "+hex(dev))
         tries+=1
-        time.sleep(0.1)
     
 def read(dev,reg):
     try:
@@ -71,11 +69,14 @@ class robot_virus:
         self.addresses = []
         # well ok rpi - I have to pretend everything is an LED?
         self.power_pin = LED(14)
+        self.state = {}
 
     def scan_addresses(self):
         self.addresses = scan_i2c()
         print("found: ")
         print(self.addresses)
+        for addr in self.addresses:
+            self.state[addr]="none"
 
     REG_VERSION=0
     REG_ALIVE=1
@@ -134,6 +135,9 @@ class robot_virus:
     def factory_reset(self,dev):
         write(dev,self.REG_EEINIT,1)
 
+    def freeze_one(self,dev):
+        write(dev,self.REG_MODE,2)
+        
     def test_one(self,dev):
         choice=0
         while True:    
@@ -180,63 +184,63 @@ class robot_virus:
 
 
     def cali(self):
+        print("recalibrating")
         if 0x0a in self.addresses:
-            self.calibrate(0x0a,[10,90,0,50],[70,40,60,0])  # <- dodgy plug a
+            self.calibrate(0x0a,[15,90,5,45],[70,40,60,0])  # <- dodgy plug a
         if 0x0b in self.addresses:
-            self.calibrate(0x0b,[10,90,0,70],[80,30,60,10])
+            self.calibrate(0x0b,[20,85,5,70],[80,30,60,10])
         if 0x0c in self.addresses:
-            self.calibrate(0x0c,[0,90,0,70],[60,40,60,0])       
+            self.calibrate(0x0c,[5,85,10,50],[60,40,60,0])       
         if 0x0d in self.addresses:
-            self.calibrate(0x0d,[10,100,0,60],[80,30,60,0]) 
+            self.calibrate(0x0d,[15,95,10,50],[80,30,60,0]) 
         if 0x0e in self.addresses:
-            self.calibrate(0x0e,[10,90,0,50],[80,30,60,0])
+            self.calibrate(0x0e,[10,85,10,50],[80,30,60,0])
         if 0x0f in self.addresses:
-            self.calibrate(0x0f,[10,90,0,50],[80,30,60,0])
+            self.calibrate(0x0f,[20,85,5,50],[80,30,60,0])
         if 0x10 in self.addresses:
-            self.calibrate(0x10,[10,90,0,60],[80,30,60,0]) # <- fixed 4 show distance
+            self.calibrate(0x10,[15,85,10,55],[80,30,60,0]) # <- fixed 4 show distance
         if 0x11 in self.addresses:
-            self.calibrate(0x11,[10,90,0,50],[70,40,60,0])       
+            self.calibrate(0x11,[15,85,5,55],[70,40,60,0])       
         if 0x12 in self.addresses:
-            self.calibrate(0x12,[10,90,0,70],[80,30,60,0])
+            self.calibrate(0x12,[20,85,0,60],[80,30,60,0])
         if 0x13 in self.addresses:
-            self.calibrate(0x13,[10,90,0,70],[80,30,60,0])
+            self.calibrate(0x13,[20,85,0,70],[80,30,60,0])
 
     def reboot(self):
+        print("power down")
         self.power_pin.off()
         time.sleep(0.5)
-        self.boot(True)
+        print("power up")
+        self.boot(False)
         
     def boot(self,do_cali=True):
         self.power_pin.on()
         time.sleep(0.5)
+        print("scanning...")
         self.scan_addresses()
         if do_cali: self.cali()
+        print("ready...")
+        for addr in self.addresses:
+            write(addr,self.REG_MODE,1)
 
     def clear_triangle(self,addr):
-        write(addr,self.REG_MODE,2)
-        time.sleep(0.1)
-        write(addr,self.REG_MODE,1)
+        ##write(addr,self.REG_MODE,2)
+        #time.sleep(0.1)
+        #write(addr,self.REG_MODE,1)
+        write(addr,self.REG_SHOW_ID,6)
 
     def set_triangle(self,addr,shape_id):
         global do_reboot
         # clear just in case
         write(addr,self.REG_MODE,2)
-        if do_reboot:
-            print("rebooting")
-            self.reboot()
-            do_reboot = False
-        time.sleep(0.1)
+        time.sleep(0.2)
         write(addr,self.REG_MODE,1)
-        if do_reboot:
-            print("rebooting")
-            self.reboot()
-            do_reboot = False
         write(addr,self.REG_SHOW_ID,shape_id)
         if do_reboot:
             print("rebooting")
             self.reboot()
             do_reboot = False
-        time.sleep(0.5)
+        #time.sleep(0.5)
         #print("setting "+str(addr)+" to "+str(shape_id))
 
     def shape_to_id(self,shape_str):
@@ -247,6 +251,7 @@ class robot_virus:
         return 4
 
     def clear_shapes(self):
+        print("clearing shapes...")
         for addr in self.addresses:
             self.clear_triangle(addr)
 
@@ -264,13 +269,15 @@ class robot_virus:
             for tri_num in range(0,tris_per_shape):
                 if len(tris)>0:
                     choice = tris[random.randrange(0,len(tris))]
-                    tris.remove(choice)                    
-                    self.set_triangle(choice,self.shape_to_id(shape))
+                    tris.remove(choice)
+                    if self.state[choice]!=shape:
+                        self.set_triangle(choice,self.shape_to_id(shape))
+                        self.state[choice]=shape
+                        #time.sleep(0.1)
                     if do_reboot:
                         print("rebooting")
                         self.reboot()
                         do_reboot = False
-                    #time.sleep(0.5)
             
 
         

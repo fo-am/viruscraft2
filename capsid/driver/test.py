@@ -3,15 +3,18 @@ import time, crc, random
 
 r = robot_virus()
 
-r.boot(True)
+r.boot(False)
 
 #while True:
 #    r.flash_all(10)
 
-
+#r.test_one(0x0e)
+#r.freeze_one(0x13)
+#while True: pass
 
 while True:
-    #r.clear_shapes()
+    print("loop")
+    r.clear_shapes()
     shapes = ["squ","tri","gui","cir"]
     random.shuffle(shapes)
     for shape in shapes:
