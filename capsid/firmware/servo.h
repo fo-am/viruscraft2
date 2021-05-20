@@ -34,7 +34,7 @@
 #define SERVO_DEG_MAX 90
 
 void servo_init();
-void servo_pulse_update();
+void servo_pulse_update(unsigned char mode);
 
 unsigned int servo_pulse[9];
 
@@ -54,6 +54,7 @@ typedef struct {
   unsigned char interpolation;
   unsigned int min_pulse;
   unsigned int max_pulse;
+  unsigned char high_power;
 } servo_state;
 
 void servo_state_init(servo_state *state, unsigned char id);
