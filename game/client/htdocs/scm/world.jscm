@@ -544,7 +544,7 @@
 			 (ctx.fillText "Current virus:" 1300 (+ -10 y))  
 			 (when variant
 				   (if (eq? (world-game-type w) "hidden")
-					   (virus-render variant ctx)
+					   (virus-render-question variant ctx)
 					   (virus-render-receptors variant ctx)))
 			 ;; only show this when it's gonna happen before end of level
 			 (when (< (model-timer model) (- (param "world-level-time") (world-level-time w))) 

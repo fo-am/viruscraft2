@@ -128,13 +128,17 @@
 		(world-bounds-vel (entity-pos v))))))))
 
 (define (virus-render v ctx)
-  (entity-render v ctx)  
-  (ctx.save)
-  (ctx.translate
-   (+ (- (vx (entity-pos v)) 50) (vx (entity-offset v)))
-   (+ (- (vy (entity-pos v)) 50) (vy (entity-offset v))))       
-  (ctx.restore))
-    
+  (entity-render v ctx))
+
+(define (virus-render-question e ctx)
+  (entity-render e ctx)  
+  (let ((posx (+ (- (vx (entity-pos e)) 150)
+				 (vx (entity-offset e))))
+		(posy (+ (- (vy (entity-pos e)) 150)
+				 (vy (entity-offset e)))))
+	(ctx.drawImage (find-image "sprites/virus/question.png") posx posy)))
+
+
 (define (virus-render-receptors v ctx)
   (entity-render v ctx)  
   (ctx.save)

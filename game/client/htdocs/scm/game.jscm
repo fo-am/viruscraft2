@@ -852,6 +852,7 @@
   (mutator-filenames)
   (list
    "sprites/host/infected.png"
+   "sprites/virus/question.png"
    "sprites/hex-b-1.png"
    "logos.png"
    "help-bubble.png"
