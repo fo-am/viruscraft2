@@ -249,7 +249,7 @@
 	       (param "host-max-population")))
 	   (cons
 		(entity-update
-		 (host-update host time delta w
+		 (host-update host time delta (world-hosts w)
 					  (world-find-attached-virus
 					   (entity-id host)
 					   infection-list))
@@ -261,7 +261,7 @@
       (else 
        (append
 		r (list (entity-update
-				 (host-update host time delta w
+				 (host-update host time delta (world-hosts w)
 							  (world-find-attached-virus
 							   (entity-id host)
 							   infection-list))

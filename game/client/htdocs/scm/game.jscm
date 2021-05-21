@@ -125,6 +125,7 @@
 (load "scm/levels.jscm")
 (load "scm/mutator.jscm")
 (load "scm/game-help.jscm")
+(load "scm/demo.jscm")
 
 (define (button-sound)
   (play-sound "button.wav"))
@@ -135,18 +136,6 @@
 (define default-button-height 80)
 
 (define button-gap 250)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; stubs
-
-(define (make-new-demo)
-  0)
-
-(define (demo-update game-data time delta)
-  game-data)
-
-(define (demo-render game-data ctx)
-  0)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -440,7 +429,7 @@
 			(set! window.location "/")))
 	(game-modify-data
 	 (lambda (d)
-	   (make-new-demo))
+	   d)
 	 (game-modify-update
 	  (lambda (t c)
 		(game-modify-data
