@@ -142,8 +142,8 @@
  ;; port number is read from command line as argument
  ;; ie: ./server.scm 8080
  #:port (string->number (command-line #:args (port) port))
-;; #:listen-ip "127.0.0.1"
- #:listen-ip "192.168.1.107"
+ #:listen-ip "127.0.0.1"
+;; #:listen-ip "192.168.1.107"
  #:command-line? #t
  #:servlet-path "/game"
  #:server-root-path

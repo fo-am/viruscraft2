@@ -254,7 +254,6 @@
 	)))
 
 (define (nightjar-main c)
-  (register-player!)
   (game-modify-mouse-hook
    (lambda (state c) c)
    (game-modify-timeout
@@ -276,59 +275,26 @@
 		 (set! ctx.fillStyle text-col)		
 		 (set! ctx.font "normal 120pt Dosis")
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
-		 (set! ctx.font "normal 30pt Dosis")
+		 (set! ctx.font "normal 30pt Dosis")		 
+		 (wrap-text ctx "Protect your host organisms from the virus..." 0 350 1000 40)
 		 )
 	   
 	   (game-modify-buttons
 		(list
 		 (rect-button
-		  "SHAPE"
-		  (+ default-button-x 200)
-		  (- default-button-y 200)
+		  "PLAY!"
+		  default-button-x
+		  default-button-y
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
 			(button-sound)
-			(register-new-game c 0)))
-
-		 (rect-button
-		  (if (> (stage-reached) 0) "MUTATE" "????")
-		  (+ default-button-x 200)
-		  (- default-button-y 100)
-		  default-button-width default-button-height
-		  "jumpy"
-		  (lambda (c)
-			(button-sound)
-			(if (> (stage-reached) 0) (register-new-game c 1)
-				c)))
-
-		 (rect-button
-		  (if (> (stage-reached) 1) "MULTIVARIANT" "????")
-		  (+ default-button-x 200)
-		  (+ default-button-y 0)
-		  default-button-width default-button-height
-		  "jumpy"
-		  (lambda (c)
-			(button-sound)
-			(if (> (stage-reached) 1) (register-new-game c 2)
-				c)))
-
-		 (rect-button
-		  (if (> (stage-reached) 2) "HIDDEN" "????")
-		  (+ default-button-x 200)
-		  (+ default-button-y 100)
-		  default-button-width default-button-height
-		  "jumpy"
-		  (lambda (c)
-			(button-sound)
-			(if (> (stage-reached) 2) (register-new-game c 3)
-				c)))
-
+			(nightjar-levels c)))
 
 		 (rect-button
 		  "HOW TO PLAY"
-		  (- default-button-x 200)
-		  (- default-button-y 100)
+		  (- default-button-x 400)
+		  default-button-y
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
@@ -337,8 +303,8 @@
 		 
 		 (rect-button
 		  "LEADERBOARD"
-		  (- default-button-x 200)
-		  (+ default-button-y 0)
+		  (+ default-button-x 400)
+		  default-button-y
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
@@ -370,7 +336,7 @@
 	 (wrap-text ctx "HOW TO PLAY" 0 100 1300 100)
 	 (set! ctx.font "normal 25pt Dosis")
 	 
-	 (wrap-text-left ctx "Blah Blah" 300 150 1000 40)
+	 (wrap-text ctx "Blah Blah" 0 150 1000 40)
 
 	 ;;(ctx.drawImage (find-image "logos.png") 300 510)
 
@@ -391,15 +357,167 @@
 	(list
 	 (rect-button
 	  "BACK"
-	  (- default-button-x 200)
-	  (+ default-button-y 50)
+	  (- default-button-x 400)
+	  default-button-y
 	  default-button-width 
 	  default-button-height 
 	  "jumpy"
 	  (lambda (c)
 		(button-sound)
-		(nightjar-main c))))
+		(nightjar-main c)))
+
+	 (rect-button
+	  "VIRUS RESEARCH"
+	  (+ default-button-x 400)
+	  default-button-y
+	  default-button-width 
+	  default-button-height 
+	  "jumpy"
+	  (lambda (c)
+		(button-sound)
+		(nightjar-science c)))
+	 )
 	c)))
+
+(define (nightjar-science c)
+  (game-modify-render
+   (lambda (ctx)
+	 ;;(ctx.drawImage (find-image "crab2.png") 1240 550)
+	 (demo-render (game-data c) ctx)
+
+	 (set! ctx.font "normal 75pt Dosis")
+	 (wrap-text ctx "HERE COMES THE SCIENCE" 0 100 1300 150)
+	 (set! ctx.font "normal 25pt Dosis")
+	 
+	 (wrap-text ctx "Blah Blah" 0 150 1000 40)
+
+	 ;;(ctx.drawImage (find-image "logos.png") 300 510)
+
+	 ;;(set! ctx.globalAlpha 0.5)
+	 ;;      (ctx.drawImage (find-image "wasp.jpg") 860 290)
+
+	 (set! ctx.font "normal 30pt Dosis")
+
+
+	 ;;(set! ctx.globalAlpha 1.0)      
+
+	 ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
+	 ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
+	 
+	 )
+
+   (game-modify-buttons
+	(list
+	 (rect-button
+	  "BACK"
+	  (- default-button-x 400)
+	  default-button-y
+	  default-button-width 
+	  default-button-height 
+	  "jumpy"
+	  (lambda (c)
+		(button-sound)
+		(nightjar-about c)))
+
+	 (rect-button
+	  "BENS WEBSITE"
+	  (+ default-button-x 400)
+	  default-button-y
+	  default-button-width 
+	  default-button-height 
+	  "jumpy"
+	  (lambda (c)
+		(button-sound)
+		(nightjar-main c)))
+	 )
+	c)))
+
+(define (nightjar-levels c)
+  (register-player!)
+  (game-modify-mouse-hook
+   (lambda (state c) c)
+   (game-modify-timeout
+	(lambda ()
+	  (when (not ditto.load_resource_static)	
+			(set! window.location "/")))
+	(game-modify-data
+	 (lambda (d)
+	   (make-new-demo))
+	 (game-modify-update
+	  (lambda (t c)
+		(game-modify-data
+		 (lambda (d)
+		   (demo-update (game-data c) (/ t 1000) (game-delta c)))
+		 c))
+	  (game-modify-render
+	   (lambda (ctx)
+		 (demo-render (game-data c) ctx)
+		 (set! ctx.fillStyle text-col)		
+		 (set! ctx.font "normal 120pt Dosis")
+		 (wrap-text ctx "CHOOSE GAME" 0 200 1500 150)		
+		 (set! ctx.font "normal 30pt Dosis")
+		 (wrap-text ctx "Can you unlock all the levels?" 0 270 1000 40)
+		 )
+	   
+	   (game-modify-buttons
+		(list
+		 (rect-button
+		  "SHAPE"
+		  default-button-x
+		  (- default-button-y 150)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(register-new-game c 0)))
+
+		 (rect-button
+		  (if (> (stage-reached) 0) "MUTATE" "LOCKED")
+		  default-button-x
+		  (- default-button-y 50)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 0) (register-new-game c 1)
+				c)))
+
+		 (rect-button
+		  (if (> (stage-reached) 1) "MULTIVARIANT" "LOCKED")
+		  default-button-x
+		  (+ default-button-y 50)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 1) (register-new-game c 2)
+				c)))
+
+		 (rect-button
+		  (if (> (stage-reached) 2) "HIDDEN" "LOCKED")
+		  default-button-x
+		  (+ default-button-y 150)
+		  default-button-width default-button-height
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(if (> (stage-reached) 2) (register-new-game c 3)
+				c)))
+
+		 (rect-button
+		  "BACK"
+		  (- default-button-x 400)
+		  (+ default-button-y 150)
+		  default-button-width 
+		  default-button-height 
+		  "jumpy"
+		  (lambda (c)
+			(button-sound)
+			(nightjar-main c)))
+
+		 )
+		c)))))))
+
 
 (define (nightjar-game-screen c game-id stage level lives)
   (game-modify-data
