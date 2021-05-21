@@ -31,7 +31,7 @@
   (wrap-centred-text 
    ctx 
    (help-bubble-text b) 
-   (+ 195 (help-bubble-x b))
+   (+ 205 (help-bubble-x b))
    (+ 53 (help-bubble-y b))
    330 40))
 
