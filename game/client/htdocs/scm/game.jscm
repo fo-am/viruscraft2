@@ -127,7 +127,7 @@
 (define (button-sound)
   (play-sound "button.wav"))
 
-(define default-button-x (- (/ screen-width 2) 150))
+(define default-button-x (- (/ screen-width 2) 200))
 (define default-button-y (+ (/ screen-height 2) 100))
 (define default-button-width 300)
 (define default-button-height 80)
@@ -213,12 +213,12 @@
 	   (game-modify-buttons
 		(list
 		 
-		 (rect-button
+		 (image-button
 		  "PLAY" 
 		  default-button-x
 		  default-button-y
-		  default-button-width default-button-height
 		  "jumpy"
+		  (find-image "buttons/button-2.png")
 		  (lambda (c)
 			(init-player-params!)
 			(button-sound)
@@ -281,32 +281,32 @@
 	   
 	   (game-modify-buttons
 		(list
-		 (rect-button
+		 (image-button
 		  "PLAY!"
 		  default-button-x
 		  default-button-y
-		  default-button-width default-button-height
 		  "jumpy"
+		  (find-image "buttons/button-1.png")
 		  (lambda (c)
 			(button-sound)
 			(nightjar-levels c)))
 
-		 (rect-button
+		 (image-button
 		  "HOW TO PLAY"
 		  (- default-button-x 400)
 		  default-button-y
-		  default-button-width default-button-height
 		  "jumpy"
+		  (find-image "buttons/button-2.png")
 		  (lambda (c)
 			(button-sound)
 			(nightjar-about c)))
 		 
-		 (rect-button
+		 (image-button
 		  "LEADERBOARD"
 		  (+ default-button-x 400)
 		  default-button-y
-		  default-button-width default-button-height
 		  "jumpy"
+		  (find-image "buttons/button-3.png")
 		  (lambda (c)
 			(button-sound)
 			(msg (eq? player-name "???"))
@@ -355,24 +355,22 @@
 
    (game-modify-buttons
 	(list
-	 (rect-button
+	 (image-button
 	  "BACK"
 	  (- default-button-x 400)
 	  default-button-y
-	  default-button-width 
-	  default-button-height 
 	  "jumpy"
+	  (find-image "buttons/button-3.png")
 	  (lambda (c)
 		(button-sound)
 		(nightjar-main c)))
 
-	 (rect-button
-	  "VIRUS RESEARCH"
+	 (image-button
+	  "THE SCIENCE"
 	  (+ default-button-x 400)
 	  default-button-y
-	  default-button-width 
-	  default-button-height 
 	  "jumpy"
+	  (find-image "buttons/button-1.png")
 	  (lambda (c)
 		(button-sound)
 		(nightjar-science c)))
@@ -408,24 +406,22 @@
 
    (game-modify-buttons
 	(list
-	 (rect-button
+	 (image-button
 	  "BACK"
 	  (- default-button-x 400)
 	  default-button-y
-	  default-button-width 
-	  default-button-height 
 	  "jumpy"
+	  (find-image "buttons/button-1.png")
 	  (lambda (c)
 		(button-sound)
 		(nightjar-about c)))
 
-	 (rect-button
+	 (image-button
 	  "BENS WEBSITE"
 	  (+ default-button-x 400)
 	  default-button-y
-	  default-button-width 
-	  default-button-height 
 	  "jumpy"
+	  (find-image "buttons/button-2.png")
 	  (lambda (c)
 		(button-sound)
 		(nightjar-main c)))
@@ -461,56 +457,55 @@
 	   
 	   (game-modify-buttons
 		(list
-		 (rect-button
+		 (image-button
 		  "SHAPE"
-		  default-button-x
+		  (- default-button-x 600)
 		  (- default-button-y 150)
-		  default-button-width default-button-height
 		  "jumpy"
+		  (find-image "buttons/button-3.png")		  
 		  (lambda (c)
 			(button-sound)
 			(register-new-game c 0)))
 
-		 (rect-button
+		 (image-button
 		  (if (> (stage-reached) 0) "MUTATE" "LOCKED")
-		  default-button-x
-		  (- default-button-y 50)
-		  default-button-width default-button-height
+		  (- default-button-x 200)
+		  (- default-button-y 150)
 		  "jumpy"
+		  (find-image "buttons/button-2.png")		  
 		  (lambda (c)
 			(button-sound)
 			(if (> (stage-reached) 0) (register-new-game c 1)
 				c)))
 
-		 (rect-button
+		 (image-button
 		  (if (> (stage-reached) 1) "MULTIVARIANT" "LOCKED")
-		  default-button-x
-		  (+ default-button-y 50)
-		  default-button-width default-button-height
+		  (+ default-button-x 200)
+		  (- default-button-y 150)
 		  "jumpy"
+		  (find-image "buttons/button-1.png")		  
 		  (lambda (c)
 			(button-sound)
 			(if (> (stage-reached) 1) (register-new-game c 2)
 				c)))
 
-		 (rect-button
+		 (image-button
 		  (if (> (stage-reached) 2) "HIDDEN" "LOCKED")
-		  default-button-x
-		  (+ default-button-y 150)
-		  default-button-width default-button-height
+		  (+ default-button-x 600)
+		  (- default-button-y 150)
 		  "jumpy"
+		  (find-image "buttons/button-3.png")		  
 		  (lambda (c)
 			(button-sound)
 			(if (> (stage-reached) 2) (register-new-game c 3)
 				c)))
 
-		 (rect-button
+		 (image-button
 		  "BACK"
-		  (- default-button-x 400)
-		  (+ default-button-y 150)
-		  default-button-width 
-		  default-button-height 
+		  default-button-x
+		  (+ default-button-y 50)
 		  "jumpy"
+		  (find-image "buttons/button-1.png")		  
 		  (lambda (c)
 			(button-sound)
 			(nightjar-main c)))
@@ -628,24 +623,23 @@
 	  (append
 	   (list
 		
-		(rect-button
+		(image-button
 		 "PLAY AGAIN"
 		 (- default-button-x (if ditto.load_resource_static 200 350))
 		 default-button-y
-		 default-button-width default-button-height
 		 "jumpy"
+		 (find-image "buttons/button-2.png")		  
 		 (lambda (c)
 		   (button-sound)
 		   (register c "none")
 		   ))
 
-		(rect-button
+		(image-button
 		 "QUIT"
 		 (+ default-button-x (if ditto.load_resource_static 200 350))
 		 default-button-y
-		 default-button-width 
-		 default-button-height 
 		 "jumpy"
+		 (find-image "buttons/button-3.png")		  
 		 (lambda (c)
 		   (button-sound)
 		   (nightjar-intro game))))
@@ -653,12 +647,12 @@
 	   (if ditto.load_resource_static
 		   '()
 		   (list
-			(rect-button
+			(image-button
 			 "LEADERBOARD"
 			 default-button-x
 			 default-button-y
-			 default-button-width default-button-height
 			 "jumpy"
+			 (find-image "buttons/button-1.png")		  
 			 (lambda (c)
 			   (button-sound)
 			   (server-call-mutate
@@ -727,13 +721,12 @@
 	 )
    (game-modify-buttons
 	(list
-	 (rect-button
+	 (image-button
 	  "BACK"
 	  default-button-x
 	  (+ default-button-y 85)
-	  default-button-width 
-	  default-button-height 
 	  "jumpy"
+	  (find-image "buttons/button-2.png")		  
 	  (lambda (c)
 		(button-sound)
 		(nightjar-intro game))))
@@ -816,23 +809,28 @@
 					   (type-delete c)
 					   c))
 
-		(rect-button "DONE"  (+ default-button-x 200) (+ default-button-y 150) default-button-width default-button-height "jumpy"
-					 (lambda (c)
-					   (button-sound)
-					   (server-call-mutate
-						"player-name"
-						(list
-						 (list "player_id" (player-id))
-						 (list "player_name" player-name))
-						(lambda (c data)
-						  (server-call-mutate
-						   "hiscores"
-						   (list)
-						   (lambda (c scores)	      
-							 (msg scores)
-							 (nightjar-hiscores c (JSON.parse scores))))
-						  c))
-					   c))
+		(image-button
+		 "DONE"
+		 (+ default-button-x 200)
+		 (+ default-button-y 150)
+		 "jumpy"
+		 (find-image "buttons/button-3.png")		  					  
+		 (lambda (c)
+		   (button-sound)
+		   (server-call-mutate
+			"player-name"
+			(list
+			 (list "player_id" (player-id))
+			 (list "player_name" player-name))
+			(lambda (c data)
+			  (server-call-mutate
+			   "hiscores"
+			   (list)
+			   (lambda (c scores)	      
+				 (msg scores)
+				 (nightjar-hiscores c (JSON.parse scores))))
+			  c))
+		   c))
 		))
 	  c)))))
 
@@ -858,6 +856,9 @@
    "help-bubble-n.png"
    "help-bubble-r.png"
    "help-bubble-lt.png"
+   "buttons/button-1.png"
+   "buttons/button-2.png"
+   "buttons/button-3.png"
    ))
 
  (lambda ()
