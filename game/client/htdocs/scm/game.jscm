@@ -22,6 +22,7 @@
 (define player-name "???")
 (define end-game-time 7)
 (define installation-mode #f)
+(define cheat-mode #t)
 
 ;; delete old params if they are here
 ;(let ((v (local-load "viruscraft2-version")))
@@ -292,36 +293,39 @@
 			(register-new-game c 0)))
 
 		 (rect-button
-		  (if (> (stage-reached) 0) "MUTATE" "????")
+		  (if (or cheat-mode (> (stage-reached) 0)) "MUTATE" "????")
 		  (+ default-button-x 200)
 		  (- default-button-y 100)
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
 			(button-sound)
-			(if (> (stage-reached) 0) (register-new-game c 1)
-				c)))
+			(if (or cheat-mode (> (stage-reached) 0))
+			    (register-new-game c 1)
+			    c)))
 
 		 (rect-button
-		  (if (> (stage-reached) 1) "MULTIVARIANT" "????")
+		  (if (or cheat-mode (> (stage-reached) 1)) "MULTIVARIANT" "????")
 		  (+ default-button-x 200)
 		  (+ default-button-y 0)
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
 			(button-sound)
-			(if (> (stage-reached) 1) (register-new-game c 2)
+			(if (or cheat-mode (> (stage-reached) 1))
+			    (register-new-game c 2)
 				c)))
 
 		 (rect-button
-		  (if (> (stage-reached) 2) "HIDDEN" "????")
+		  (if (or cheat-mode (> (stage-reached) 2)) "HIDDEN" "????")
 		  (+ default-button-x 200)
 		  (+ default-button-y 100)
 		  default-button-width default-button-height
 		  "jumpy"
 		  (lambda (c)
 			(button-sound)
-			(if (> (stage-reached) 2) (register-new-game c 3)
+			(if (or cheat-mode (> (stage-reached) 2))
+			    (register-new-game c 3)
 				c)))
 
 
