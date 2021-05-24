@@ -125,49 +125,11 @@
 			(* delta 2) delta)))))
 
 (define (host-update h time delta hosts new-virus)
-  (let ((virus (host-virus h))
-		(move (v2add	   
-			   (world-bounds-vel (entity-pos h))
-			   (host-shove h hosts))))
-    (host-modify-virus
-	 (host-modify-dir
-	  (entity-rotate-to-face
-	   (entity-modify-anim-speed
-		(entity-modify-pos
-		 (host-update-state h new-virus delta)
-		 ;; update the position
-		 (v2add (entity-pos h) (host-dir h)))
-		;; walk speed
-		(* (v2mag (host-dir h)) 1))
-	   ;; facing angle
-	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 1)
-	  ;; dir
-	  (v2lerp
-	   (host-dir h)
-	   (if (< (v2mag move) 0.001)
-		   (if (< (rndf) 0.1)
-			   (vmul (rndcirc2d) 10)
-			   (v2mul (host-dir h) 0.99))
-		   move)
-	   0.01))
-	 ;; update the virus
-	 (cond
-	  ;; update the host postion if we have one
-	  (virus	    
-	   (entity-modify-pos virus (entity-pos h)))
-	  ;; store the infected host if we have one
-	  (new-virus
-	   ;; tell it it's infected...
-	   (entity-modify-pos
-		(entity-modify-offset
-		 (host-modify-state new-virus 'state-attached)
-		 ;; add the offset to the virus
-		 (v2sub (entity-pos new-virus) (entity-pos h)))
-		(entity-pos h)))
-	  (else virus)))))
+  (host-update-movement
+   (host-update-state h new-virus delta)   
+   time delta hosts new-virus))
 
-;; disable update state
-(define (host-demo-update h time delta hosts new-virus)
+(define (host-update-movement h time delta hosts new-virus)
   (let ((virus (host-virus h))
 		(move (v2add	   
 			   (world-bounds-vel (entity-pos h))

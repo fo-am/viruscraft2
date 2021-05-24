@@ -101,32 +101,48 @@
      #f
      host-list)))
 
-(define (virus-update v time delta world)	  
-  (let ((state (virus-state v)))
-    (entity-modify-pos
-     (entity-modify-timer
-      ;; the viruses state machine...
-      (cond
-       ((eq? state 'state-idle)
-	(if (> (entity-timer v) (param "virus-max-age"))
-	    (host-modify-state (entity-modify-timer v 0) 'state-died)
-	    v))
-       ((eq? state 'state-died) v) 
-       (else v))
-
-      (+ (entity-timer v) delta))
-
-     ;; update the position
-     (v2add
-      (entity-pos v)	    
-      (v2add
+(define (virus-update-position v time delta viruses)
+  (entity-modify-pos
+   v (v2add
+	  (entity-pos v)	    
+	  (v2add
 	   (world-centre-vel (entity-pos v))
 	   (v2add
 		(v2add
-		 (virus-shove v (world-viruses world))
+		 (virus-shove v viruses)
 		 (world-fluid-vel (entity-pos v) time))	       
-		(world-bounds-vel (entity-pos v))))))))
+		(world-bounds-vel (entity-pos v)))))))
+  
+(define (virus-update-state v delta)
+  (let ((state (virus-state v)))
+	(entity-modify-timer
+	 ;; the viruses state machine...
+	 (cond
+	  ((eq? state 'state-idle)
+	   (if (> (entity-timer v) (param "virus-max-age"))
+		   (host-modify-state (entity-modify-timer v 0) 'state-died)
+		   v))
+	  ((eq? state 'state-died) v) 
+	  (else v))
+	 (+ (entity-timer v) delta))))
 
+(define (virus-update v time delta viruses)	  
+  (virus-update-position
+   (virus-update-state v delta)
+   time delta viruses))
+
+(define (virus-demo-update v time delta viruses)	  
+  (entity-modify-rot
+   (entity-modify-pos
+	v (v2add
+	   (entity-pos v)	    
+	   (v2add
+		(world-centre-vel (entity-pos v))
+		(v2add
+		 (virus-shove v viruses)
+		 (world-fluid-vel (entity-pos v) time)))))
+   (+ (entity-rot v) (* delta 2))))
+  
 (define (virus-render v ctx)
   (entity-render v ctx))
 
@@ -140,11 +156,16 @@
 
 
 (define (virus-render-receptors v ctx)
-  (entity-render v ctx)  
-  (ctx.save)
-  (ctx.translate
-   (+ (- (vx (entity-pos v)) 150) (vx (entity-offset v)))
-   (+ (- (vy (entity-pos v)) 150) (vy (entity-offset v))))       
-  (ctx.drawImage (virus-receptor-image v) 0 0)
-  (ctx.restore))
+  (let ((posx (+ (- (vx (entity-pos v)) 150)
+				 (vx (entity-offset v))))
+		(posy (+ (- (vy (entity-pos v)) 150)
+				 (vy (entity-offset v)))))
+	(entity-render v ctx)  
+	(ctx.save)
+	(ctx.translate posx posy)
+	(ctx.translate 150 150)
+	(ctx.rotate (entity-rot v))
+	(ctx.translate -150 -150)
+	(ctx.drawImage (virus-receptor-image v) 0 0)
+	(ctx.restore)))
     

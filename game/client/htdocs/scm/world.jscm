@@ -229,7 +229,7 @@
 	   (else (append			 
 			  (list (entity-update
 					 (virus-update
-					  virus time delta w)
+					  virus time delta (world-viruses w))
 					 delta))
 			  r))))
 	(if (< (length (world-viruses w))

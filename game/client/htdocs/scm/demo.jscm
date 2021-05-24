@@ -18,30 +18,60 @@
   (make-demo
    (build-list
 	5 (lambda (_)
-		(make-host (vadd
-					(v2mul (rndcirc2d) 1000)
-					(v2mul (vec2 screen-width
-								 screen-height) 0.5))
-				   (generate-receptors 3))))))
+		(make-host
+		 (vadd
+		  (v2mul (rndcirc2d) 1000)
+		  (v2mul (vec2 screen-width
+					   screen-height) 0.5))
+		 (generate-receptors 3))))
+   (build-list
+	2
+	(lambda (_)
+	  (make-virus-with-receptors
+		 (vadd
+		  (v2mul (rndcirc2d) 1000)
+		  (v2mul (vec2 screen-width
+					   screen-height) 0.5))
+		 -10000 (generate-receptors 5))))
+   ))
 
-(define (make-demo entities)
-  (list entities))
+(define (make-demo hosts viruses)
+  (list hosts viruses))
 
-(define (demo-entities d)
-  (list-ref d 0))
+(define (demo-hosts d) (list-ref d 0))
+(define (demo-viruses d) (list-ref d 1))
 
 (define (demo-render d ctx)
   ;; build and render the entity renderer
   (for-each
    (lambda (e)
      (host-render e ctx))
-   (demo-entities d)))
+   (demo-hosts d))
+  (for-each
+   (lambda (e)
+     (virus-render-receptors e ctx))
+   (demo-viruses d)))
 
 (define (demo-update d time delta)
   (make-demo
    (map
     (lambda (e)
 	  (entity-update 
-	   (host-demo-update e time delta (demo-entities d) #f) delta))
-	(demo-entities d))))
+	   (host-update-movement e time delta (demo-hosts d) #f) delta))
+	(demo-hosts d))
+   (map
+    (lambda (e)
+	  (entity-update (virus-demo-update e time delta (demo-viruses d)) delta))
+	(demo-viruses d))))
 	
+(define (virus-demo-update v time delta viruses)	  
+  (entity-modify-rot
+   (entity-modify-pos
+	v (v2add
+	   (entity-pos v)	    
+	   (v2add
+		(world-centre-vel (entity-pos v))
+		(v2add
+		 (virus-shove v viruses)
+		 (world-fluid-vel (entity-pos v) time)))))
+   (+ (entity-rot v) (* delta 1))))
