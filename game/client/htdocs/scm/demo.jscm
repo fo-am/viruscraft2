@@ -1,0 +1,77 @@
+;; -*- mode: scheme; -*-
+;; Why We Love Wasps Copyright (C) 2019 FoAM Kernow
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU Affero General Public License as
+;; published by the Free Software Foundation, either version 3 of the
+;; License, or (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU Affero General Public License for more details.
+;;
+;; You should have received a copy of the GNU Affero General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+(define (make-new-demo)
+  (make-demo
+   (build-list
+	5 (lambda (_)
+		(make-host
+		 (vadd
+		  (v2mul (rndcirc2d) 1000)
+		  (v2mul (vec2 screen-width
+					   screen-height) 0.5))
+		 (generate-receptors 3))))
+   (build-list
+	2
+	(lambda (_)
+	  (make-virus-with-receptors
+		 (vadd
+		  (v2mul (rndcirc2d) 1000)
+		  (v2mul (vec2 screen-width
+					   screen-height) 0.5))
+		 -10000 (generate-receptors 5))))
+   ))
+
+(define (make-demo hosts viruses)
+  (list hosts viruses))
+
+(define (demo-hosts d) (list-ref d 0))
+(define (demo-viruses d) (list-ref d 1))
+
+(define (demo-render d ctx)
+  ;; build and render the entity renderer
+  (for-each
+   (lambda (e)
+     (host-render e ctx))
+   (demo-hosts d))
+  (for-each
+   (lambda (e)
+     (virus-render-receptors e ctx))
+   (demo-viruses d)))
+
+(define (demo-update d time delta)
+  (make-demo
+   (map
+    (lambda (e)
+	  (entity-update 
+	   (host-update-movement e time delta (demo-hosts d) #f) delta))
+	(demo-hosts d))
+   (map
+    (lambda (e)
+	  (entity-update (virus-demo-update e time delta (demo-viruses d)) delta))
+	(demo-viruses d))))
+	
+(define (virus-demo-update v time delta viruses)	  
+  (entity-modify-rot
+   (entity-modify-pos
+	v (v2add
+	   (entity-pos v)	    
+	   (v2add
+		(world-centre-vel (entity-pos v))
+		(v2add
+		 (virus-shove v viruses)
+		 (world-fluid-vel (entity-pos v) time)))))
+   (+ (entity-rot v) (* delta 1))))

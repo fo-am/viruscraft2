@@ -16,6 +16,7 @@ TARGET = robot
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c \
 	usiTwiSlave.c \
+	crc.c \
 	servo.c	
 
 # List Assembler source files here.
@@ -151,7 +152,8 @@ AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 # default attiny85/84
 #AVRDUDE_WRITE_FUSE = -U lfuse:w:0x62:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
 
-# 8Mhz 
+# 8Mhz
+# brownout at 2.7v
 AVRDUDE_WRITE_FUSE = -U lfuse:w:0xe2:m -U hfuse:w:0xDF:m -U efuse:w:0xFF:m
 
 # 4 when u brick yr atmega:

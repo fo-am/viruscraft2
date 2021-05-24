@@ -37,7 +37,7 @@
 	(let ((args (build-url-args argsl)))
 	  (set! args.fn name)
 	  (msg args)
-	  (let ((v ($.get "egglab" args)))
+	  (let ((v ($.get "game" args)))
 	    (v.fail (lambda (jqXHR textStatus errorThrown)
 		      (msg textStatus)
 		      (msg errorThrown)))))))
@@ -46,7 +46,7 @@
   (if (not ditto.load_resource_static)
       (let ((args (build-url-args argsl)))
 	(set! args.fn name)
-	(let ((v ($.get "egglab" args (mutate-game f))))
+	(let ((v ($.get "game" args (mutate-game f))))
 	  (v.fail (lambda (jqXHR textStatus errorThrown)
 		    (msg textStatus)
 		    (msg errorThrown)))))
@@ -330,8 +330,7 @@
 (define (image-button name x y jitter drawable callback)
   (list "image-button"
         name
-        (- x (/ drawable.width 2))
-        (- y (/ drawable.height 2))
+        x y 
         drawable.width
         drawable.height
         jitter callback drawable
@@ -578,7 +577,7 @@
          0 0))
   (set! ctx.fillStyle text-col)
   ;;(set! ctx.fillStyle "#000")
-  (button-text-render! b t 25)
+  (button-text-render! b t 15)
   (ctx.restore))
 
 (define (animated-button-render! ctx t b)

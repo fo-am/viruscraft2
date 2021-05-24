@@ -124,17 +124,22 @@
 		(if (eq? state 'state-infected)
 			(* delta 2) delta)))))
 
-(define (host-update h time delta world new-virus)
+(define (host-update h time delta hosts new-virus)
+  (host-update-movement
+   (host-update-state h new-virus delta)   
+   time delta hosts new-virus))
+
+(define (host-update-movement h time delta hosts new-virus)
   (let ((virus (host-virus h))
 		(move (v2add	   
 			   (world-bounds-vel (entity-pos h))
-			   (host-shove h (world-hosts world)))))
+			   (host-shove h hosts))))
     (host-modify-virus
 	 (host-modify-dir
 	  (entity-rotate-to-face
 	   (entity-modify-anim-speed
 		(entity-modify-pos
-		 (host-update-state h new-virus delta)
+		 h 
 		 ;; update the position
 		 (v2add (entity-pos h) (host-dir h)))
 		;; walk speed

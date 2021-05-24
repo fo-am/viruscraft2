@@ -23,7 +23,8 @@ unsigned int servo_active[8] = {1,1,1,1,1,1,1,1};
 void servo_init() {
 #ifndef UNIT_TEST
   //SERVO_DDR = SERVO_MASK;
-  SERVO_DDR = 0x0F; 
+  SERVO_DDR = 0x0F;
+  
   TCCR1B |= (1<<WGM12) | (1<<CS11);  // pwm mode 4,CTC, prescale=8
   TIMSK1 |= (1<<OCIE1A);             // enable T1_compareA interrupt 
   TCNT1 = 65530;
@@ -31,19 +32,20 @@ void servo_init() {
 }
 
 // currently overwrites all of PORTA (if output)
-void servo_pulse_update() {
+void servo_pulse_update(unsigned char mode) {
 #ifndef UNIT_TEST
   static unsigned char servo_num = 0;
-  if (servo_num < SERVO_NUM) { // leave space for i2c
-    // end pulse for servo (n), start pulse for servo (n+1)      
-    SERVO_PORT &= 0xf0;
-    if (servo_active[servo_num]==1) {
-      SERVO_PORT |= (1<<servo_num);
-    }
-  } else {
-    SERVO_PORT &= 0xf0;
+  if (mode>0) {
+	if (servo_num < SERVO_NUM) { // leave space for i2c
+	  // end pulse for servo (n), start pulse for servo (n+1)      
+	  SERVO_PORT &= 0xf0;
+	  if (servo_active[servo_num]==1) {
+		SERVO_PORT |= (1<<servo_num);
+	  }
+	} else {
+	  SERVO_PORT &= 0xf0;
+	}
   }
-  
   OCR1A = servo_pulse[servo_num];  // set width of pulse
   servo_num++;                     // prepare next servo 
   if(servo_num > 8) servo_num = 0; // again from servo 0;
@@ -54,7 +56,7 @@ void servo_pulse_update() {
 
 void servo_state_init(servo_state *state, unsigned char id) {
   state->id = id;
-  state->active = 1;
+  state->active = 0;
   state->start_pulse = SERVO_MID;
   state->end_pulse = SERVO_MID;
   state->time = 0;
@@ -65,6 +67,7 @@ void servo_state_init(servo_state *state, unsigned char id) {
   state->interpolation = SERVO_INTERPOLATION_LINEAR;
   state->min_pulse = SERVO_MIN;
   state->max_pulse = SERVO_MAX;
+  state->high_power = 0;
 }
 
 unsigned int servo_degrees_to_pulse(servo_state *state, int degrees) {
@@ -100,7 +103,7 @@ int cosi(int a, int b, float v) {
 void servo_update(servo_state *state) {
   if (state->time >= MAKE_FIXED(1.0)) {
     state->time = MAKE_FIXED(1.0);
-	state->active = 0;
+	state->active = state->high_power; // 0 = power saving
   } else {
     state->active = 1;
     state->time += state->speed;
