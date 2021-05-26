@@ -47,11 +47,37 @@
 
 (define (update-robot-virus shape-list)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://192.168.1.107:8889/shapes" true)
+    (xhttp.open "POST" "http://192.168.1.68:8889/shapes" true)
     (xhttp.setRequestHeader "Content-type" "text/plain")
     (xhttp.send
      (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))
-  
+
+(define sensor-state "none")
+
+(define (get-sensor-state)
+  (let ((t sensor-state))
+    (set! sensor-state "none")
+    t))
+
+(define (get-sensor-events)
+  (msg "opening socket")
+  (let ((socket (js "new WebSocket('ws://192.168.1.68:8890')")))
+    (set! socket.onopen
+	  (lambda (e)
+	    (msg "sensor socket opened")))
+    (set! socket.onmessage
+	  (lambda (e)
+	    (msg e.data)
+	    (set! sensor-state e.data)))
+    (set! socket.onclose
+	  (lambda (e)
+	    (msg "socket closed")))
+    (set! socket.onerror
+	  (lambda (e)
+	    (msg "socket error")))))
+
+(when installation-mode (get-sensor-events))
+	    
 (define (build-help-stack game-type stage time)
   (cond
    ((< (help-seen) stage)
@@ -356,7 +382,6 @@
 		  w))	 
 	 (else w))))
 
-
 (define (world-update w time delta)
   (update-scores-max-hosts! (length (world-hosts w)))
   (update-scores-max-viruses! (length (world-viruses w)))
@@ -378,6 +403,8 @@
 			   (map (lambda (m) (model-update m (world-hosts w) delta)) (world-models w))
 			   (world-models w))))
 	  
+	  (world-update-sensor
+	   time
 	  (world-update-state 
 	   (make-world
 		(world-game-id w)
@@ -417,10 +444,18 @@
 		 (world-receptor-mixer w) time delta)
 		(world-lives w)
 		(world-stage w))
-	   time delta))))
+	   time delta)))))
 
 (define (world-update-mouse w state x y time)
   (let ((mutator (mutator-update-mouse (world-mutator w) state x y)))
+	(world-modify-mutator 
+	 (if (mutator-event mutator)
+		 (world-receptor-button w (mutator-event mutator) time)
+		 w)
+	 mutator)))
+
+(define (world-update-sensor time w)
+  (let ((mutator (mutator-update-sensor (world-mutator w) (get-sensor-state))))
 	(world-modify-mutator 
 	 (if (mutator-event mutator)
 		 (world-receptor-button w (mutator-event mutator) time)

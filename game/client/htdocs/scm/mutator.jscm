@@ -77,6 +77,23 @@
 		#f buttons))
 	  (else (dice-button-clicked buttons))))))
 
+(define (mutator-update-sensor m sensor-state)
+  (let ((buttons
+	 (map
+	  (lambda (button)
+	    (shape-button-update-sensor button sensor-state))
+	  (mutator-buttons m))))
+	
+    (make-mutator
+     (mutator-type m)
+     buttons
+     (foldl
+      (lambda (button r)
+	(if (shape-button-clicked button)
+	    (shape-button-shape button)
+	    r))
+      #f buttons))))
+
 (define (mutator-update m mixer time delta)
   (make-mutator
    (mutator-type m)
