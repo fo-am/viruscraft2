@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./wasp-server.scm 8892
+./vc2-server.scm 8894

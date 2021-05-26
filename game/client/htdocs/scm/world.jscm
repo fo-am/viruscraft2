@@ -229,7 +229,7 @@
 	   (else (append			 
 			  (list (entity-update
 					 (virus-update
-					  virus time delta w)
+					  virus time delta (world-viruses w))
 					 delta))
 			  r))))
 	(if (< (length (world-viruses w))
@@ -249,7 +249,7 @@
 	       (param "host-max-population")))
 	   (cons
 		(entity-update
-		 (host-update host time delta w
+		 (host-update host time delta (world-hosts w)
 					  (world-find-attached-virus
 					   (entity-id host)
 					   infection-list))
@@ -261,7 +261,7 @@
       (else 
        (append
 		r (list (entity-update
-				 (host-update host time delta w
+				 (host-update host time delta (world-hosts w)
 							  (world-find-attached-virus
 							   (entity-id host)
 							   infection-list))
@@ -544,7 +544,7 @@
 			 (ctx.fillText "Current virus:" 1300 (+ -10 y))  
 			 (when variant
 				   (if (eq? (world-game-type w) "hidden")
-					   (virus-render variant ctx)
+					   (virus-render-question variant ctx)
 					   (virus-render-receptors variant ctx)))
 			 ;; only show this when it's gonna happen before end of level
 			 (when (< (model-timer model) (- (param "world-level-time") (world-level-time w))) 
