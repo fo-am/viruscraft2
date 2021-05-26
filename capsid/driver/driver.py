@@ -186,36 +186,36 @@ class robot_virus:
     def cali(self):
         print("recalibrating")
         if 0x0a in self.addresses:
-            self.calibrate(0x0a,[15,90,5,45],[70,40,60,0])  # <- dodgy plug a
+            self.calibrate(0x0a,[15,90,5,45],[60,50,60,0])  # <- dodgy plug a
         if 0x0b in self.addresses:
-            self.calibrate(0x0b,[20,85,5,70],[80,30,60,10])
+            self.calibrate(0x0b,[20,85,5,70],[65,40,50,10])
         if 0x0c in self.addresses:
-            self.calibrate(0x0c,[5,85,10,50],[60,40,60,0])       
+            self.calibrate(0x0c,[5,85,10,50],[45,40,60,0])       
         if 0x0d in self.addresses:
-            self.calibrate(0x0d,[15,95,10,50],[80,30,60,0]) 
+            self.calibrate(0x0d,[15,95,10,50],[60,50,50,0]) # <- bit iffy
         if 0x0e in self.addresses:
-            self.calibrate(0x0e,[10,85,10,50],[80,30,60,0])
+            self.calibrate(0x0e,[10,80,10,50],[60,35,55,0])
         if 0x0f in self.addresses:
-            self.calibrate(0x0f,[20,85,5,50],[80,30,60,0])
+            self.calibrate(0x0f,[20,85,5,50],[70,40,55,0])
         if 0x10 in self.addresses:
-            self.calibrate(0x10,[15,85,10,55],[80,30,60,0]) # <- fixed 4 show distance
+            self.calibrate(0x10,[15,85,10,55],[60,30,60,0]) # <- fixed 4 show distance
         if 0x11 in self.addresses:
-            self.calibrate(0x11,[15,85,5,55],[70,40,60,0])       
+            self.calibrate(0x11,[15,85,0,55],[60,40,40,0])       
         if 0x12 in self.addresses:
-            self.calibrate(0x12,[20,85,0,60],[80,30,60,0])
+            self.calibrate(0x12,[20,85,0,60],[70,40,45,0])
         if 0x13 in self.addresses:
-            self.calibrate(0x13,[20,85,0,70],[80,30,60,0])
+            self.calibrate(0x13,[25,85,0,70],[75,35,50,0])
 
     def reboot(self):
         print("power down")
         self.power_pin.off()
-        time.sleep(0.5)
+        time.sleep(5)
         print("power up")
         self.boot(False)
         
     def boot(self,do_cali=True):
         self.power_pin.on()
-        time.sleep(0.5)
+        time.sleep(5)
         print("scanning...")
         self.scan_addresses()
         if do_cali: self.cali()

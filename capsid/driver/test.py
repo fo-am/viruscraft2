@@ -3,14 +3,14 @@ import time, crc, random
 
 r = robot_virus()
 
-r.boot(False)
+r.boot(True)
 
 #while True:
 #    r.flash_all(10)
 
-#r.test_one(0x0e)
-#r.freeze_one(0x13)
-#while True: pass
+#r.test_one(0x13)
+#r.freeze_one(0x0a)
+while True: pass
 
 while True:
     print("loop")
