@@ -193,7 +193,6 @@
   (if (new-player?)
 	  (game-modify-render
 	   (lambda (ctx)
-		 (demo-render (game-data c) ctx)
 		 (set! ctx.fillStyle text-col)		
 		 (set! ctx.font "normal 120pt Dosis")
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
@@ -203,9 +202,9 @@
 		 )
 	   
 	   (game-modify-buttons
-		(list
-		 
-		 (image-button
+	    (list
+	     
+	     (image-button
 		  "PLAY" 
 		  default-button-x
 		  default-button-y

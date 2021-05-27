@@ -33,10 +33,10 @@
 	((or (eq? game-type "shape")
 		 (eq? game-type "multivariant"))
 	 (list
-	  (build-shape-button 300 600 "tri")
-	  (build-shape-button 450 600 "squ")
-	  (build-shape-button 600 600 "cir")
-	  (build-shape-button 750 600 "gui")))
+	  (build-shape-button 300 600 "cir")
+	  (build-shape-button 450 600 "tri")
+	  (build-shape-button 600 600 "gui")
+	  (build-shape-button 750 600 "squ")))
 	(else
 	 (build-dice-button 500 550)
 	 ))
