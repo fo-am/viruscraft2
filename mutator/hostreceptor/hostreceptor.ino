@@ -18,7 +18,9 @@ VL53L0X sensor(&sw);
 
 void setup()
 {
-  Wire.begin(0x20); 
+  //Serial.begin(9600);
+  
+  Wire.begin(0x73); 
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   
@@ -50,14 +52,16 @@ void setup()
 
 unsigned char state = 0;
 unsigned char thresh = 100;
-
+unsigned short value = 0;
+unsigned char debounce = 0;
 void loop()
 {
-  int v=sensor.readRangeContinuousMillimeters();
-
-  if (v<thresh) {
+  value=sensor.readRangeContinuousMillimeters();
+//Serial.println(v);
+  if (value<thresh) {
     digitalWrite(2,HIGH);
     state=1;
+    debounce=1;
   } else {
     digitalWrite(2,LOW);
     state=0;
@@ -77,6 +81,10 @@ void requestEvent()
       case 0x00: Wire.write(0xfa);
       case 0x01: Wire.write(state);
       case 0x02: Wire.write(thresh);
+      case 0x03: Wire.write(value&0xff);
+      case 0x04: Wire.write((value>>8)&0xff);
+      case 0x05: Wire.write(debounce);      
       default: Wire.write(state);
   }
+  debounce=0;
 }

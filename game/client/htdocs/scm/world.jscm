@@ -423,7 +423,7 @@
 		 (lambda (i m v)
 		   (cond
 		    ((model-new-variant? m)
-		     (update-robot-virus (model-variant m))
+		     (when installation-mode (update-robot-virus (model-variant m)))
 		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
 		    (else v)))
 		 models
