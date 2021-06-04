@@ -520,7 +520,7 @@
 	   (append
 		(list
 		 (rect-button
-		  "QUIT" 20 (+ default-button-y 185) 60 60 #f
+		  "QUIT" 20 (+ default-button-y 160) 80 50 #f
 		  (lambda (c)
 			(button-sound)
 			(let ((w (game-data c)))
@@ -530,7 +530,7 @@
 			  (save-scores-and-end c game-id))))			  
 
 		 (rect-button
-		  "?" 100 (+ default-button-y 185) 60 60 #f
+		  "HELP" 120 (+ default-button-y 160) 80 50 #f
 		  (lambda (c)
 			(button-sound)
 			(set! help-stack (build-help
