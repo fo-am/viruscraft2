@@ -774,7 +774,7 @@
 	   (set! ctx.font "normal 30pt Dosis")
 	   (wrap-text ctx "Enter your name for the leaderboard" 0 70 1000 70)
 	   (set! ctx.font "normal 50pt Dosis")
-	   (wrap-text ctx player-name 0 150 1000 70)
+	   (wrap-text ctx player-name 0 180 1000 70)
 	   (set! ctx.font "normal 30pt Dosis"))
 
 	 (game-modify-buttons
@@ -785,7 +785,7 @@
 							((eq? (qwertypos-y i) 1) 300)
 							(else 380))
 					  (* (qwertypos-x i) 120)))
-				(y (+ 220 (* (qwertypos-y i) 130)))
+				(y (+ 190 (* (qwertypos-y i) 130)))
 				(img (find-image "sprites/hex-b-1.png")))
 			(image-button ch x y #f
 						  img
@@ -798,16 +798,21 @@
 			  "Z" "X" "C" "V" "B" "N" "M"))
 
 	   (list
-		(rect-button "DELETE" (- default-button-x 200) (+ default-button-y 150) default-button-width default-button-height "jumpy"
-					 (lambda (c)
-					   (button-sound)		      
-					   (type-delete c)
-					   c))
+		(image-button
+		 "DELETE"
+		 (- default-button-x 200)
+		 (+ default-button-y 80)
+		 "jumpy"
+		 (find-image "buttons/button-2.png")		  					  
+		 (lambda (c)
+		   (button-sound)		      
+		   (type-delete c)
+		   c))
 
 		(image-button
 		 "DONE"
 		 (+ default-button-x 200)
-		 (+ default-button-y 150)
+		 (+ default-button-y 80)
 		 "jumpy"
 		 (find-image "buttons/button-3.png")		  					  
 		 (lambda (c)
