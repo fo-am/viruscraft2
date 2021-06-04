@@ -82,8 +82,8 @@
   (cond
    ((< (help-seen) stage)
 	(inc-help-seen!)
-	;; the first time we autotrigger help, make it the intro 
-	(build-help (if (eq? game-type "shape") "intro" game-type) time))
+	;; the first time we autotrigger help 
+	(build-help game-type time))
    (else '())))
 
 (define (build-world stage level game-id time lives)
@@ -335,6 +335,8 @@
 
 (define (world-update-state w time delta)
   (let ((state (world-state w)))
+	(when (not (eq? state "state-running"))
+		  (set! help-stack '()))  
 	(cond
 	 ((eq? state "state-running")
 	  (cond 
