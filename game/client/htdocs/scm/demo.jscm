@@ -49,7 +49,7 @@
    (demo-hosts d))
   (for-each
    (lambda (e)
-     (virus-render-receptors e ctx))
+     (virus-render-demo e ctx))
    (demo-viruses d)))
 
 (define (demo-update d time delta)

@@ -177,14 +177,6 @@
 	(when (not (eq? (host-state h) 'state-died))
 		  (when (eq? (host-state h) 'state-fade-away)
 				(set! ctx.globalAlpha (- 1.1 (/ (entity-timer h) host-fade-time))))
-		  (entity-render h ctx)
-
-		  ;; (ctx.save)
-		  ;; (ctx.translate
-		  ;;  (- (vx (entity-pos h)) 50)
-		  ;;  (- (vy (entity-pos h)) 50))       
-		  ;; (ctx.drawImage (host-receptor-image h) 0 0)
-		  ;; (ctx.restore)
-		  
+		  (entity-render h ctx)		  
 		  (when virus (virus-render virus ctx))
 		  (set! ctx.globalAlpha 1.0))))
