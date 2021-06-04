@@ -75,7 +75,8 @@
 			  (shape-button-shape button)
 			  r))
 		#f buttons))
-	  (else (dice-button-clicked buttons))))))
+	  (else
+	   (dice-button-clicked buttons))))))
 
 (define (mutator-update-sensor m sensor-state)
   (let ((buttons

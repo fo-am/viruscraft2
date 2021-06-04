@@ -41,7 +41,7 @@
 (define (world-stage w) (list-ref w 15))
 
 (define virus-age-var 5)
-(define info-text-display-duration 2)
+(define info-text-display-duration 5)
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
@@ -139,10 +139,7 @@
 		 level ;; level
 		 0 ;; level-time
 		 level-params
-		 (if (< level 11)
-			 "state-running" ;; state
-			 ;; todo: game complete
-			 "state-restart-game")
+		 "state-running" ;; state
 		 0 ;; infection timer
 		 #t ;; grace
 		 game-type
@@ -356,8 +353,10 @@
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
 		 (world-modify-state
-		  w (if (> (world-level w) (- (param "world-num-levels") 1))
-				"state-stage-complete"
+		  w (if (>= (world-level w) (param "world-num-levels"))		
+				(if (>= (world-level w) (length stage-types))
+					"state-game-complete"
+					"state-stage-complete")
 				"state-level-complete"))
 		 0))
 	   (else w)))	 
@@ -369,6 +368,10 @@
 	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state w "state-new-stage")
 		  w))
+	 ((eq? state "state-game-complete")
+	  (if (> (world-level-time w) info-text-display-duration)
+		  (world-modify-state w "state-exit")
+		  w))
 	 ((eq? state "state-new-level")
 	  (world-modify-state w "state-running"))
 	 ((eq? state "state-new-stage")
@@ -377,7 +380,7 @@
 	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state 
 		   w (if (< (world-lives w) 1)
-				 "state-restart-game"
+				 "state-exit"
 				 "state-restart-level"))
 		  w))	 
 	 (else w))))
@@ -455,12 +458,14 @@
 	 mutator)))
 
 (define (world-update-sensor time w)
-  (let ((mutator (mutator-update-sensor (world-mutator w) (get-sensor-state))))
-	(world-modify-mutator 
-	 (if (mutator-event mutator)
-		 (world-receptor-button w (mutator-event mutator) time)
-		 w)
-	 mutator)))
+  (if installation-mode
+	  (let ((mutator (mutator-update-sensor (world-mutator w) (get-sensor-state))))
+		(world-modify-mutator 
+		 (if (mutator-event mutator)
+			 (world-receptor-button w (mutator-event mutator) time)
+			 w)
+		 mutator))
+	  w))
 
 (define (world-receptor-button w receptor time)
   (cond
@@ -608,6 +613,11 @@
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
+		 (get-scores-analysis)))
+
+  (when (eq? (world-state w) "state-game-complete")		
+		(render-explanation
+		 (string-append "WELL DONE: GAME COMPLETED!")
 		 (get-scores-analysis)))
   
   (when (and

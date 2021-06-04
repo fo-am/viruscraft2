@@ -78,9 +78,15 @@
    (register
     (req 'score '(game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
     (lambda (game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
-      (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+      (update-score db game_id
+					(string->number stage)
+					(string->number level)
+					survived
+					(string->number duration)
+					mutations hosts_spawned viruses_spawned
+					infections max_hosts max_viruses final_hosts
+					final_viruses)
       (let ((rank (get-game-rank db game_id)))
-		(display (list game_id rank))(newline)
 		(pluto-response (scheme->json rank)))))
    
    (register
@@ -142,8 +148,8 @@
  ;; port number is read from command line as argument
  ;; ie: ./server.scm 8080
  #:port (string->number (command-line #:args (port) port))
-;; #:listen-ip "127.0.0.1"
- #:listen-ip "192.168.1.73"
+ #:listen-ip "127.0.0.1"
+;; #:listen-ip "192.168.1.73"
  #:command-line? #t
  #:servlet-path "/game"
  #:server-root-path

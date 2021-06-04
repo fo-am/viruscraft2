@@ -37,7 +37,7 @@
 
 (define (setup db)
   (exec/ignore db "create table player ( id integer primary key autoincrement)")
-  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, time_stamp varchar, stage integer, level integer, survived integer, duration real, mutations integer, hosts_spawned integer, viruses_spawned integer, infections integer, max_hosts integer, max_viruses integer, final_hosts integer, final_viruses integer)")
+  (exec/ignore db "create table game ( id integer primary key autoincrement, player_id integer, time_stamp varchar, stage integer, level integer, survived integer, duration real, mutations integer, hosts_spawned integer, viruses_spawned integer, infections integer, max_hosts integer, max_viruses integer, final_hosts integer, final_viruses integer, score real)")
   (exec/ignore db "create table player_name ( id integer primary key autoincrement, player_id integer, player_name text )")
   )
 
@@ -46,13 +46,29 @@
 
 (define (insert-game db player_id)
   (insert
-   db "INSERT INTO game VALUES (NULL, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
+   db "INSERT INTO game VALUES (NULL, ?, ?, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)"
    player_id (timestamp-now)))
+
+;; these are used to calculate the single score value
+;; need to update these based on the client
+;; if these change then all the scores are wrong anyway
+;; so the db will need clearing
+(define seconds-per-level 60)
+(define levels-per-stage 5)
+
+(define (calc-score duration level stage)
+  (+ duration
+	 ;; level starts at one
+     (* (+ (- level 1)
+		   ;; stage starts at zero
+           (* stage levels-per-stage))
+        seconds-per-level)))
 
 (define (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
   (exec/ignore
-   db "update game set stage=?, level=?, survived=?, duration=?, mutations=?, hosts_spawned=?, viruses_spawned=?, infections=?, max_hosts=?, max_viruses=?, final_hosts=?, final_viruses=? where id = ?"
+   db "update game set stage=?, level=?, survived=?, duration=?, mutations=?, hosts_spawned=?, viruses_spawned=?, infections=?, max_hosts=?, max_viruses=?, final_hosts=?, final_viruses=?, score=? where id = ?"
    stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses
+   (calc-score duration level stage)
    game_id))
 
 (define (insert-player-name db player_id player_name)
@@ -81,30 +97,32 @@
          (cdr s)))))
 
 ;; get the player name/scores ordered for the hiscores list
-(define (hiscores-select db)
+;; old version that orders the score manually
+(define (hiscores-select_ db)
   (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
                      join player_name as n on g.player_id=n.player_id        
                      where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
                      order by g.stage desc, g.level desc, g.duration desc limit 10")))
-	(display r)(newline)
     (if (null? r) '() (cdr r))))
 
-(define (get-position v ol)
-  (define (_ n l)
-    (cond
-      ((null? l) n)
-      ((> (car l) v) n)
-      (else (_ (+ n 1) (cdr l)))))
-  (_ 1 ol))
+;; using the precached score value
+(define (hiscores-select db)
+  (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
+                     join player_name as n on g.player_id=n.player_id        
+                     where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
+                     order by g.score desc limit 10")))
+    (if (null? r) '() (cdr r))))
 
+;; using the precached score value to shorehorn this in one query
 (define (get-game-rank db game-id)
   (let ((s (select db "select count(*) from game as g 
                        join player_name as n on g.player_id=n.player_id 
                        where n.player_name !='???' and 
-                       g.duration > (select duration from game where id = ?) and 
+                       g.score > (select score from game where id = ?) and 
                        g.time_stamp > (select datetime('now', '-7 day'))" game-id)))
     (if (null? s)
-	999
-	(vector-ref (cadr s) 0))))
+	1
+	(+ (vector-ref (cadr s) 0) 1))))
+
 
 
