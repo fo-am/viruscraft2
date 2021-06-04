@@ -563,7 +563,7 @@
 (define scores-anim-timing 0.10) 
 
 (define (to-fixed v n)
-  (v.toFixed v n))
+  (v.toFixed n))
 
 (define (pluralise v text)
   (string-append v (if (eq? v 1) text (string-append text "s"))))
@@ -585,18 +585,29 @@
 		  (set! ctx.fillStyle text-col)      		  
 		  (wrap-text
 		   ctx 
-		   (string-append "YOU MADE IT " (to-fixed (scores-duration) 2)
-						  " SECONDS INTO STAGE " (+ stage 1)
-						  " OF LEVEL " level)
+		   (string-append "YOU SURVIVED " (to-fixed (scores-duration) 2)
+						  " SECONDS INTO LEVEL " level
+						  " OF THE " (cond
+									  ((eq? stage 0) "SHAPE STAGE")
+									  ((eq? stage 1) "MUTATE STAGE")
+									  ((eq? stage 2) "MULTIVARIANT STAGE")
+									  (else "HIDDEN STAGE")))
 		   0 100 1300 100)
 
 		  (set! ctx.font "normal 30pt Dosis")
 
 		  (wrap-text
 		   ctx 
-		   (string-append "You have a high score rank of " score-pos " for players this week!")
+		   (string-append "You have a high score rank of " score-pos " for players this week.")
 		   0 300 1300 100)
-
+		  
+		  (wrap-text
+		   ctx 
+		   (if (<= score-pos 10)
+			   "CONGRATULATIONS: YOU MADE THE TOP TEN!"
+			   "Can you make the top ten?")
+		   0 380 1300 100)
+		  
 		  ;; (wrap-text
 		  ;;  ctx 
 		  ;;  (string-append "You spawned " (pluralise (scores-hosts-spawned) " host"))
@@ -683,31 +694,34 @@
    (lambda (ctx)
 	 (demo-render (game-data c) ctx)
 	 (set! ctx.fillStyle text-col)      
-	 (set! ctx.font "normal 75pt Dosis")
-	 (wrap-text ctx "LEADERBOARD" 0 100 1300 100)
-	 (set! ctx.font "normal 30pt Dosis")
+	 (set! ctx.font "normal 60pt Dosis")
+	 (wrap-text ctx "TOP TEN PLAYERS THIS WEEK" 50 100 1300 100)
+	 (set! ctx.font "normal 25pt Dosis")
 	 
      (wrap-text ctx "NAME" col1 170 1000 1)
      (wrap-text ctx "STAGE" col2 170 1000 1)
      (wrap-text ctx "LEVEL" col3 170 1000 1)
-     (wrap-text ctx "DURATION" col4 170 1000 1)
-     
+     (wrap-text ctx "FINAL LEVEL TIME" col4 170 1000 1)
+
+	 (define lh 38)
+	 (set! ctx.fillStyle text-col)
+	 
      (when scores
 	   (index-for-each
 	    (lambda (i e)
 	      (cond
 	       ((zero? i)
-			(set! ctx.font "normal 30pt pompiere")
-			(text-flashy-render ctx (list-ref e 0) col1 (+ 220 (* 45 i)) (game-time c))
-			(text-flashy-render ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* 45 i)) (game-time c))
-			(text-flashy-render ctx (number->string (list-ref e 2)) col3 (+ 220 (* 45 i)) (game-time c))
-			(text-flashy-render ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* 45 i)) (game-time c))
-			(set! ctx.font "normal 30pt pompiere"))
+			(set! ctx.font "bold 25pt Dosis")
+			(wrap-text ctx (list-ref e 0) col1 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (number->string (list-ref e 2)) col3 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* lh i)) 1000 1))
 	       (else
-			(wrap-text ctx (list-ref e 0) col1 (+ 220 (* 45 i)) 1000 1)
-			(wrap-text ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* 45 i)) 1000 1)
-			(wrap-text ctx (number->string (list-ref e 2)) col3 (+ 220 (* 45 i)) 1000 1)
-			(wrap-text ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* 45 i)) 1000 1))))
+			(set! ctx.font "normal 25pt Dosis")
+			(wrap-text ctx (list-ref e 0) col1 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (number->string (list-ref e 2)) col3 (+ 220 (* lh i)) 1000 1)
+			(wrap-text ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* lh i)) 1000 1))))
 	    scores))
 
 	 ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
