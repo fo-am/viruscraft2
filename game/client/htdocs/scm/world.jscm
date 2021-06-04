@@ -523,12 +523,12 @@
   (set! ctx.font "normal 80pt Dosis")
   (let ((m (ctx.measureText title)))
 	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
-		  (y 150)
+		  (y 180)
 		  (w (+ m.width 60))
 		  (h 120))
 	  (set! ctx.globalAlpha 0.8)
 	  (set! ctx.fillStyle panel-col)  
-	  (ctx.fillRect 0 150 screen-width 300)  
+	  (ctx.fillRect 0 150 screen-width 500)  
 	  (set! ctx.globalAlpha 1.0)
 	  (set! ctx.fillStyle "#000")  
 	  (ctx.fillText title (+ x 30) (- (+ y h) 20))))
@@ -601,26 +601,29 @@
   (when (eq? (world-state w) "state-game-over")
 		(cond
 		 ((< (world-lives w) 1)
-		  (render-explanation "GAME OVER" (get-scores-analysis)))
+		  (render-explanation "GAME OVER" (get-scores-analysis (world-stage w))))
 		 (else
 		  (render-explanation
-		   (string-append (- (world-lives w) 1) " LIVES LEFT")
-		   (get-scores-analysis)))))
+		   (string-append (world-lives w)
+						  (if (eq? 1 (world-lives w))
+							  " LIFE LEFT"
+							  " LIVES LEFT"))
+		   (get-scores-analysis (world-stage w))))))
 
   (when (eq? (world-state w) "state-level-complete")
 		(render-explanation
 		 (string-append "LEVEL " (world-level w) " COMPLETE!")
-		 (get-scores-analysis)))
+		 (get-scores-analysis (world-stage w))))
 
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
-		 (get-scores-analysis)))
+		 (get-scores-analysis (world-stage w))))
 
   (when (eq? (world-state w) "state-game-complete")		
 		(render-explanation
 		 (string-append "WELL DONE: GAME COMPLETED!")
-		 (get-scores-analysis)))
+		 (get-scores-analysis (world-stage w))))
   
   (when (and
 		 (eq? (world-state w) "state-running")
