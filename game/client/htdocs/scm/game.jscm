@@ -562,34 +562,41 @@
 	 (game-modify-render
 	  (lambda (ctx)
 		(set! ctx.fillStyle text-col)      
-		(set! ctx.font "normal 50pt Dosis")
 		
 		(let ((n (game-data c)))		
 		  (set! ctx.fillStyle text-col)      		  
+		  ;; (wrap-text
+		  ;;  ctx 
+		  ;;  (string-append "YOU SURVIVED " (to-fixed (scores-duration) 2)
+		  ;; 				  " SECONDS INTO LEVEL " level
+		  ;; 				  " OF THE " (cond
+		  ;; 							  ((eq? stage 0) "SHAPE STAGE")
+		  ;; 							  ((eq? stage 1) "MUTATE STAGE")
+		  ;; 							  ((eq? stage 2) "MULTIVARIANT STAGE")
+		  ;; 							  (else "HIDDEN STAGE")))
+		  ;;  0 100 1300 100)
+
+		  ;;(set! ctx.font "normal 30pt Dosis")
+
+		  (set! ctx.font "normal 75pt Dosis")
+
 		  (wrap-text
 		   ctx 
-		   (string-append "YOU SURVIVED " (to-fixed (scores-duration) 2)
-						  " SECONDS INTO LEVEL " level
-						  " OF THE " (cond
-									  ((eq? stage 0) "SHAPE STAGE")
-									  ((eq? stage 1) "MUTATE STAGE")
-									  ((eq? stage 2) "MULTIVARIANT STAGE")
-									  (else "HIDDEN STAGE")))
-		   0 100 1300 100)
-
+		   (string-append "Well done, your high score position is " score-pos)
+		   0 150 1300 130)
+		  
 		  (set! ctx.font "normal 30pt Dosis")
 
 		  (wrap-text
 		   ctx 
-		   (string-append "You have a high score rank of " score-pos " for players this week.")
-		   0 300 1300 100)
-		  
-		  (wrap-text
-		   ctx 
-		   (if (<= score-pos 10)
-			   "CONGRATULATIONS: YOU MADE THE TOP TEN!"
-			   "Can you make the top ten?")
-		   0 380 1300 100)
+		   (cond
+			((eq? score-pos 1)
+			 "YOU ARE OFFICIALLY TOP VIROLOGIST!")
+			((<= score-pos 10)
+			 "CONGRATULATIONS: YOU MADE THE TOP TEN!")
+			(else
+			 "Can you make the top ten?"))
+		   0 400 1300 100)
 		  
 		  ;; (wrap-text
 		  ;;  ctx 
@@ -708,11 +715,7 @@
 			(wrap-text ctx (number->string (+ (list-ref e 1) 1)) col2 (+ 220 (* lh i)) 1000 1)
 			(wrap-text ctx (number->string (list-ref e 2)) col3 (+ 220 (* lh i)) 1000 1)
 			(wrap-text ctx (string-append (/ (floor (* (list-ref e 3) 100)) 100) " secs") col4 (+ 220 (* lh i)) 1000 1))))
-	    scores))
-
-	 ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
-	 ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
-	 
+	    scores))	 
 	 )
    (game-modify-buttons
 	(list
