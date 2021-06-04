@@ -356,7 +356,7 @@
 		(world-modify-level-time
 		 (world-modify-state
 		  w (if (>= (world-level w) (param "world-num-levels"))		
-				(if (>= (world-level w) (length stage-types))
+				(if (>= (world-stage w) (- (length stage-types) 1))
 					"state-game-complete"
 					"state-stage-complete")
 				"state-level-complete"))
