@@ -312,11 +312,10 @@
 (define (nightjar-about c)
   (game-modify-render
    (lambda (ctx)
-	 (demo-render (game-data c) ctx)
-	 (set! ctx.font "normal 75pt Dosis")
-	 (wrap-text ctx "HOW TO PLAY" 0 100 1300 100)
-	 (set! ctx.font "normal 25pt Dosis")
-	 ;;(ctx.drawImage (find-image "logos.png") 300 510)
+	 ;;(demo-render (game-data c) ctx)
+	 (set! ctx.font "normal 50pt Dosis")
+	 (wrap-text ctx "HOW TO PLAY" 0 70 1300 100)
+	 (ctx.drawImage (find-image "about.png") 60 50)
 	 (set! ctx.font "normal 30pt Dosis")
 	 )
 
@@ -325,7 +324,7 @@
 	 (image-button
 	  "BACK"
 	  (- default-button-x 400)
-	  default-button-y
+	  (+ default-button-y 90)
 	  "jumpy"
 	  (find-image "buttons/button-3.png")
 	  (lambda (c)
@@ -335,7 +334,7 @@
 	 (image-button
 	  "THE SCIENCE"
 	  (+ default-button-x 400)
-	  default-button-y
+	  (+ default-button-y 90)
 	  "jumpy"
 	  (find-image "buttons/button-1.png")
 	  (lambda (c)
@@ -866,6 +865,7 @@
    "buttons/button-1.png"
    "buttons/button-2.png"
    "buttons/button-3.png"
+   "about.png"
    ))
 
  (lambda ()
