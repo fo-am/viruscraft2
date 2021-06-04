@@ -144,13 +144,40 @@
     (entity-walk-to e) 
     (entity-walk-time e))))
 
-(define (entity-rotate-to-face e dir speed)
+(define max-turn 0.1)
+
+(define (rot-clamp a m)
+  (cond
+   ((< a (- m)) (- m))
+   ((> a m) m)
+   (else a)))
+
+(define (turn-clamped a b m)
+  (cond
+   ((> b (+ a m)) (+ a m))
+   ((< b (- a m)) (- a m))
+   (else b)))
+
+;; lerp seems wrong
+(define (entity-rotate-to-face_ e dir speed)
   (if (and (zero? (vx dir))
 		   (zero? (vy dir)))
 	  e
 	  (let ((ndir (v2normalise dir)))
 		(entity-modify-rot
 		 e (lerp
+			(entity-rot e)
+			(Math.atan2 (vy ndir) (vx ndir))
+			speed)))))
+
+;; simple clamping seems better
+(define (entity-rotate-to-face e dir speed)
+  (if (and (zero? (vx dir))
+		   (zero? (vy dir)))
+	  e
+	  (let ((ndir (v2normalise dir)))
+		(entity-modify-rot
+		 e (turn-clamped
 			(entity-rot e)
 			(Math.atan2 (vy ndir) (vx ndir))
 			speed)))))

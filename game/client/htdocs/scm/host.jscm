@@ -145,7 +145,7 @@
 		;; walk speed
 		(* (v2mag (host-dir h)) 1))
 	   ;; facing angle
-	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 1)
+	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 0.05)
 	  ;; dir
 	  (v2lerp
 	   (host-dir h)
