@@ -332,7 +332,7 @@
 		(nightjar-main c)))
 
 	 (image-button
-	  "THE SCIENCE"
+	  "MORE INFO"
 	  (+ default-button-x 400)
 	  (+ default-button-y 90)
 	  "jumpy"
@@ -348,35 +348,18 @@
    (lambda (ctx)
 	 (demo-render (game-data c) ctx)
 
-	 (set! ctx.font "normal 75pt Dosis")
-	 (wrap-text ctx "HERE COMES THE SCIENCE" 0 100 1300 150)
-	 (set! ctx.font "normal 20pt Dosis")
-	 (wrap-text ctx "In our research group we study the evolution of parasites, bacteria, viruses, and the hosts that they infect." 0 150 1500 40)
-	 (wrap-text ctx "As an example, viruses can evolve to infect a broader or narrower range of hosts, or to become more infectious, and in turn their hosts can evolve to defend themselves. This often turns into a bit of a competition, as once the host has evolved to defend themselves, the virus then needs to evolve to bypass these defences if it is going to survive, and then the host needs to evolve, then the virus, then the host, and so on (this is a bit like an arms race!)." 0 240 1500 40)
-	 (wrap-text ctx "There are lots of things that affect how the virus and host evolve, like their genetics, the environment they live in, and what else is living in the ecosystem. We study how all these things alter the outcome of disease outbreaks." 0 420 1500 40)
-	 
-
-	 ;;(ctx.drawImage (find-image "logos.png") 300 510)
-
-	 ;;(set! ctx.globalAlpha 0.5)
-	 ;;      (ctx.drawImage (find-image "wasp.jpg") 860 290)
-
+	 (set! ctx.font "normal 40pt Dosis")
+	 (wrap-text ctx "ABOUT THE RESEARCH" 0 60 1300 150)
+	 (ctx.drawImage (find-image "ben.png") 100 60)
 	 (set! ctx.font "normal 30pt Dosis")
-
-
-	 ;;(set! ctx.globalAlpha 1.0)      
-
-	 ;; (ctx.drawImage (find-image "title-wildflowers1.png") -50 290)
-	 ;; (ctx.drawImage (find-image "title-wildflowers2.png") 1280 340)
-	 
 	 )
 
    (game-modify-buttons
 	(list
 	 (image-button
 	  "BACK"
-	  (- default-button-x 400)
-	  default-button-y
+	  (- default-button-x 300)
+	  (+ default-button-y 90)
 	  "jumpy"
 	  (find-image "buttons/button-1.png")
 	  (lambda (c)
@@ -385,13 +368,14 @@
 
 	 (image-button
 	  "BENS WEBSITE"
-	  (+ default-button-x 400)
-	  default-button-y
+	  (+ default-button-x 300)
+	  (+ default-button-y 90)
 	  "jumpy"
-	  (find-image "buttons/button-2.png")
+	  (find-image "buttons/button-3.png")
 	  (lambda (c)
 		(button-sound)
-		(nightjar-main c)))
+		(set! window.location "https://benashbyevo.wordpress.com/")
+		c))
 	 )
 	c)))
 
@@ -866,6 +850,7 @@
    "buttons/button-2.png"
    "buttons/button-3.png"
    "about.png"
+   "ben.png"
    ))
 
  (lambda ()

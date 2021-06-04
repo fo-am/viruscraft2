@@ -17,7 +17,7 @@
 (define (make-new-demo)
   (make-demo
    (build-list
-	5 (lambda (_)
+	3 (lambda (_)
 		(make-host
 		 (vadd
 		  (v2mul (rndcirc2d) 1000)
@@ -25,7 +25,7 @@
 					   screen-height) 0.5))
 		 (generate-receptors 3))))
    (build-list
-	2
+	1
 	(lambda (_)
 	  (make-virus-with-receptors
 		 (vadd
