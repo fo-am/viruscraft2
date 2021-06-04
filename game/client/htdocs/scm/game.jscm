@@ -93,7 +93,7 @@
 	(make-param "player-id" -1 "number")
 	(make-param "help-seen" -1 "number"))))
 
-(define params-version 22)
+(define params-version 23)
 
 (define (init-params!)
   (let ((v (local-load "viruscraft2-version")))
