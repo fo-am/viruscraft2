@@ -511,13 +511,13 @@
 	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
 		  (y 150)
 		  (w (+ m.width 60))
-		  (h 120))
-	  (set! ctx.globalAlpha 0.8)
+		  (h 200))
+	  (set! ctx.globalAlpha 0.5)
 	  (set! ctx.fillStyle panel-col)  
 	  (ctx.fillRect 0 y screen-width h)  
 	  (set! ctx.globalAlpha 1.0)
 	  (set! ctx.fillStyle "#000")  
-	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
+	  (ctx.fillText text (+ x 30) (- (+ y h) 50)))))
 
 (define (render-explanation title text)
   (set! ctx.font "normal 80pt Dosis")
@@ -526,9 +526,9 @@
 		  (y 180)
 		  (w (+ m.width 60))
 		  (h 120))
-	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.globalAlpha 0.5)
 	  (set! ctx.fillStyle panel-col)  
-	  (ctx.fillRect 0 150 screen-width 500)  
+	  (ctx.fillRect 0 0 screen-width screen-height)  
 	  (set! ctx.globalAlpha 1.0)
 	  (set! ctx.fillStyle "#000")  
 	  (ctx.fillText title (+ x 30) (- (+ y h) 20))))
@@ -628,9 +628,15 @@
   (when (and
 		 (eq? (world-state w) "state-running")
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
-		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
-									   " SECONDS TO GO!")))
-
+		(let ((secs
+			   (+ (trunc
+				   (- (param "world-level-time")
+					  (world-level-time w))) 1)))		  
+		  (render-message (string-append
+						   "ONLY " secs (if (eq? 1 secs)
+											" SECOND TO GO!" 
+											" SECONDS TO GO!")))))
+  
   (render-bubble-stack! help-stack ctx))
 
 (define (world-end-game-timer w)
