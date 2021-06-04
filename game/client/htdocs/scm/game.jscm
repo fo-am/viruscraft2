@@ -97,7 +97,6 @@
 
 (define (init-params!)
   (let ((v (local-load "viruscraft2-version")))
-	(msg "checking params")
 	(when (or (not v) (< v params-version))
 		  (msg "resetting params")
 		  (local-nuke)
@@ -266,7 +265,8 @@
 		 (set! ctx.font "normal 120pt Dosis")
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 		 (set! ctx.font "normal 30pt Dosis")		 
-		 (wrap-text ctx "Protect your host organisms from the virus..." 0 350 1000 40)
+		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
+		 (ctx.drawImage (find-image "logos.png") 400 580)
 		 )
 	   
 	   (game-modify-buttons
@@ -274,8 +274,8 @@
 		 (image-button
 		  "PLAY!"
 		  default-button-x
-		  default-button-y
-		  "jumpy"
+		  (- default-button-y 80)
+ 		  "jumpy"
 		  (find-image "buttons/button-1.png")
 		  (lambda (c)
 			(button-sound)
@@ -284,7 +284,7 @@
 		 (image-button
 		  "HOW TO PLAY"
 		  (- default-button-x 400)
-		  default-button-y
+		  (- default-button-y 80)
 		  "jumpy"
 		  (find-image "buttons/button-2.png")
 		  (lambda (c)
@@ -294,7 +294,7 @@
 		 (image-button
 		  "LEADERBOARD"
 		  (+ default-button-x 400)
-		  default-button-y
+		  (- default-button-y 80)
 		  "jumpy"
 		  (find-image "buttons/button-3.png")
 		  (lambda (c)
@@ -350,7 +350,7 @@
 
 	 (set! ctx.font "normal 40pt Dosis")
 	 (wrap-text ctx "ABOUT THE RESEARCH" 0 60 1300 150)
-	 (ctx.drawImage (find-image "ben.png") 100 60)
+	 (ctx.drawImage (find-image "ben.png") 100 70)
 	 (set! ctx.font "normal 30pt Dosis")
 	 )
 
