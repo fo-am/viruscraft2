@@ -640,7 +640,10 @@
 		  (find-image "buttons/button-2.png")		  
 		  (lambda (c)
 			(button-sound)
-			(nightjar-levels c)
+			(game-modify-data
+			 (lambda (d)
+			   (make-new-demo))
+			 (nightjar-levels c))
 			))
 
 		 (image-button
