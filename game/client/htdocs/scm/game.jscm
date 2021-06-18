@@ -836,7 +836,18 @@
 (set! ctx.fillStyle "#fff")
 
 (load-sounds!
- (list "button.wav"))
+ (list "button.wav"
+	   "death.wav"
+	   "dice-click.wav"
+	   "game-over.wav"
+	   "level-complete.wav"
+	   "life-lost.wav"
+	   "mutate.wav"
+	   "start.wav"
+	   "shape-click.wav"
+	   "spawn.wav"
+	   "stage-complete.wav"
+	   ))
 
 (load-images!
  (append 

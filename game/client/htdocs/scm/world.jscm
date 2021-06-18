@@ -86,8 +86,12 @@
 	(build-help game-type time))
    (else '())))
 
+(define first-update #t)
+
 (define (build-world stage level game-id time lives)
   (let ((game-type (list-ref stage-types stage)))
+	(play-sound "start.wav")
+	(set! first-update #t)
 	(reset-scores!)
 	;; auto trigger the help if we haven't seen it yet
 	(set! help-stack (build-help-stack game-type stage time))
@@ -341,10 +345,10 @@
 	 ((eq? state "state-running")
 	  (cond 
 	   ((zero? (length (world-hosts w)))
-		(msg "recording level time")
-		(update-scores-duration! (dbg (world-level-time w)))
+		(update-scores-duration! (world-level-time w))
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
+		(play-sound "life-lost.wav")
 		(world-modify-level-time		
 		 (world-modify-state w "state-game-over")
 		 0)) 
@@ -358,8 +362,12 @@
 		  w (if (>= (world-level w) (param "world-num-levels"))		
 				(if (>= (world-stage w) (- (length stage-types) 1))
 					"state-game-complete"
-					"state-stage-complete")
-				"state-level-complete"))
+					(begin
+					  (play-sound "stage-complete.wav")
+					  "state-stage-complete"))
+				(begin
+				  (play-sound "level-complete.wav")
+				  "state-level-complete")))
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
@@ -428,6 +436,9 @@
 		 (lambda (i m v)
 		   (cond
 		    ((model-new-variant? m)
+			 (when (not first-update)
+				   (play-sound "mutate.wav"))
+			 (set! first-update #f)
 		     (when installation-mode (update-robot-virus (model-variant m)))
 		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
 		    (else v)))
