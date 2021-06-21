@@ -33,7 +33,7 @@ async def loop(websocket,path):
             if await read(i2c,debounce_addr)==1:
                 await websocket.send(shape)
   
-start_server = websockets.serve(loop, "192.168.1.73", 8890)
+start_server = websockets.serve(loop, "192.168.1.1", 8890)
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
 
