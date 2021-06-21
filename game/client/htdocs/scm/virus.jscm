@@ -169,3 +169,28 @@
 	(ctx.drawImage (virus-receptor-image v) 0 0)
 	(ctx.restore)))
     
+(define (virus-render-demo v ctx)
+  (let ((posx (+ (- (vx (entity-pos v)) 150)
+				 (vx (entity-offset v))))
+		(posy (+ (- (vy (entity-pos v)) 150)
+				 (vy (entity-offset v))))
+		(clip (list-ref (entity-sprite-list v) (entity-clip v))))
+    (let ((images (anim-clip-frame-looped
+				   clip (entity-facing v)
+				   (entity-frame v))))
+	  
+	  (ctx.save)
+	  (ctx.translate posx posy)
+	  (ctx.translate 150 150)
+	  (ctx.rotate (entity-rot v))
+	  (ctx.scale 0.75 0.75)
+	  (ctx.translate -150 -150)
+	  
+	  (for-each
+	   (lambda (image)
+		   (ctx.drawImage image 0 0))
+	   images)
+	  
+	  (ctx.drawImage (virus-receptor-image v) 0 0)
+	  (ctx.restore))))
+  

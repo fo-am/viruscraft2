@@ -93,7 +93,7 @@
 	 ;; the host's state machine...
 	 (cond
 	  ;; at any time switch to infected if a virus attaches
-	  (new-virus
+	  (new-virus	  
 	   (entity-modify-bg-image
 		(host-modify-state
 		 (entity-modify-timer h 0)
@@ -105,6 +105,7 @@
 		   (host-modify-state (entity-modify-timer h 0) 'state-divide)
 		   h))
 	  ((eq? state 'state-divide)
+	   (play-sound "spawn.wav")
 	   (host-modify-state h 'state-fade-away))
 	  ((eq? state 'state-fade-away)
 	   (if (> (entity-timer h) host-fade-time)
@@ -114,9 +115,11 @@
 	   h) 
 	  ((eq? state 'state-infected)
 	   (if (> (entity-timer h) (param "host-infected-death-time"))
-		   (host-modify-state
-			(entity-modify-timer h 0)
-			'state-fade-away)
+		   (begin
+			 (play-sound "death.wav")			 
+			 (host-modify-state
+			  (entity-modify-timer h 0)
+			  'state-fade-away))
 		   (entity-modify-clip h host-animation-infected)))
 	  (else h))   
 	 (+ (entity-timer h)
@@ -145,7 +148,7 @@
 		;; walk speed
 		(* (v2mag (host-dir h)) 1))
 	   ;; facing angle
-	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 1)
+	   (vec2 (vy (host-dir h)) (- (vx (host-dir h)))) 0.05)
 	  ;; dir
 	  (v2lerp
 	   (host-dir h)
@@ -177,14 +180,6 @@
 	(when (not (eq? (host-state h) 'state-died))
 		  (when (eq? (host-state h) 'state-fade-away)
 				(set! ctx.globalAlpha (- 1.1 (/ (entity-timer h) host-fade-time))))
-		  (entity-render h ctx)
-
-		  ;; (ctx.save)
-		  ;; (ctx.translate
-		  ;;  (- (vx (entity-pos h)) 50)
-		  ;;  (- (vy (entity-pos h)) 50))       
-		  ;; (ctx.drawImage (host-receptor-image h) 0 0)
-		  ;; (ctx.restore)
-		  
+		  (entity-render h ctx)		  
 		  (when virus (virus-render virus ctx))
 		  (set! ctx.globalAlpha 1.0))))

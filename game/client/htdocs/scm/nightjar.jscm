@@ -137,7 +137,7 @@
    image-lib))
   
 (define sound-lib ())
-(define max-sound-channels 8)
+(define max-sound-channels 2)
 
 (define (load-sounds! l)
   (for-each

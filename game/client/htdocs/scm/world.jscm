@@ -41,7 +41,7 @@
 (define (world-stage w) (list-ref w 15))
 
 (define virus-age-var 5)
-(define info-text-display-duration 2)
+(define info-text-display-duration 5)
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
@@ -82,12 +82,16 @@
   (cond
    ((< (help-seen) stage)
 	(inc-help-seen!)
-	;; the first time we autotrigger help, make it the intro 
-	(build-help (if (eq? game-type "shape") "intro" game-type) time))
+	;; the first time we autotrigger help 
+	(build-help game-type time))
    (else '())))
+
+(define first-update #t)
 
 (define (build-world stage level game-id time lives)
   (let ((game-type (list-ref stage-types stage)))
+	(play-sound "start.wav")
+	(set! first-update #t)
 	(reset-scores!)
 	;; auto trigger the help if we haven't seen it yet
 	(set! help-stack (build-help-stack game-type stage time))
@@ -139,10 +143,7 @@
 		 level ;; level
 		 0 ;; level-time
 		 level-params
-		 (if (< level 11)
-			 "state-running" ;; state
-			 ;; todo: game complete
-			 "state-restart-game")
+		 "state-running" ;; state
 		 0 ;; infection timer
 		 #t ;; grace
 		 game-type
@@ -338,14 +339,16 @@
 
 (define (world-update-state w time delta)
   (let ((state (world-state w)))
+	(when (not (eq? state "state-running"))
+		  (set! help-stack '()))  
 	(cond
 	 ((eq? state "state-running")
 	  (cond 
 	   ((zero? (length (world-hosts w)))
-		(msg "recording level time")
-		(update-scores-duration! (dbg (world-level-time w)))
+		(update-scores-duration! (world-level-time w))
 		(update-scores-final-hosts! (length (world-hosts w)))
 		(update-scores-final-viruses! (length (world-viruses w)))
+		(play-sound "life-lost.wav")
 		(world-modify-level-time		
 		 (world-modify-state w "state-game-over")
 		 0)) 
@@ -356,9 +359,15 @@
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
 		 (world-modify-state
-		  w (if (> (world-level w) (- (param "world-num-levels") 1))
-				"state-stage-complete"
-				"state-level-complete"))
+		  w (if (>= (world-level w) (param "world-num-levels"))		
+				(if (>= (world-stage w) (- (length stage-types) 1))
+					"state-game-complete"
+					(begin
+					  (play-sound "stage-complete.wav")
+					  "state-stage-complete"))
+				(begin
+				  (play-sound "level-complete.wav")
+				  "state-level-complete")))
 		 0))
 	   (else w)))	 
 	 ((eq? state "state-level-complete")
@@ -369,6 +378,10 @@
 	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state w "state-new-stage")
 		  w))
+	 ((eq? state "state-game-complete")
+	  (if (> (world-level-time w) info-text-display-duration)
+		  (world-modify-state w "state-exit")
+		  w))
 	 ((eq? state "state-new-level")
 	  (world-modify-state w "state-running"))
 	 ((eq? state "state-new-stage")
@@ -377,7 +390,7 @@
 	  (if (> (world-level-time w) info-text-display-duration)
 		  (world-modify-state 
 		   w (if (< (world-lives w) 1)
-				 "state-restart-game"
+				 "state-exit"
 				 "state-restart-level"))
 		  w))	 
 	 (else w))))
@@ -423,7 +436,10 @@
 		 (lambda (i m v)
 		   (cond
 		    ((model-new-variant? m)
-		     (update-robot-virus (model-variant m))
+			 (when (not first-update)
+				   (play-sound "mutate.wav"))
+			 (set! first-update #f)
+		     (when installation-mode (update-robot-virus (model-variant m)))
 		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
 		    (else v)))
 		 models
@@ -455,12 +471,14 @@
 	 mutator)))
 
 (define (world-update-sensor time w)
-  (let ((mutator (mutator-update-sensor (world-mutator w) (get-sensor-state))))
-	(world-modify-mutator 
-	 (if (mutator-event mutator)
-		 (world-receptor-button w (mutator-event mutator) time)
-		 w)
-	 mutator)))
+  (if installation-mode
+	  (let ((mutator (mutator-update-sensor (world-mutator w) (get-sensor-state))))
+		(world-modify-mutator 
+		 (if (mutator-event mutator)
+			 (world-receptor-button w (mutator-event mutator) time)
+			 w)
+		 mutator))
+	  w))
 
 (define (world-receptor-button w receptor time)
   (cond
@@ -504,24 +522,24 @@
 	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
 		  (y 150)
 		  (w (+ m.width 60))
-		  (h 120))
-	  (set! ctx.globalAlpha 0.8)
+		  (h 200))
+	  (set! ctx.globalAlpha 0.5)
 	  (set! ctx.fillStyle panel-col)  
 	  (ctx.fillRect 0 y screen-width h)  
 	  (set! ctx.globalAlpha 1.0)
 	  (set! ctx.fillStyle "#000")  
-	  (ctx.fillText text (+ x 30) (- (+ y h) 20)))))
+	  (ctx.fillText text (+ x 30) (- (+ y h) 50)))))
 
 (define (render-explanation title text)
   (set! ctx.font "normal 80pt Dosis")
   (let ((m (ctx.measureText title)))
 	(let ((x (- (/ screen-width 2) (+ (/ m.width 2) 30)))
-		  (y 150)
+		  (y 180)
 		  (w (+ m.width 60))
 		  (h 120))
-	  (set! ctx.globalAlpha 0.8)
+	  (set! ctx.globalAlpha 0.5)
 	  (set! ctx.fillStyle panel-col)  
-	  (ctx.fillRect 0 150 screen-width 300)  
+	  (ctx.fillRect 0 0 screen-width screen-height)  
 	  (set! ctx.globalAlpha 1.0)
 	  (set! ctx.fillStyle "#000")  
 	  (ctx.fillText title (+ x 30) (- (+ y h) 20))))
@@ -594,28 +612,42 @@
   (when (eq? (world-state w) "state-game-over")
 		(cond
 		 ((< (world-lives w) 1)
-		  (render-explanation "GAME OVER" (get-scores-analysis)))
+		  (render-explanation "GAME OVER" (get-scores-analysis (world-stage w))))
 		 (else
 		  (render-explanation
-		   (string-append (- (world-lives w) 1) " LIVES LEFT")
-		   (get-scores-analysis)))))
+		   (string-append (world-lives w)
+						  (if (eq? 1 (world-lives w))
+							  " LIFE LEFT"
+							  " LIVES LEFT"))
+		   (get-scores-analysis (world-stage w))))))
 
   (when (eq? (world-state w) "state-level-complete")
 		(render-explanation
 		 (string-append "LEVEL " (world-level w) " COMPLETE!")
-		 (get-scores-analysis)))
+		 (get-scores-analysis (world-stage w))))
 
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
-		 (get-scores-analysis)))
+		 (get-scores-analysis (world-stage w))))
+
+  (when (eq? (world-state w) "state-game-complete")		
+		(render-explanation
+		 (string-append "WELL DONE: GAME COMPLETED!")
+		 (get-scores-analysis (world-stage w))))
   
   (when (and
 		 (eq? (world-state w) "state-running")
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
-		(render-message (string-append "ONLY " (trunc (- (param "world-level-time") (world-level-time w)))
-									   " SECONDS TO GO!")))
-
+		(let ((secs
+			   (+ (trunc
+				   (- (param "world-level-time")
+					  (world-level-time w))) 1)))		  
+		  (render-message (string-append
+						   "ONLY " secs (if (eq? 1 secs)
+											" SECOND TO GO!" 
+											" SECONDS TO GO!")))))
+  
   (render-bubble-stack! help-stack ctx))
 
 (define (world-end-game-timer w)

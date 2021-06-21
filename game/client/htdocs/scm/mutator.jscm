@@ -57,11 +57,13 @@
   (let ((buttons
 		 (cond
 		  ((eq? (mutator-type m) "shape")
+		   (play-sound "shape-click.wav")
 		   (map
 			(lambda (button)
 			  (shape-button-update-mouse button state x y))
 			(mutator-buttons m)))
 		  (else
+		   (play-sound "dice-click.wav")
 		   (dice-button-update-mouse (mutator-buttons m) state x y)))))
 	
 	(make-mutator
@@ -75,7 +77,8 @@
 			  (shape-button-shape button)
 			  r))
 		#f buttons))
-	  (else (dice-button-clicked buttons))))))
+	  (else
+	   (dice-button-clicked buttons))))))
 
 (define (mutator-update-sensor m sensor-state)
   (let ((buttons

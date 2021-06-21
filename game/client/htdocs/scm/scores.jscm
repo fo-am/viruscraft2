@@ -80,12 +80,12 @@
 
 (define scores-why "")
 
-(define (get-scores-analysis)
+(define (get-scores-analysis stage)
   (when (eq? scores-why "")
-		(set! scores-why (scores-analysis)))
+		(set! scores-why (scores-analysis stage)))
   scores-why)
 
-(define (scores-analysis)
+(define (scores-analysis stage)
   (if (scores-survived)
 	  ;; the player won
 	  (string-append
@@ -103,13 +103,17 @@
 			 (if (< (scores-infections) 10)
 				 (list "You hardly had any infections.") '()))
 		 (if (> (scores-mutations) 20)
-			 (list "Try using less mutation next time.")
+			 (list "You had to mutated your hosts a lot.")
 			 (if (< (scores-mutations) 5)
 				 (list "You only mutated when you had to.") '()))
 		 (if (< (scores-max-viruses) 10)
 			 (list "You kept virus counts low.")
 			 (if (> (scores-max-viruses) 25)
-				 (list "You might find it easier by keeping virus counts lower.") '())))))
+				 (list
+				  "You did well to survive with so much virus around."
+				  "You managed to keep ahead of the virus evolution."
+				  "This virus is no match for your hosts."
+				  "You are becoming an expert in immunity.") '())))))
 	  
 	  ;; game over
 	  (string-append
@@ -120,16 +124,23 @@
 		 (if (< (scores-mutations) 1)
 			 (list "Use the buttons at the bottom to mutate your host.")
 			 (if (< (scores-mutations) 10)
-				 (list "Try mutating more - to start with your host receptors match the virus spike protein shapes.")
+				 (list
+				  "Your host might need to evolve more quickly to keep up with the virus evolution."
+				  "Try mutating more - to start with your host receptors match the virus spike protein shapes.")
 				 '()))
 		 (if (< (scores-duration) 20)
 			 (list "It's not always that hard. Try mutating sooner next time.")
 			 (if (< (scores-duration) 30)
-				 (list "Keep an eye on the virus spike protein shapes.")
+				 (list
+				  (if (not (eq? stage 3))
+					  "Keep an eye on the virus spike protein shapes."
+					  "Can you work out the virus shapes from the infected hosts?"))
 				 (if (> (scores-duration) 40)
 					 (list "You nearly made it!") '())))		
 		 (if (< (scores-max-hosts) 10)
 			 (list "You need to increase your host population to make it easier to survive.") '())
 		 (if (> (scores-max-viruses) 25)
-			 (list "Its easier if you can manage to keep the number of viruses down to a minimum.") '()))))))
+			 (list "Its easier if you can manage to keep the number of viruses down to a minimum."
+				   "Try changing the host's shapes so none of them match the virus."
+				   "Try mutating until none of your host shapes match the virus shapes.") '()))))))
 

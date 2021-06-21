@@ -78,9 +78,15 @@
    (register
     (req 'score '(game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses))
     (lambda (game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
-      (update-score db game_id stage level survived duration mutations hosts_spawned viruses_spawned infections max_hosts max_viruses final_hosts final_viruses)
+      (update-score db game_id
+					(string->number stage)
+					(string->number level)
+					survived
+					(string->number duration)
+					mutations hosts_spawned viruses_spawned
+					infections max_hosts max_viruses final_hosts
+					final_viruses)
       (let ((rank (get-game-rank db game_id)))
-		(display (list game_id rank))(newline)
 		(pluto-response (scheme->json rank)))))
    
    (register
