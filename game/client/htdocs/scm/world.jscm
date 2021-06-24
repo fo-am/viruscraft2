@@ -634,7 +634,13 @@
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
-		 (get-scores-analysis (world-stage w))))
+		 (string-append "You can now try "
+						(cond
+						 ((eq? (world-stage w) 0) "mutating your hosts!")
+						 ((eq? (world-stage w) 1) "playing against multiple virus variants!")
+						 (else "playing against a virus you cannot see!")))))
+						 
+
 
   (when (eq? (world-state w) "state-game-complete")		
 		(render-explanation
