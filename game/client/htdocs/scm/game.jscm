@@ -230,18 +230,15 @@
 	 "player"
 	 '() 
 	 (lambda (c id)	 
-	   (msg (list "new player id" id))
 	   ;; save it...
 	   (local-set-param "viruscraft2" "player-id" id)
 	   c)))
    (else
-	(msg (list "returning player id" (player-id)))
 	(when (eq? player-name "???")
 		  (server-call-mutate
 		   "get-player-name"
 		   (list (list "player_id" (player-id)))
 		   (lambda (c name) 
-			 (msg (list "player name loaded:" (JSON.parse name)))
 			 ;; save it...
 			 (set! player-name (JSON.parse name))
 			 c)))
@@ -420,6 +417,13 @@
 		(button-sound)
 		(set! window.location "https://benashbyevo.wordpress.com/")
 		c))
+
+	 (hidden-button
+	  "" 1260 210 50 50 #f
+	  (lambda (c)
+		(button-sound)
+		(set! cheat-mode #t)
+		c))	 
 	 )
 	c)))
 

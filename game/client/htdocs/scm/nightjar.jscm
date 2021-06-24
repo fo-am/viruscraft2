@@ -137,7 +137,7 @@
    image-lib))
   
 (define sound-lib ())
-(define max-sound-channels 2)
+(define max-sound-channels 8)
 
 (define (load-sounds! l)
   (for-each
@@ -322,6 +322,10 @@
 
 ;; ----------------------------------------
 ;; button stuff
+
+(define (hidden-button name x y w h jitter callback)
+  (list "hidden-button" name x y w h
+        jitter callback #f (rndf) #f))
 
 (define (rect-button name x y w h jitter callback)
   (list "rect-button" name x y w h
@@ -552,7 +556,8 @@
       (cond
        ((or (eq? (button-type b) "rect-button")
             (eq? (button-type b) "image-button")
-            (eq? (button-type b) "animated-button"))
+            (eq? (button-type b) "animated-button")
+			(eq? (button-type b) "hidden-button"))
         (rect-button-update! b mx my c))
        (else
         (circle-button-update! b mx my c)))))
@@ -611,6 +616,7 @@
     (animated-button-render! ctx t b))
    ((eq? (button-type b) "image-button")
     (image-button-render! ctx t b))
+   ((eq? (button-type b) "hidden-button") 0)
    (else
     (circle-button-render! ctx t b))))
 
