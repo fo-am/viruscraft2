@@ -23,7 +23,6 @@
 (define end-game-time 7)
 (define installation-mode #f)
 (define cheat-mode #f)
-(js "let page_hidden=false;")
 (define highlight-col "#2ceaa3")
 
 ;; delete old params if they are here
@@ -190,7 +189,7 @@
 	   (set! ctx.font "normal 120pt Dosis")
 	   (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 	   (set! ctx.font "normal 30pt Dosis")
-	   (wrap-text ctx "Are you happy for us to store your player info (scores and level reached) on your browser?" 0 340 1200 60)
+	   (wrap-text ctx "Are you happy for us to store your player info (scores and level reached so far) on your browser and on our server for the leaderboard? This does not include any personally identifiable information." 0 340 1200 60)
 	   (set! ctx.font "normal 30pt Dosis")
 	   )
 	 
@@ -198,8 +197,8 @@
 	  (list
 	   
 	   (image-button
-		"PLAY" 
-		default-button-x
+		"YES" 
+		(- default-button-x 300)
 		default-button-y
 		"jumpy"
 		(find-image "buttons/button-2.png")
@@ -207,6 +206,16 @@
 		  (init-player-params!)
 		  (button-sound)
 		  (nightjar-main c)))
+	   
+	   (image-button
+		"NO" 
+		(+ default-button-x 300)
+		default-button-y
+		"jumpy"
+		(find-image "buttons/button-3.png")
+		(lambda (c)
+		  (button-sound)
+		  (set! window.location "https://benashbyevo.wordpress.com/")))
 	   
 	   )
 	  c)))
