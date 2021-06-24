@@ -53,11 +53,23 @@
      (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))
 
 (define sensor-state "none")
+(define sensor-state-debounced "none")
+(define sensor-state-debounce #t)
 
 (define (get-sensor-state)
   (let ((t sensor-state))
     (set! sensor-state "none")
     t))
+
+(define (get-sensor-state-debounced)
+  (when (not (eq? sensor-state sensor-state-debounced))
+    (set! sensor-state-debounce #t))  
+  (cond ((and sensor-state-debounce
+	      (not (eq? sensor-state "none")))
+	 (set! sensor-state-debounced sensor-state)
+	 (set! sensor-state-debounce #f)
+	 sensor-state)
+	(else "none")))
 
 (define (get-sensor-events)
   (msg "opening socket")
@@ -67,7 +79,6 @@
 	    (msg "sensor socket opened")))
     (set! socket.onmessage
 	  (lambda (e)
-	    (msg e.data)
 	    (set! sensor-state e.data)))
     (set! socket.onclose
 	  (lambda (e)

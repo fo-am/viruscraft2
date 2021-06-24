@@ -261,8 +261,8 @@
 		   (demo-update (game-data c) (/ t 1000) (game-delta c)))
 		 ;; hand wavy detection
 		 (if (and installation-mode
-				  (not (eq? (get-sensor-state) "none")))
-			 (nightjar-about c)
+			  (not (eq? (get-sensor-state-debounced) "none")))
+		     (nightjar-about c)
 			 c)))
 	  (game-modify-render
 	   (lambda (ctx)
@@ -273,7 +273,7 @@
 		 (set! ctx.font "normal 30pt Dosis")		 
 		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
 		 (when installation-mode
-			   (wrap-text ctx "Wave your hands over the shapes below to start." 0 400 1000 40))
+			   (wrap-text ctx "Hover your hands over one of the shapes below to start." 0 400 1000 40))
 		 (ctx.drawImage (find-image "logos.png") 400 580)
 		 )
 	   
@@ -281,12 +281,12 @@
 		(if installation-mode
 			
 			(list
-			 (image-button
-			  "PLAY!"
+			 (hidden-button
+			  ""
 			  (+ default-button-x 600)
-			  (- default-button-y 100)
-			  "jumpy"
-			  (find-image "buttons/button-1.png")
+			  (+ default-button-y 90)
+			  500 300
+			  #f
 			  (lambda (c)
 				(button-sound)
 				(nightjar-about c)))
@@ -345,15 +345,15 @@
    (game-modify-buttons
 	(if installation-mode
 		(list
-		 (image-button
-		  "PLAY"
+		 (hidden-button
+		  ""
 		  (+ default-button-x 600)
  		  (+ default-button-y 90)
-		  "jumpy"
-		  (find-image "buttons/button-1.png")		  
+		  500 300
+		  #f
 		  (lambda (c)
-			(button-sound)
-			(register-new-game c 0))))
+		    (button-sound)
+		    (register-new-game c 0))))
 		(list
 		 (image-button
 		  "BACK"
@@ -378,7 +378,7 @@
 	(if installation-mode
 		(game-modify-update
 		 (lambda (t c)
-		   (if (not (eq? (get-sensor-state) "none"))
+		   (if (not (eq? (get-sensor-state-debounced) "none"))
 			   (register-new-game c 0)
 			   c))
 		 c)

@@ -27,11 +27,20 @@ async def loop(websocket,path):
         "tri":0x72,
         "cir":0x73
         }
-    debounce_addr = 0x06
+    debounce_addr = 0x01
+    last_sent_none = False
     while True:
+        found_event = False
         for shape,i2c in devices.items():
-            if await read(i2c,debounce_addr)==1:
+            r = await read(i2c,debounce_addr)
+            if r==1:
+                found_event = True
+                last_sent_none = False
                 await websocket.send(shape)
+                
+        if not found_event and not last_sent_none:
+            await websocket.send("none")
+            last_sent_none=True
   
 start_server = websockets.serve(loop, "192.168.1.1", 8890)
 asyncio.get_event_loop().run_until_complete(start_server)
