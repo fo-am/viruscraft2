@@ -290,6 +290,13 @@
 			  (lambda (c)
 				(button-sound)
 				(nightjar-about c)))
+
+			 (hidden-button
+			  "" 0 0 100 100
+			  #f
+			  (lambda (c)
+				(button-sound)
+				(nightjar-secrets c)))
 			 )
 			
 			(list
@@ -589,6 +596,40 @@
 				c)))
 			
 			)) c))))))
+
+
+(define (nightjar-secrets c)
+  (game-modify-render
+   (lambda (ctx)     
+     (set! ctx.font "normal 50pt Dosis")
+     (wrap-text ctx "SECRET PAGE" 0 70 1300 100)
+     (set! ctx.font "normal 30pt Dosis")
+     )
+   (game-modify-buttons
+    (list
+     (image-button
+      "SHUT DOWN PI"
+      default-button-x
+      (- default-button-y 200)
+      "jumpy"
+      (find-image "buttons/button-1.png")
+      (lambda (c)
+	(button-sound)
+	(halt-pi)
+	c))
+     (image-button
+      "BACK"
+      default-button-x
+      default-button-y
+      "jumpy"
+      (find-image "buttons/button-2.png")
+      (lambda (c)
+	(button-sound)
+	(nightjar-main c)
+	))
+     ) c)))
+
+
 
 (define scores-anim-t 0)
 (define scores-anim-nests 0)

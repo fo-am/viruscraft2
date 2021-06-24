@@ -28,6 +28,9 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_response(200)
             return
 
+        if self.path=="/halt":
+            os.system("sudo halt")
+        
         if self.path=="/shapes":
             data_len = int(self.headers['Content-Length'])
             data_string = self.rfile.read(data_len)

@@ -52,6 +52,11 @@
     (xhttp.send
      (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))
 
+(define (halt-pi)
+  (let ((xhttp (js "new XMLHttpRequest()")))
+    (xhttp.open "POST" "http://viruscraft.wlan:8889/halt" true)
+    (xhttp.send)))
+
 (define sensor-state "none")
 (define sensor-state-debounced "none")
 (define sensor-state-debounce #t)
