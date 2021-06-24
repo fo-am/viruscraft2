@@ -951,6 +951,7 @@
    "about.png"
    "about-installation.png"
    "ben.png"
+   "x"
    ))
 
  (lambda ()

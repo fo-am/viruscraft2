@@ -12,11 +12,26 @@ html, body {
     background: black;
 }
 
+.logo-outer {
+	min-width: 800px;
+	width: 100%;
+}
+
+.logo-holder {
+	font-size: 1.5em;
+	color: black;
+	position: absolute;
+	margin-left: -100px;
+    left: 50%;
+    bottom: 30%;
+	text-align: center;
+}
+
 #canvas {
     width: 100%; /* 100% causes slider sometimes */
     height: auto;
     min-width: 800px;
-    background: #e3e2db; /* url(../images/backgrounds/background.jpg); */
+    background: #e3e2db;  /* url(../images/backgrounds/background.jpg); */
     background-size: 100% 100%;
     padding: 0;
     margin: auto;

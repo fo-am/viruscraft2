@@ -112,11 +112,12 @@
             (set! image-lib (cons (list fn image) image-lib))
 			(set! ctx.fillStyle "#000")
             (ctx.clearRect 0 0 screen-width screen-height)
-            (centre-text ctx "Loading..." 0 240)
+			(set! ctx.font "normal 50pt Dosis")
+            (centre-text ctx "Loading..." 0 500)
             (centre-text
              ctx
              (+ "" (Math.floor (* (/ (length image-lib)
-                                     (length images)) 100)) "%") 0 340)
+                                     (length images)) 100)) "%") 0 580)
             (when (eq? (length image-lib)
                        (length images))
                   (finished))))
