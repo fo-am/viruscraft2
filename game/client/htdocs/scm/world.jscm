@@ -137,7 +137,7 @@
 		 (index-map
 		  (lambda (i m)
 			(make-virus-with-receptors
-			 (vec2 1400 (+ (* i 300) 190)) 0
+			 (vec2 1400 (+ (* i 350) 200)) 0
 			 (build-list num-virus-receptors (lambda (_) 'tri))))
 		  models)	 
 		 level ;; level
@@ -441,7 +441,7 @@
 				   (play-sound "mutate.wav"))
 			 (set! first-update #f)
 		     (when installation-mode (update-robot-virus (model-variant m)))
-		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
+		     (make-virus-with-receptors (vec2 1400 (+ (* i 350) 200)) 0 (model-variant m)))
 		    (else v)))
 		 models
 		 (world-variant-viruses w))
@@ -590,7 +590,7 @@
 		(ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
 		(index-for-each2
 		 (lambda (i model variant)
-		   (let ((y (+ (* i 300) 100))
+		   (let ((y (+ (* i 350) 100))
 				 (mutation-time (- (model-period model) (model-timer model))))
 			 (when (< mutation-time 1)
 				   (set! ctx.globalAlpha (- 1 mutation-time))
