@@ -23,7 +23,7 @@
 (define end-game-time 7)
 (define installation-mode #f)
 (define cheat-mode #f)
-
+(js "let page_hidden=false;")
 (define highlight-col "#2ceaa3")
 
 ;; delete old params if they are here
@@ -266,7 +266,8 @@
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 		 (set! ctx.font "normal 30pt Dosis")		 
 		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
-		 (wrap-text ctx "Wave your hands over the shapes below to start." 0 400 1000 40)
+		 (when installation-mode
+			   (wrap-text ctx "Wave your hands over the shapes below to start." 0 400 1000 40))
 		 (ctx.drawImage (find-image "logos.png") 400 580)
 		 )
 	   
@@ -942,3 +943,8 @@
  (lambda ()
    (start-game canvas ctx)))
 
+(document.addEventListener
+ "visibilitychange"
+ (lambda ()
+   (when document.hidden 
+		 (set! window.location "/"))) #f)
