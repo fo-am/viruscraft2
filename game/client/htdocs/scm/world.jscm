@@ -137,7 +137,7 @@
 		 (index-map
 		  (lambda (i m)
 			(make-virus-with-receptors
-			 (vec2 1400 (+ (* i 300) 190)) 0
+			 (vec2 1400 (+ (* i 350) 200)) 0
 			 (build-list num-virus-receptors (lambda (_) 'tri))))
 		  models)	 
 		 level ;; level
@@ -359,8 +359,9 @@
 		(update-scores-final-viruses! (length (world-viruses w)))
 		(world-modify-level-time
 		 (world-modify-state
-		  w (if (>= (world-level w) (param "world-num-levels"))		
-				(if (>= (world-stage w) (- (length stage-types) 1))
+		  w (if (>= (world-level w) (param "world-num-levels"))
+				(if (or (>= (world-stage w) (- (length stage-types) 1))
+						installation-mode)
 					"state-game-complete"
 					(begin
 					  (play-sound "stage-complete.wav")
@@ -440,7 +441,7 @@
 				   (play-sound "mutate.wav"))
 			 (set! first-update #f)
 		     (when installation-mode (update-robot-virus (model-variant m)))
-		     (make-virus-with-receptors (vec2 1400 (+ (* i 300) 190)) 0 (model-variant m)))
+		     (make-virus-with-receptors (vec2 1400 (+ (* i 350) 200)) 0 (model-variant m)))
 		    (else v)))
 		 models
 		 (world-variant-viruses w))
@@ -513,7 +514,7 @@
 
 (define panel-col "#f2f2f2")
 (define bg-col "#e3e2db")
-(define panel-width 400)
+(define panel-width (if installation-mode 0 400))
 (define help-stack '())    
 
 (define (render-message text)
@@ -548,17 +549,17 @@
 
 
 (define (world-render w ctx time)
-;;  (set! ctx.fillStyle bg-col)
-;;  (ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
+  ;;(set! ctx.fillStyle bg-col)
+  ;;(ctx.fillRect 0 0 (- screen-width panel-width) screen-height)
 
   (set! ctx.strokeStyle "#000")
   (set! ctx.fillStyle "#000")
 
-;;  (ctx.beginPath)
-;;  (ctx.rect 100 100
-;;			(- screen-width panel-width 200)
-;;			(- screen-height 200))
-;;  (ctx.stroke)
+  ;; (ctx.beginPath)
+  ;; (ctx.rect 100 100
+  ;; 			(- screen-width panel-width 200)
+  ;; 			(- screen-height 200))
+  ;; (ctx.stroke)
 
   (for-each
    (lambda (e)
@@ -576,16 +577,20 @@
   (when (eq? (world-state w) "state-running")
 		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60)
 ;;		(ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
-		(ctx.fillText (string-append "LIVES: " (world-lives w)) 30 110))
-
-
+		(ctx.fillText (string-append "LIVES: " (+ (world-lives w) 1)) 30 110)
+		(when
+		 installation-mode
+		 (ctx.fillText (string-append "LEVEL: " (world-level w) "/" (param "world-num-levels")) 30 160)))
+  
+  
   ;; variant
-  (when (eq? (world-state w) "state-running")
+  (when (and (not installation-mode)
+			 (eq? (world-state w) "state-running"))
 		(set! ctx.fillStyle panel-col)
 		(ctx.fillRect (- screen-width panel-width) 0 panel-width screen-height)
 		(index-for-each2
 		 (lambda (i model variant)
-		   (let ((y (+ (* i 300) 100))
+		   (let ((y (+ (* i 350) 100))
 				 (mutation-time (- (model-period model) (model-timer model))))
 			 (when (< mutation-time 1)
 				   (set! ctx.globalAlpha (- 1 mutation-time))
@@ -629,7 +634,13 @@
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
-		 (get-scores-analysis (world-stage w))))
+		 (string-append "You can now try "
+						(cond
+						 ((eq? (world-stage w) 0) "mutating your hosts!")
+						 ((eq? (world-stage w) 1) "playing against multiple virus variants!")
+						 (else "playing against a virus you cannot see!")))))
+						 
+
 
   (when (eq? (world-state w) "state-game-complete")		
 		(render-explanation

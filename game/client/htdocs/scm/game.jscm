@@ -23,7 +23,6 @@
 (define end-game-time 7)
 (define installation-mode #t)
 (define cheat-mode #f)
-
 (define highlight-col "#2ceaa3")
 
 ;; delete old params if they are here
@@ -105,9 +104,6 @@
 		  )))
 
 
-;;(define start-level (param "start-level"))
-;;(define installation-mode #t)
-
 (load "scm/ordered-list.jscm")
 (load "scm/particles.jscm")
 (load "scm/animation.jscm")
@@ -143,14 +139,11 @@
   (register-game c (player-id) stage 1 3))
 
 (define (register-game c player-id stage level lives)
-  (msg "started register game")
   (server-call-mutate
    "game"
    (list (list "player_id" player-id))
    (lambda (c game-id)	 
-	 (msg (list "game id:" game-id))
      (nightjar-game-screen c game-id stage level lives)))
-  (msg "waiting for game to register...")
   (game-modify-data
    (lambda (d)	 
 	 (world-modify-state d "state-waiting-for-restart"))
@@ -188,34 +181,46 @@
 	c))
 
 (define (nightjar-intro c)
-  (if (new-player?)
-	  (game-modify-render
-	   (lambda (ctx)
-		 (set! ctx.fillStyle text-col)		
-		 (set! ctx.font "normal 120pt Dosis")
-		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
-		 (set! ctx.font "normal 30pt Dosis")
-		 (wrap-text ctx "Are you happy for us to store your player info (scores and level reached) on your browser?" 0 340 1200 60)
-		 (set! ctx.font "normal 30pt Dosis")
-		 )
+  (cond
+   ((new-player?)
+	(game-modify-render
+	 (lambda (ctx)
+	   (set! ctx.fillStyle text-col)		
+	   (set! ctx.font "normal 120pt Dosis")
+	   (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
+	   (set! ctx.font "normal 30pt Dosis")
+	   (wrap-text ctx "Are you happy for us to store your player info (scores and level reached so far) on your browser and on our server for the leaderboard? This does not include any personally identifiable information." 0 340 1200 60)
+	   (set! ctx.font "normal 30pt Dosis")
+	   )
+	 
+	 (game-modify-buttons
+	  (list
 	   
-	   (game-modify-buttons
-	    (list
-	     
-	     (image-button
-		  "PLAY" 
-		  default-button-x
-		  default-button-y
-		  "jumpy"
-		  (find-image "buttons/button-2.png")
-		  (lambda (c)
-			(init-player-params!)
-			(button-sound)
-			(nightjar-main c)))
-		 
-		 )
-		c))
-	  (nightjar-main c)))
+	   (image-button
+		"YES" 
+		(- default-button-x 300)
+		default-button-y
+		"jumpy"
+		(find-image "buttons/button-2.png")
+		(lambda (c)
+		  (init-player-params!)
+		  (button-sound)
+		  (nightjar-main c)))
+	   
+	   (image-button
+		"NO" 
+		(+ default-button-x 300)
+		default-button-y
+		"jumpy"
+		(find-image "buttons/button-3.png")
+		(lambda (c)
+		  (button-sound)
+		  (set! window.location "https://benashbyevo.wordpress.com/")))
+	   
+	   )
+	  c)))
+   (else
+	(nightjar-main c))))
 
 (define (register-player!)
   (init-params!)
@@ -225,18 +230,15 @@
 	 "player"
 	 '() 
 	 (lambda (c id)	 
-	   (msg (list "new player id" id))
 	   ;; save it...
 	   (local-set-param "viruscraft2" "player-id" id)
 	   c)))
    (else
-	(msg (list "returning player id" (player-id)))
 	(when (eq? player-name "???")
 		  (server-call-mutate
 		   "get-player-name"
 		   (list (list "player_id" (player-id)))
 		   (lambda (c name) 
-			 (msg (list "player name loaded:" (JSON.parse name)))
 			 ;; save it...
 			 (set! player-name (JSON.parse name))
 			 c)))
@@ -257,7 +259,11 @@
 		(game-modify-data
 		 (lambda (d)
 		   (demo-update (game-data c) (/ t 1000) (game-delta c)))
-		 c))
+		 ;; hand wavy detection
+		 (if (and installation-mode
+				  (not (eq? (get-sensor-state) "none")))
+			 (nightjar-about c)
+			 c)))
 	  (game-modify-render
 	   (lambda (ctx)
 		 (demo-render (game-data c) ctx)
@@ -266,48 +272,64 @@
 		 (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 		 (set! ctx.font "normal 30pt Dosis")		 
 		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
+		 (when installation-mode
+			   (wrap-text ctx "Wave your hands over the shapes below to start." 0 400 1000 40))
 		 (ctx.drawImage (find-image "logos.png") 400 580)
 		 )
 	   
 	   (game-modify-buttons
-		(list
-		 (image-button
-		  "PLAY!"
-		  default-button-x
-		  (- default-button-y 80)
- 		  "jumpy"
-		  (find-image "buttons/button-1.png")
-		  (lambda (c)
-			(button-sound)
-			(nightjar-levels c)))
-		 
-		 (image-button
-		  "HOW TO PLAY"
-		  (- default-button-x 400)
-		  (- default-button-y 80)
-		  "jumpy"
-		  (find-image "buttons/button-2.png")
-		  (lambda (c)
-			(button-sound)
-			(nightjar-about c)))
-		 
-		 (image-button
-		  "LEADERBOARD"
-		  (+ default-button-x 400)
-		  (- default-button-y 80)
-		  "jumpy"
-		  (find-image "buttons/button-3.png")
-		  (lambda (c)
-			(button-sound)
-			(server-call-mutate
-			 "hiscores"
-			 (list)
-			 (lambda (c scores)
-			   (nightjar-hiscores c (JSON.parse scores))))
-			c))
-		 
-		 )
-		c)))))))
+		(if installation-mode
+			
+			(list
+			 (image-button
+			  "PLAY!"
+			  (+ default-button-x 600)
+			  (- default-button-y 100)
+			  "jumpy"
+			  (find-image "buttons/button-1.png")
+			  (lambda (c)
+				(button-sound)
+				(nightjar-about c)))
+			 )
+			
+			(list
+			 (image-button
+			  "PLAY!"
+			  default-button-x
+			  (- default-button-y 80)
+			  "jumpy"
+			  (find-image "buttons/button-1.png")
+			  (lambda (c)
+				(button-sound)
+				(nightjar-levels c)))
+			 
+			 (image-button
+			  "HOW TO PLAY"
+			  (- default-button-x 400)
+			  (- default-button-y 80)
+			  "jumpy"
+			  (find-image "buttons/button-2.png")
+			  (lambda (c)
+				(button-sound)
+				(nightjar-about c)))
+			 
+			 (image-button
+			  "LEADERBOARD"
+			  (+ default-button-x 400)
+			  (- default-button-y 80)
+			  "jumpy"
+			  (find-image "buttons/button-3.png")
+			  (lambda (c)
+				(button-sound)
+				(server-call-mutate
+				 "hiscores"
+				 (list)
+				 (lambda (c scores)
+				   (nightjar-hiscores c (JSON.parse scores))))
+				c))
+			 
+			 ))
+			c)))))))
 
 (define (nightjar-about c)
   (game-modify-render
@@ -315,33 +337,52 @@
 	 ;;(demo-render (game-data c) ctx)
 	 (set! ctx.font "normal 50pt Dosis")
 	 (wrap-text ctx "HOW TO PLAY" 0 70 1300 100)
-	 (ctx.drawImage (find-image "about.png") 60 50)
+	 (ctx.drawImage (find-image (if installation-mode
+									"about-installation.png"
+									"about.png")) 60 50)
 	 (set! ctx.font "normal 30pt Dosis")
 	 )
-
    (game-modify-buttons
-	(list
-	 (image-button
-	  "BACK"
-	  (- default-button-x 400)
-	  (+ default-button-y 90)
-	  "jumpy"
-	  (find-image "buttons/button-3.png")
-	  (lambda (c)
-		(button-sound)
-		(nightjar-main c)))
+	(if installation-mode
+		(list
+		 (image-button
+		  "PLAY"
+		  (+ default-button-x 600)
+ 		  (+ default-button-y 90)
+		  "jumpy"
+		  (find-image "buttons/button-1.png")		  
+		  (lambda (c)
+			(button-sound)
+			(register-new-game c 0))))
+		(list
+		 (image-button
+		  "BACK"
+		  (- default-button-x 400)
+		  (+ default-button-y 90)
+		  "jumpy"
+		  (find-image "buttons/button-3.png")
+		  (lambda (c)
+			(button-sound)
+			(nightjar-main c)))
 
-	 (image-button
-	  "MORE INFO"
-	  (+ default-button-x 400)
-	  (+ default-button-y 90)
-	  "jumpy"
-	  (find-image "buttons/button-1.png")
-	  (lambda (c)
-		(button-sound)
-		(nightjar-science c)))
-	 )
-	c)))
+		 (image-button
+		  "MORE INFO"
+		  (+ default-button-x 400)
+		  (+ default-button-y 90)
+		  "jumpy"
+		  (find-image "buttons/button-1.png")
+		  (lambda (c)
+			(button-sound)
+			(nightjar-science c)))
+		 ))
+	(if installation-mode
+		(game-modify-update
+		 (lambda (t c)
+		   (if (not (eq? (get-sensor-state) "none"))
+			   (register-new-game c 0)
+			   c))
+		 c)
+		c))))
 
 (define (nightjar-science c)
   (game-modify-render
@@ -367,7 +408,7 @@
 		(nightjar-about c)))
 
 	 (image-button
-	  "BENS WEBSITE"
+	  "BEN'S WEBSITE"
 	  (+ default-button-x 300)
 	  (+ default-button-y 90)
 	  "jumpy"
@@ -376,6 +417,13 @@
 		(button-sound)
 		(set! window.location "https://benashbyevo.wordpress.com/")
 		c))
+
+	 (hidden-button
+	  "" 1260 210 50 50 #f
+	  (lambda (c)
+		(button-sound)
+		(set! cheat-mode #t)
+		c))	 
 	 )
 	c)))
 
@@ -518,27 +566,29 @@
 			 c)))))
 	  (game-modify-buttons
 	   (append
-		(list
-		 (rect-button
-		  "QUIT" 20 (+ default-button-y 160) 80 50 #f
-		  (lambda (c)
-			(button-sound)
-			(let ((w (game-data c)))
-			  (update-scores-duration! (world-level-time w))
-			  (update-scores-final-hosts! (length (world-hosts w)))
-			  (update-scores-final-viruses! (length (world-viruses w)))
-			  (save-scores-and-end c game-id))))			  
+		(if installation-mode
+			'()
+			(list
+			 (rect-button
+			  "QUIT" 20 (+ default-button-y 160) 80 50 #f
+			  (lambda (c)
+				(button-sound)
+				(let ((w (game-data c)))
+				  (update-scores-duration! (world-level-time w))
+				  (update-scores-final-hosts! (length (world-hosts w)))
+				  (update-scores-final-viruses! (length (world-viruses w)))
+				  (save-scores-and-end c game-id))))			  
 
-		 (rect-button
-		  "HELP" 120 (+ default-button-y 160) 80 50 #f
-		  (lambda (c)
-			(button-sound)
-			(set! help-stack (build-help
-							  (world-game-type (game-data c))
-							  (/ (game-time c) 1000)))
-			c))
-		 
-		 )) c))))))
+			 (rect-button
+			  "HELP" 120 (+ default-button-y 160) 80 50 #f
+			  (lambda (c)
+				(button-sound)
+				(set! help-stack (build-help
+								  (world-game-type (game-data c))
+								  (/ (game-time c) 1000)))
+				c)))
+			
+			)) c))))))
 
 (define scores-anim-t 0)
 (define scores-anim-nests 0)
@@ -551,9 +601,14 @@
 (define (pluralise v text)
   (string-append v (if (eq? v 1) text (string-append text "s"))))
 
+(define end-screen-time 8)
+(define end-screen-timer 0)
+
 (define (nightjar-end c score-pos stage level)
+  (set! end-screen-timer 0)
   (cond
-   ((eq? player-name "???")
+   ((and (eq? player-name "???")
+		 (not installation-mode))
 	(nightjar-enter-name c score-pos stage level))
    (else
 	(set! scores-anim-pos 0)
@@ -580,24 +635,42 @@
 
 		  (set! ctx.font "normal 75pt Dosis")
 
-		  (wrap-text
-		   ctx 
-		   (string-append "Well done, your high score position is " score-pos)
-		   0 150 1300 130)
-		  
-		  (set! ctx.font "normal 30pt Dosis")
+		  (cond
+		   (installation-mode
+			(wrap-text
+			 ctx
+			 (string-append "YOU SURVIVED " (to-fixed (scores-duration) 2)
+							" SECONDS INTO LEVEL " level)
+			 0 150 1300 130)
 
-		  (wrap-text
-		   ctx 
-		   (cond
-			((eq? score-pos 1)
-			 "YOU ARE OFFICIALLY TOP VIROLOGIST!")
-			((<= score-pos 10)
-			 "CONGRATULATIONS: YOU MADE THE TOP TEN!")
-			(else
-			 "Can you make the top ten?"))
-		   0 400 1300 100)
+			(set! ctx.font "normal 30pt Dosis")
+
+			(wrap-text
+			 ctx 
+			 (string-append "Well done, this gives you a high score position of: " score-pos)
+			 0 400 1300 100)
+			
+			)
+		   (else
+			(wrap-text
+			 ctx 
+			 (string-append "Well done, your high score position is " score-pos)
+			 0 150 1300 130)
+			
+			(set! ctx.font "normal 30pt Dosis")
+			
+			(wrap-text
+			 ctx 
+			 (cond
+			  ((eq? score-pos 1)
+			   "YOU ARE OFFICIALLY TOP VIROLOGIST!")
+			  ((<= score-pos 10)
+			   "CONGRATULATIONS: YOU MADE THE TOP TEN!")
+			  (else
+			   "Can you make the top ten?"))
+			 0 400 1300 100)))
 		  
+		  		  
 		  ;; (wrap-text
 		  ;;  ctx 
 		  ;;  (string-append "You spawned " (pluralise (scores-hosts-spawned) " host"))
@@ -618,63 +691,70 @@
 		)
 	  (game-modify-update
 	   (lambda (t c)
-		 c)
+		 (cond
+		  (installation-mode
+		   (set! end-screen-timer (+ end-screen-timer (game-delta c)))
+		   (if (> end-screen-timer end-screen-time)
+			   (nightjar-main c)
+			   c))
+		  (else c)))
 	   (game-modify-buttons
-		(list
-		 
-		 (image-button
-		  "PLAY AGAIN"
-		  (- default-button-x 400)
-		  default-button-y
-		  "jumpy"
-		  (find-image "buttons/button-2.png")		  
-		  (lambda (c)
-			(button-sound)
-			(game-modify-data
-			 (lambda (d)
-			   (make-new-demo))
-			 (nightjar-levels c))
-			))
+		(if installation-mode
+			'()
+			(list
+			 (image-button
+			  "PLAY AGAIN"
+			  (- default-button-x 400)
+			  default-button-y
+			  "jumpy"
+			  (find-image "buttons/button-2.png")		  
+			  (lambda (c)
+				(button-sound)
+				(game-modify-data
+				 (lambda (d)
+				   (make-new-demo))
+				 (nightjar-levels c))
+				))
 
-		 (image-button
-		  "BACK"
-		  (+ default-button-x 400)
-		  default-button-y
-		  "jumpy"
-		  (find-image "buttons/button-3.png")		  
-		  (lambda (c)
-			(button-sound)
-			(nightjar-intro game)))
-		 
-		 (image-button
-		  "LEADERBOARD"
-		  default-button-x
-		  default-button-y
-		  "jumpy"
-		  (find-image "buttons/button-1.png")		  
-		  (lambda (c)
-			(button-sound)
-			(server-call-mutate
-			 "hiscores"
-			 (list)
-			 (lambda (c scores)	      
-			   ;; restart the demo!
-			   (nightjar-hiscores
-				(game-modify-update
-				 (lambda (t c)
-				   ;; update loop
-				   (game-modify-data
-					(lambda (d)
-					  (demo-update (game-data c) (/ t 1000) (game-delta c)))
-					c))
-				 ;; init the demo
-				 (game-modify-data
-				  (lambda (d)
-					(make-new-demo))
-				  c))
-				(JSON.parse scores))))
-			c)))
-	   
+			 (image-button
+			  "BACK"
+			  (+ default-button-x 400)
+			  default-button-y
+			  "jumpy"
+			  (find-image "buttons/button-3.png")		  
+			  (lambda (c)
+				(button-sound)
+				(nightjar-intro game)))
+			 
+			 (image-button
+			  "LEADERBOARD"
+			  default-button-x
+			  default-button-y
+			  "jumpy"
+			  (find-image "buttons/button-1.png")		  
+			  (lambda (c)
+				(button-sound)
+				(server-call-mutate
+				 "hiscores"
+				 (list)
+				 (lambda (c scores)	      
+				   ;; restart the demo!
+				   (nightjar-hiscores
+					(game-modify-update
+					 (lambda (t c)
+					   ;; update loop
+					   (game-modify-data
+						(lambda (d)
+						  (demo-update (game-data c) (/ t 1000) (game-delta c)))
+						c))
+					 ;; init the demo
+					 (game-modify-data
+					  (lambda (d)
+						(make-new-demo))
+					  c))
+					(JSON.parse scores))))
+				c))))
+		
 		c)))))))
 
 (define col1 -350)
@@ -869,9 +949,15 @@
    "buttons/button-2.png"
    "buttons/button-3.png"
    "about.png"
+   "about-installation.png"
    "ben.png"
    ))
 
  (lambda ()
    (start-game canvas ctx)))
 
+(document.addEventListener
+ "visibilitychange"
+ (lambda ()
+   (when document.hidden 
+		 (set! window.location "/"))) #f)

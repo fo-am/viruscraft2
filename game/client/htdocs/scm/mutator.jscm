@@ -32,11 +32,12 @@
    (cond
 	((or (eq? game-type "shape")
 		 (eq? game-type "multivariant"))
-	 (list
-	  (build-shape-button 300 600 "cir")
-	  (build-shape-button 450 600 "tri")
-	  (build-shape-button 600 600 "gui")
-	  (build-shape-button 750 600 "squ")))
+	 (let ((mid (- (/ (- screen-width panel-width) 2) 75)))
+	   (list
+		(build-shape-button (- mid 225) 600 "cir")
+		(build-shape-button (- mid 75)  600 "tri")
+		(build-shape-button (+ mid 75)  600 "gui")
+		(build-shape-button (+ mid 225) 600 "squ"))))
 	(else
 	 (build-dice-button 500 550)
 	 ))
