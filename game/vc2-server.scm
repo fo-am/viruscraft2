@@ -45,7 +45,7 @@
       (set! db (open (string->path db-name)))
       (setup db)))
 
-(open-log "log.txt")
+(open-log "/home/pi/viruscraft2/game/log.txt")
 
 (define (pluto-response txt)
   (response/full

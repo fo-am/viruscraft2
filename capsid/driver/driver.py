@@ -1,4 +1,4 @@
-import smbus, time, random, copy, crc
+import smbus, time, random, copy, crc, math
 from gpiozero import LED
 
 ##############################################
@@ -261,9 +261,8 @@ class robot_virus:
         if len(self.addresses)<1:
             print("rebooting")
             self.reboot()
-            return
-        tris_per_shape = int(len(self.addresses)/len(shapes))
-        if tris_per_shape<1: tris_per_shape=1
+            return         
+        tris_per_shape = int(math.ceil(len(self.addresses)/float(len(shapes))))
         tris = copy.copy(self.addresses)
         for shape in shapes:
             for tri_num in range(0,tris_per_shape):
@@ -278,6 +277,4 @@ class robot_virus:
                         print("rebooting")
                         self.reboot()
                         do_reboot = False
-            
-
         
