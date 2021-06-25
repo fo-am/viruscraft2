@@ -32,7 +32,8 @@
    (cond
 	((or (eq? game-type "shape")
 		 (eq? game-type "multivariant"))
-	 (let ((mid (- (/ (- screen-width panel-width) 2) 75)))
+	 (let ((mid (+ (- (/ (- screen-width panel-width) 2) 75)
+				   (if installation-mode 0 100))))
 	   (list
 		(build-shape-button (- mid 225) 600 "cir")
 		(build-shape-button (- mid 75)  600 "tri")
