@@ -20,7 +20,7 @@ void setup()
 {
   //Serial.begin(9600);
   
-  Wire.begin(0x73); 
+  Wire.begin(0x70); 
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   
@@ -54,11 +54,17 @@ unsigned char state = 0;
 unsigned char thresh = 100;
 unsigned short value = 0;
 unsigned char debounce = 0;
+float fv = 0;
+float f = 0.3;
+
 void loop()
 {
+  
   value=sensor.readRangeContinuousMillimeters();
-//Serial.println(v);
-  if (value<thresh) {
+  fv = value*f+fv*(1-f);
+  
+  Serial.println(fv);
+  if (fv<thresh) {
     digitalWrite(2,HIGH);
     state=1;
     debounce=1;

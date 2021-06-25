@@ -110,15 +110,15 @@
     (set! image.onload
           (lambda ()
             (set! image-lib (cons (list fn image) image-lib))
-			(set! ctx.fillStyle "#000")
-            (ctx.clearRect 0 0 screen-width screen-height)
-            (centre-text ctx "Loading..." 0 240)
-            (centre-text
-             ctx
-             (+ "" (Math.floor (* (/ (length image-lib)
-                                     (length images)) 100)) "%") 0 340)
-            (when (eq? (length image-lib)
+
+			(let ((p (document.getElementById "loading")))
+			  (set! p.value (* (/ (length image-lib)
+								  (length images)) 100)))
+			
+			(when (eq? (length image-lib)
                        (length images))
+				  (let ((p (document.getElementById "loading-container")))
+					(set! p.style.display "none"))
                   (finished))))
     (set! image.src (+ "images/" fn))))
 
@@ -568,7 +568,7 @@
   (set! ctx.fillStyle highlight-col)
   (ctx.fillRect 0 0 (button-w b) (button-h b))
   (set! ctx.fillStyle text-col)
-  (button-text-render! b t 15)
+  (button-text-render! b t 10)
   (button-do-jittering b t)
   (ctx.restore))
 

@@ -12,11 +12,41 @@ html, body {
     background: black;
 }
 
+.logo-outer {
+	min-width: 800px;
+	width: 100%;
+}
+
+.logo-holder {
+	font-size: 1.5em;
+	color: black;
+	position: absolute;
+	margin-left: -100px;
+	left: 50%;
+    top: 20%;
+	text-align: center;
+}
+
+
+progress {
+	width: 200px;
+	height: 15px;
+}
+
+/* background: */
+progress::-webkit-progress-bar { background-color: white; width: 100%; }
+progress { background-color: white; }
+
+/* value: */
+progress::-webkit-progress-value { background-color: #1d6052 !important; }
+progress::-moz-progress-bar { background-color: #1d6052 !important; }
+progress { color: #1d6052; }
+
 #canvas {
     width: 100%; /* 100% causes slider sometimes */
     height: auto;
     min-width: 800px;
-    background: #e3e2db; /* url(../images/backgrounds/background.jpg); */
+    background: #e3e2db;  /* url(../images/backgrounds/background.jpg); */
     background-size: 100% 100%;
     padding: 0;
     margin: auto;

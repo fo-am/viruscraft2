@@ -577,14 +577,16 @@
 			'()
 			(list
 			 (rect-button
-			  "QUIT" 20 (+ default-button-y 160) 80 50 #f
+			  "QUIT" 30 (+ default-button-y 160) 80 50 #f
 			  (lambda (c)
 				(button-sound)
-				(let ((w (game-data c)))
-				  (update-scores-duration! (world-level-time w))
-				  (update-scores-final-hosts! (length (world-hosts w)))
-				  (update-scores-final-viruses! (length (world-viruses w)))
-				  (save-scores-and-end c game-id))))			  
+				;;(let ((w (game-data c)))
+				;;  (update-scores-duration! (world-level-time w))
+				;;  (update-scores-final-hosts! (length (world-hosts w)))
+				;;  (update-scores-final-viruses! (length (world-viruses w)))
+				;;  (save-scores-and-end c game-id))
+				(nightjar-main c)
+				))
 
 			 (rect-button
 			  "HELP" 120 (+ default-button-y 160) 80 50 #f
