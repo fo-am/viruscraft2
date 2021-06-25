@@ -20,7 +20,7 @@ void setup()
 {
   //Serial.begin(9600);
   
-  Wire.begin(0x70); 
+  Wire.begin(0x73); 
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
   
