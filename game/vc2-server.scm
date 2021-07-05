@@ -45,7 +45,7 @@
       (set! db (open (string->path db-name)))
       (setup db)))
 
-(open-log "/home/pi/viruscraft2/game/log.txt")
+;; (open-log "/home/pi/viruscraft2/game/log.txt")
 
 (define (pluto-response txt)
   (response/full
@@ -148,8 +148,8 @@
  ;; port number is read from command line as argument
  ;; ie: ./server.scm 8080
  #:port (string->number (command-line #:args (port) port))
-;; #:listen-ip "127.0.0.1"
- #:listen-ip "192.168.1.1"
+ #:listen-ip "127.0.0.1"
+;; #:listen-ip "192.168.1.1"
  #:command-line? #t
  #:servlet-path "/game"
  #:server-root-path

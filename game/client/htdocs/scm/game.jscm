@@ -21,7 +21,7 @@
 
 (define player-name "???")
 (define end-game-time 7)
-(define installation-mode #f)
+(define installation-mode #t)
 (define cheat-mode #f)
 (define highlight-col "#2ceaa3")
 
@@ -273,7 +273,10 @@
 		 (set! ctx.font "normal 30pt Dosis")		 
 		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
 		 (when installation-mode
-			   (wrap-text ctx "Hover your hands over one of the shapes below to start." 0 400 1000 40))
+			   (wrap-text ctx "Hover your hands over one of the shapes below to start." 0 400 1000 40)
+			   (ctx.drawImage (find-image "boxes.png") 450 480)
+			   (ctx.drawImage (find-image "hand.png") (+ 650 (* 300 (sin (* (game-time c) 0.001)))) 450)
+			   )
 		 (ctx.drawImage (find-image "logos.png") 400 580)
 		 )
 	   
@@ -994,6 +997,8 @@
    "about.png"
    "about-installation.png"
    "ben.png"
+   "hand.png"
+   "boxes.png"
    ))
 
  (lambda ()

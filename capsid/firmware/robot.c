@@ -24,7 +24,7 @@
 #include <avr/eeprom.h>
 
 #define LED PB0
-#define I2C_ADDR 0x0f
+#define I2C_ADDR 0x16
 #define FIRMWARE_VERSION 5
 
 // changlog: 5
