@@ -277,7 +277,7 @@
 			   (ctx.drawImage (find-image "boxes.png") 450 480)
 			   (ctx.drawImage (find-image "hand.png") (+ 650 (* 300 (sin (* (game-time c) 0.001)))) 450)
 			   )
-		 (ctx.drawImage (find-image "logos.png") 400 580)
+		 (ctx.drawImage (find-image "logos.png") 380 620)
 		 )
 	   
 	   (game-modify-buttons
