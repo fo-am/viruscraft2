@@ -273,9 +273,9 @@
 		 (set! ctx.font "normal 30pt Dosis")		 
 		 (wrap-text ctx "Protect your host organisms from an evolving virus." 0 320 1000 40)
 		 (when installation-mode
-			   (wrap-text ctx "Hover your hands over one of the shapes below to start." 0 400 1000 40)
+			   (wrap-text ctx "Hover your hand over one of the wooden boxes to start." 0 380 1000 40)
 			   (ctx.drawImage (find-image "boxes.png") 450 480)
-			   (ctx.drawImage (find-image "hand.png") (+ 650 (* 300 (sin (* (game-time c) 0.001)))) 450)
+			   (ctx.drawImage (find-image "hand.png") (+ 650 (* 300 (sin (* (game-time c) 0.0005)))) 450)
 			   )
 		 (ctx.drawImage (find-image "logos.png") 380 620)
 		 )
@@ -347,9 +347,9 @@
 	 ;;(demo-render (game-data c) ctx)
 	 (set! ctx.font "normal 50pt Dosis")
 	 (wrap-text ctx "HOW TO PLAY" 0 70 1300 100)
-	 (ctx.drawImage (find-image (if installation-mode
-									"about-installation.png"
-									"about.png")) 60 50)
+	 (if installation-mode
+		 (ctx.drawImage (find-image "about-installation.png") 100 60)
+		 (ctx.drawImage (find-image "about.png") 60 50))
 	 (set! ctx.font "normal 30pt Dosis")
 	 )
    (game-modify-buttons
