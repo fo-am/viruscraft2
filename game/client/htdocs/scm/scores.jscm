@@ -103,7 +103,7 @@
 			 (if (< (scores-infections) 10)
 				 (list "You hardly had any infections.") '()))
 		 (if (> (scores-mutations) 20)
-			 (list "You had to mutated your hosts a lot.")
+			 (list "You had to mutate your hosts a lot.")
 			 (if (< (scores-mutations) 5)
 				 (list "You only mutated when you had to.") '()))
 		 (if (< (scores-max-viruses) 10)
