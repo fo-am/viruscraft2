@@ -22,8 +22,8 @@
    ((eq? game-type "shape") 
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "Hey - it looks like you're trying to survive a pandemic?" 'none 400 300 "help-bubble-n.png" popup-duration)
-	  (make-help-bubble "Click on the shapes to change your host receptor shapes" 'one 850 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "Hey - it looks like you're trying to survive a pandemic?" 'none 500 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Click on the shapes to change your host receptor shapes" 'one 955 500 "help-bubble.png" popup-duration)
 	  (make-help-bubble "Keep an eye on the virus spike protein shapes here." 'five 920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "If shapes on the virus match shapes on your hosts..." 'five 920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "... then your hosts are at risk of infection." 'five 920 150 "help-bubble-r.png" popup-duration)
@@ -43,7 +43,7 @@
    ((eq? game-type "mutate")
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "Of course, organisms can't directly change receptor shapes." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Of course, organisms can't directly change receptor shapes." 'none 500 300 "help-bubble-n.png" popup-duration)
 	  (make-help-bubble "Changes come from random mutations." 'one 850 500 "help-bubble.png" popup-duration)
 	  (make-help-bubble "Click on the dice to mutate your receptor shapes." 'one 850 500 "help-bubble.png" popup-duration)
 	  (make-help-bubble "The dice change together, not individually." 'one 850 500 "help-bubble.png" popup-duration)	  
@@ -53,17 +53,17 @@
    ((eq? game-type "multivariant")
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "In the real world there are muliple virus variants." 'none 400 300 "help-bubble-n.png" popup-duration)
-	  (make-help-bubble "This means hosts need to adapt to more than one." 'none 400 300 "help-bubble-n.png" popup-duration)
-	  (make-help-bubble "Can you keep up?" 'none 400 300 "help-bubble-n.png" popup-duration))
+	  (make-help-bubble "In the real world there are muliple virus variants." 'none 500 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "This means hosts need to adapt to more than one." 'none 500 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Can you keep up?" 'none 500 300 "help-bubble-n.png" popup-duration))
 	 time #t))
    
    (else ;; "hidden"
 	(make-help-bubble-stack 
 	 (list
-	  (make-help-bubble "Viruses are smaller than the wavelength of visible light." 'none 400 300 "help-bubble-n.png" popup-duration)
+	  (make-help-bubble "Viruses are smaller than the wavelength of visible light." 'none 500 300 "help-bubble-n.png" popup-duration)
 	  (make-help-bubble "This means we can't see their receptor shapes." 'none 920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "You can work out what shapes the virus has ..." 'none  920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "... by which of your hosts are getting infected." 'none   920 150 "help-bubble-r.png" popup-duration)
-	  (make-help-bubble "This is the most realistic and hardest version of the game!" 'none 400 300 "help-bubble-n.png" popup-duration))
+	  (make-help-bubble "This is the most realistic and hardest version of the game!" 'none 500 300 "help-bubble-n.png" popup-duration))
 	 time #t))))

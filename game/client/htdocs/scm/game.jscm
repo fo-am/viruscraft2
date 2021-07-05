@@ -21,7 +21,7 @@
 
 (define player-name "???")
 (define end-game-time 7)
-(define installation-mode #t)
+(define installation-mode #f)
 (define cheat-mode #f)
 (define highlight-col "#2ceaa3")
 
