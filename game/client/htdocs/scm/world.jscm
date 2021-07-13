@@ -57,6 +57,11 @@
     (xhttp.open "POST" "http://viruscraft.wlan:8889/halt" true)
     (xhttp.send)))
 
+(define (test-shapes)
+  (let ((xhttp (js "new XMLHttpRequest()")))
+    (xhttp.open "POST" "http://viruscraft.wlan:8889/test_shapes" true)
+    (xhttp.send)))
+
 (define sensor-state "none")
 (define sensor-state-debounced "none")
 (define sensor-state-debounce #t)

@@ -4,6 +4,7 @@ import SimpleHTTPServer
 import SocketServer
 import os
 import time
+import random
 from driver import robot_virus
 
 global transmitter
@@ -13,7 +14,6 @@ global transmitter
 virus = robot_virus()
 
 virus.boot(True)
-
 
 class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def send_response(self, *args, **kwargs):
@@ -25,6 +25,18 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
         
     def do_POST(self):
         if self.path=="/ping":
+            self.send_response(200)
+            return
+
+        if self.path=="/test_shapes":
+            virus.clear_shapes()
+            shapes = ["squ","tri","gui","cir"]
+            random.shuffle(shapes)
+            for shape in shapes:
+                virus.distribute_shapes([shape])
+                time.sleep(2)
+                
+            virus.clear_shapes()
             self.send_response(200)
             return
 

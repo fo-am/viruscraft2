@@ -11,9 +11,10 @@ r.boot()
 #r.test_one(0x13)
 #r.freeze_one(0x0a)
 
-r.distribute_shapes(["tri","tri","tri","tri","tri"])
+#r.distribute_shapes(["tri","tri","tri","tri","tri"])
 
 #while True: pass
+
 
 def loop_test():
     while True:
@@ -25,6 +26,7 @@ def loop_test():
             r.distribute_shapes([shape])
             time.sleep(2)
 
+loop_test()
     
 def lo_test():
     r.power_pin.on()

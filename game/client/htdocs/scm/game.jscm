@@ -21,7 +21,7 @@
 
 (define player-name "???")
 (define end-game-time 7)
-(define installation-mode #f)
+(define installation-mode #t)
 (define cheat-mode #f)
 (define highlight-col "#2ceaa3")
 
@@ -613,14 +613,24 @@
    (game-modify-buttons
     (list
      (image-button
-      "SHUT DOWN PI"
+      "HALT PI"
+      default-button-x
+      (- default-button-y 400)
+      "jumpy"
+      (find-image "buttons/button-1.png")
+      (lambda (c)
+	(button-sound)
+	(halt-pi)
+	c))
+     (image-button
+      "TEST SHAPES"
       default-button-x
       (- default-button-y 200)
       "jumpy"
       (find-image "buttons/button-1.png")
       (lambda (c)
 	(button-sound)
-	(halt-pi)
+	(test-shapes)
 	c))
      (image-button
       "BACK"
