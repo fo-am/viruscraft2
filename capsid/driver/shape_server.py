@@ -37,11 +37,18 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 time.sleep(2)
                 
             virus.clear_shapes()
+            virus.clear_shapes()
+            virus.clear_shapes()
             self.send_response(200)
             return
 
         if self.path=="/halt":
             os.system("sudo halt")
+        
+        if self.path=="/restart":
+            os.system("sudo service viruscraft-server restart")
+            os.system("sudo service viruscraft-sensor restart")
+            os.system("sudo service viruscraft-capsid restart")
         
         if self.path=="/shapes":
             data_len = int(self.headers['Content-Length'])

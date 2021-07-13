@@ -57,6 +57,11 @@
     (xhttp.open "POST" "http://viruscraft.wlan:8889/halt" true)
     (xhttp.send)))
 
+(define (restart-pi)
+  (let ((xhttp (js "new XMLHttpRequest()")))
+    (xhttp.open "POST" "http://viruscraft.wlan:8889/restart" true)
+    (xhttp.send)))
+
 (define (test-shapes)
   (let ((xhttp (js "new XMLHttpRequest()")))
     (xhttp.open "POST" "http://viruscraft.wlan:8889/test_shapes" true)

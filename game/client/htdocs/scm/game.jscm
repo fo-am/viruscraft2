@@ -608,36 +608,42 @@
    (lambda (ctx)     
      (set! ctx.font "normal 50pt Dosis")
      (wrap-text ctx "SECRET PAGE" 0 70 1300 100)
-     (set! ctx.font "normal 30pt Dosis")
+     (set! ctx.font "normal 20pt Dosis")
      )
    (game-modify-buttons
     (list
-     (image-button
+     (rect-button
       "HALT PI"
-      default-button-x
-      (- default-button-y 400)
-      "jumpy"
-      (find-image "buttons/button-1.png")
+      (+ default-button-x 80)
+      (- default-button-y 300)
+      250 50 #f
       (lambda (c)
 	(button-sound)
 	(halt-pi)
 	c))
-     (image-button
-      "TEST SHAPES"
-      default-button-x
+     (rect-button
+      "RESTART SERVER"
+      (+ default-button-x 80)
       (- default-button-y 200)
-      "jumpy"
-      (find-image "buttons/button-1.png")
+      250 50 #f 
+      (lambda (c)
+	(button-sound)
+	(restart-pi)
+	c))
+     (rect-button
+      "TEST SHAPES"
+      (+ default-button-x 80)
+      (- default-button-y 100)
+      250 50 #f
       (lambda (c)
 	(button-sound)
 	(test-shapes)
 	c))
-     (image-button
+     (rect-button
       "BACK"
-      default-button-x
+      (+ default-button-x 80)
       default-button-y
-      "jumpy"
-      (find-image "buttons/button-2.png")
+      250 50 #f
       (lambda (c)
 	(button-sound)
 	(nightjar-main c)
