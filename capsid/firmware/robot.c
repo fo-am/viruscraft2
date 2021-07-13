@@ -24,7 +24,7 @@
 #include <avr/eeprom.h>
 
 #define LED PB0
-#define I2C_ADDR 0x16
+#define I2C_ADDR 0x14
 #define FIRMWARE_VERSION 5
 
 // changlog: 5
@@ -119,14 +119,14 @@ servo_state servo[SERVO_NUM];
 
 void init_defaults() {
   // defaults
-  hide_angle[0]=10;
-  hide_angle[1]=90;
-  hide_angle[2]=0;
-  hide_angle[3]=70;
+  hide_angle[0]=20;
+  hide_angle[1]=100;
+  hide_angle[2]=5;
+  hide_angle[3]=55;
 
-  show_angle[0]=80;
-  show_angle[1]=30;
-  show_angle[2]=60;
+  show_angle[0]=70;
+  show_angle[1]=55;
+  show_angle[2]=50;
   show_angle[3]=0;
 
   for (unsigned int s = 0; s<SERVO_NUM; s++) { 
@@ -256,7 +256,8 @@ void i2c_write(uint8_t reg, uint8_t value) {
 
 int main() {
   init_defaults();
-  
+
+  /* turning this off, as it's too unreliable
   // read eeprom
   unsigned int pos = 0;
   for (unsigned int servo_id=0; servo_id<4; servo_id++) {
@@ -264,6 +265,7 @@ int main() {
 	  write_servo(servo_id,addr,eeprom_read_byte(&ee_servo[pos++]));
 	}
   }
+  */
   
   for (unsigned int s = 0; s<SERVO_NUM; s++) { 
     servo_modify(&servo[s],hide_angle[s],1000);
