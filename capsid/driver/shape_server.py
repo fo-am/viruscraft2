@@ -66,6 +66,7 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
     
 PORT = 8889
 SocketServer.TCPServer.allow_reuse_address = True
-httpd = SocketServer.TCPServer(("", PORT), server)
+#httpd = SocketServer.TCPServer(("", PORT), server)
+httpd = SocketServer.TCPServer(("192.168.1.83", PORT), server)
 httpd.serve_forever()
 

@@ -45,26 +45,29 @@
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
+;;(define end-point "http://viruscraft.wlan")
+(define end-point "http://192.168.1.83")
+
 (define (update-robot-virus shape-list)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://viruscraft.wlan:8889/shapes" true)
+    (xhttp.open "POST" (string-append end-point ":8889/shapes") true)
     (xhttp.setRequestHeader "Content-type" "text/plain")
     (xhttp.send
      (dbg (foldl (lambda (s r) (string-append r " " s)) "" shape-list)))))
 
 (define (halt-pi)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://viruscraft.wlan:8889/halt" true)
+    (xhttp.open "POST" (string-append end-point ":8889/halt") true)
     (xhttp.send)))
 
 (define (restart-pi)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://viruscraft.wlan:8889/restart" true)
+    (xhttp.open "POST" (string-append end-point ":8889/restart") true)
     (xhttp.send)))
 
 (define (test-shapes)
   (let ((xhttp (js "new XMLHttpRequest()")))
-    (xhttp.open "POST" "http://viruscraft.wlan:8889/test_shapes" true)
+    (xhttp.open "POST" (string-append end-point ":8889/test_shapes") true)
     (xhttp.send)))
 
 (define sensor-state "none")
@@ -88,7 +91,9 @@
 
 (define (get-sensor-events)
   (msg "opening socket")
-  (let ((socket (js "new WebSocket('ws://viruscraft.wlan:8890')")))
+  (let (;;(socket (js "new WebSocket('ws://viruscraft.wlan:8890')"))
+	(socket (js "new WebSocket('ws://192.168.1.83:8890')"))
+	)
     (set! socket.onopen
 	  (lambda (e)
 	    (msg "sensor socket opened")))
