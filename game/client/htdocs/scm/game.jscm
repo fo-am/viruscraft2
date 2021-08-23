@@ -249,6 +249,7 @@
    (lambda (state c) c)
    (game-modify-timeout
 	(lambda ()
+	  (close-sensor-socket)
 	  (when (not ditto.load_resource_static)	
 			(set! window.location "/")))
 	(game-modify-data
@@ -443,6 +444,7 @@
    (lambda (state c) c)
    (game-modify-timeout
 	(lambda ()
+	  (close-sensor-socket)
 	  (when (not ditto.load_resource_static)	
 			(set! window.location "/")))
 	(game-modify-data
@@ -1023,5 +1025,6 @@
 (document.addEventListener
  "visibilitychange"
  (lambda ()
+   (close-sensor-socket)
    (when document.hidden 
 		 (set! window.location "/"))) #f)

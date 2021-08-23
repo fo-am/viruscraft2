@@ -16,7 +16,10 @@
    version="1.1"
    id="svg2233"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="capsid-schematic.svg">
+   sodipodi:docname="capsid-schematic.svg"
+   inkscape:export-filename="/home/dave/code/viruscraft2/docs/capsid-schematic.png"
+   inkscape:export-xdpi="171.04378"
+   inkscape:export-ydpi="171.04378">
   <defs
      id="defs2227" />
   <sodipodi:namedview
@@ -26,9 +29,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
+     inkscape:zoom="0.49497475"
      inkscape:cx="496.46607"
-     inkscape:cy="446.81926"
+     inkscape:cy="608.44367"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"

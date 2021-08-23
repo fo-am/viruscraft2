@@ -89,24 +89,36 @@
 	 sensor-state)
 	(else "none")))
 
+(define socket 0)
+(define socket-needed #f)
+;;(js "new WebSocket('ws://viruscraft.wlan:8890')")
+;;(js "new WebSocket('ws://192.168.1.83:8890')")
+
 (define (get-sensor-events)
   (msg "opening socket")
-  (let (;;(socket (js "new WebSocket('ws://viruscraft.wlan:8890')"))
-	(socket (js "new WebSocket('ws://192.168.1.83:8890')"))
-	)
-    (set! socket.onopen
-	  (lambda (e)
-	    (msg "sensor socket opened")))
-    (set! socket.onmessage
-	  (lambda (e)
-	    (set! sensor-state e.data)))
-    (set! socket.onclose
-	  (lambda (e)
-	    (msg "socket closed")))
-    (set! socket.onerror
-	  (lambda (e)
-	    (msg "socket error")))))
+  (set! socket-needed #t)
+  (set! socket (js "new WebSocket('ws://localhost:8890')"))
+  (set! socket.onopen
+		(lambda (e)
+		  (msg "sensor socket opened")))
+  (set! socket.onmessage
+		(lambda (e)
+		  (set! sensor-state e.data)))
+  (set! socket.onclose
+		(lambda (e)		  
+		  (msg "socket closed")
+		  ;; reopen?
+		  (when socket-needed (get-sensor-events))))
+  (set! socket.onerror
+		(lambda (e)
+		  (msg "socket error"))))
 
+(define (close-sensor-socket)
+  (set! socket-needed #f)
+  (msg "closing socket")
+  (socket.send "closemenow")
+  (socket.close))
+  
 (when installation-mode (get-sensor-events))
 	    
 (define (build-help-stack game-type stage time)

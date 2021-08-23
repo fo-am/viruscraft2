@@ -35,7 +35,8 @@ async def loop(websocket,path):
     ignore = {}
     debounce_addr = 0x01
     last_sent_none = False
-    while True:
+    running = True
+    while running:
         found_event = False
         for shape,i2c in devices.items():
             if not i2c in ignore:
@@ -43,7 +44,11 @@ async def loop(websocket,path):
                 if r==1:
                     found_event = True
                     last_sent_none = False
-                    await websocket.send(shape)
+                    try:
+                        await websocket.send(shape)
+                    except websockets.exceptions.ConnectionClosed as e:
+                        running = False
+
                 if r!=0 and r!=1:
                     # if we get a dodgy value, add this to the
                     # ignore list for 8 seconds in order to force
