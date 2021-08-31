@@ -606,17 +606,32 @@
 
 
 (define (nightjar-secrets c)
+  (list-devices)
   (game-modify-render
    (lambda (ctx)     
      (set! ctx.font "normal 50pt Dosis")
      (wrap-text ctx "SECRET PAGE" 0 70 1300 100)
+     (set! ctx.font "normal 30pt Dosis")
+     (when (not (null? i2c_devices))
+       (let ((tris (foldl
+		    (lambda (d r)
+		      (string-append r "0x" (d.toString 16) ", "))
+		    ""
+		    (list-ref i2c_devices 0)))
+	     (sense (foldl
+		     (lambda (d r)
+		       (string-append r "0x" (d.toString 16) ", "))
+		     ""
+		     (list-ref i2c_devices 1))))
+	 (wrap-text ctx (string-append "Capsid triangles (" (length (list-ref i2c_devices 0)) " found): " tris) 300 200 500 50)
+	 (wrap-text ctx (string-append "Sensor devices (" (length (list-ref i2c_devices 1)) " found): " sense) 300 420 500 50)))
      (set! ctx.font "normal 20pt Dosis")
      )
    (game-modify-buttons
     (list
      (rect-button
       "HALT PI"
-      (+ default-button-x 80)
+      (- default-button-x 180)
       (- default-button-y 300)
       250 50 #f
       (lambda (c)
@@ -625,7 +640,7 @@
 	c))
      (rect-button
       "RESTART SERVER"
-      (+ default-button-x 80)
+      (- default-button-x 180)
       (- default-button-y 200)
       250 50 #f 
       (lambda (c)
@@ -634,7 +649,7 @@
 	c))
      (rect-button
       "TEST SHAPES"
-      (+ default-button-x 80)
+      (- default-button-x 180)
       (- default-button-y 100)
       250 50 #f
       (lambda (c)
@@ -642,9 +657,18 @@
 	(test-shapes)
 	c))
      (rect-button
+      "UPDATE DEVICES"
+      (- default-button-x 180)
+      (- default-button-y 0)
+      250 50 #f
+      (lambda (c)
+	(button-sound)
+	(list-devices)
+	c))
+     (rect-button
       "BACK"
       (+ default-button-x 80)
-      default-button-y
+      (+ default-button-y 100)
       250 50 #f
       (lambda (c)
 	(button-sound)

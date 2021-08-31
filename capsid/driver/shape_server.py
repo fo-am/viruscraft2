@@ -4,8 +4,9 @@ import SimpleHTTPServer
 import SocketServer
 import os
 import time
+import json
 import random
-from driver import robot_virus
+from driver import robot_virus, scan_all_i2c
 
 global transmitter
 
@@ -22,12 +23,25 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(200)
+
+    def _set_headers(self):
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        
+    def do_GET(self):
+        self._set_headers()
+        if self.path=="/devices":
+            devices = scan_all_i2c()
+            self.wfile.write(json.dumps(devices))
+            return
+        return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
         
     def do_POST(self):
         if self.path=="/ping":
             self.send_response(200)
             return
-
+                        
         if self.path=="/test_shapes":
             virus.clear_shapes()
             shapes = ["squ","tri","gui","cir"]
@@ -59,14 +73,14 @@ class server(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
         self.send_response(200)
         
-    def do_GET(self):
-        return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
+    #def do_GET(self):
+    #     return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
 
     
 PORT = 8889
 SocketServer.TCPServer.allow_reuse_address = True
-#httpd = SocketServer.TCPServer(("", PORT), server)
-httpd = SocketServer.TCPServer(("192.168.1.83", PORT), server)
+httpd = SocketServer.TCPServer(("", PORT), server)
+#httpd = SocketServer.TCPServer(("192.168.1.83", PORT), server)
 httpd.serve_forever()
 

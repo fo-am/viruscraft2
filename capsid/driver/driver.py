@@ -60,7 +60,27 @@ def scan_i2c():
                 if not addr in ret:
                     ret.append(addr)            
     return ret
-    
+
+# return all addresses present
+def scan_all_i2c():
+    tris_ret = []
+    sense_ret = []
+    for scan in range(0,5):
+        # i2c range: 0x07 -> 0x78 - reserve 0x7x for the sensors
+        for addr in range(0x07,0x6f):
+            # attempt reading the version        
+            if read(addr,0x00)>0:
+                if not addr in tris_ret:
+                    tris_ret.append(addr)            
+    for scan in range(0,5):
+        # i2c range: 0x07 -> 0x78 - reserve 0x7x for the sensors
+        for addr in range(0x6f,0x78):
+            # attempt reading the version        
+            if read(addr,0x00)>0:
+                if not addr in sense_ret:
+                    sense_ret.append(addr)            
+    return [tris_ret,sense_ret]
+
 ###################################################
 # controller for a robot virus
 
