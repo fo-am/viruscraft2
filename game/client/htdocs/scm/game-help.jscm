@@ -28,9 +28,11 @@
 	  (make-help-bubble "If shapes on the virus match shapes on your hosts..." 'five 920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "... then your hosts are at risk of infection." 'five 920 150 "help-bubble-r.png" popup-duration)
 	  (make-help-bubble "The virus will adapt, you need to keep ahead of it." 'four 920 150 "help-bubble-r.png" popup-duration)
-	  (make-help-bubble "You need to survive for one minute." 'five 200 20 "help-bubble-lt.png" popup-duration))
+	  (make-help-bubble "Keep clicking on the shapes to change your receptors" 'six 955 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "The more full the shape is ..."  'seven 955 500 "help-bubble.png" popup-duration)
+	  (make-help-bubble "... the more likely your hosts will have that receptor!" 'eight 955 500 "help-bubble.png" popup-duration))
 	 time #t))
-
+   
    ;; ((eq? game-type "shape") 
    ;; 	(make-help-bubble-stack 
    ;; 	 (list
