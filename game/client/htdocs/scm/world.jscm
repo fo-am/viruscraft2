@@ -45,8 +45,11 @@
 
 (define stage-types (list "shape" "mutate" "multivariant" "hidden"))
 
-;;(define end-point "http://viruscraft.wlan")
-(define end-point "http://192.168.1.83")
+(define end-point "http://viruscraft.wlan")
+;;(define end-point "http://192.168.1.83")
+
+;;-------------------------------------------------------------------------------------
+;; installation server stuff
 
 (define (update-robot-virus shape-list)
   (let ((xhttp (js "new XMLHttpRequest()")))
@@ -70,12 +73,27 @@
     (xhttp.open "POST" (string-append end-point ":8889/test_shapes") true)
     (xhttp.send)))
 
+(define i2c_devices ())
+
+(define (list-devices)
+  (let ((xhttp (js "new XMLHttpRequest()")))
+    (set! xhttp.onreadystatechange
+	  (lambda ()
+	    (when (eq? xhttp.readyState 4)
+	      (set! i2c_devices (JSON.parse xhttp.response)))))
+    (xhttp.open "GET" (string-append end-point ":8889/devices") true)
+    (xhttp.send)))
+
+
 (define sensor-state "none")
 (define sensor-state-debounced "none")
 (define sensor-state-debounce #t)
 
 (define (get-sensor-state)
   (let ((t sensor-state))
+    (when (not (eq? sensor-state "none"))
+      ;; clear reload timeout
+      (set! timeout-time 0))
     (set! sensor-state "none")
     t))
 
@@ -91,13 +109,14 @@
 
 (define socket 0)
 (define socket-needed #f)
+
 ;;(js "new WebSocket('ws://viruscraft.wlan:8890')")
 ;;(js "new WebSocket('ws://192.168.1.83:8890')")
 
 (define (get-sensor-events)
   (msg "opening socket")
   (set! socket-needed #t)
-  (set! socket (js "new WebSocket('ws://localhost:8890')"))
+  (set! socket (js "new WebSocket('ws://viruscraft.wlan:8890')"))
   (set! socket.onopen
 		(lambda (e)
 		  (msg "sensor socket opened")))
@@ -120,7 +139,10 @@
   (socket.close))
   
 (when installation-mode (get-sensor-events))
-	    
+
+;;-------------------------------------------------------------------------------------
+
+
 (define (build-help-stack game-type stage time)
   (cond
    ((< (help-seen) stage)

@@ -21,13 +21,13 @@ async def read(dev,reg):
 async def loop(websocket,path):
     print("starting...")
     devices = {
-#        "squ":0x70,
+        "squ":0x70,
         "gui":0x71,
         "tri":0x72,
         "cir":0x73
     }
     err_count = {
-        #        0x70:0,
+        0x70:0,
         0x71:0,
         0x72:0,
         0x73:0,
@@ -54,7 +54,7 @@ async def loop(websocket,path):
                     # ignore list for 8 seconds in order to force
                     # it to reset itself on the other end
                     err_count[i2c]+=1
-                    if err_count[i2c]>100:
+                    if err_count[i2c]>10:
                         print(str(r)+" <- ignoring "+str(i2c))
                         err_count[i2c]=0
                         ignore[i2c]=time.time()
@@ -75,8 +75,8 @@ async def loop(websocket,path):
         for i2c in to_remove:                
             ignore.pop(i2c)
 
-#start_server = websockets.serve(loop, "192.168.1.1", 8890)
-start_server = websockets.serve(loop, "192.168.1.83", 8890)
+start_server = websockets.serve(loop, "192.168.1.1", 8890)
+#start_server = websockets.serve(loop, "192.168.1.83", 8890)
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
 
