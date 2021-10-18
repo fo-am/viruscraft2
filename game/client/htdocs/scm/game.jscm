@@ -189,7 +189,7 @@
 	   (set! ctx.font "normal 120pt Dosis")
 	   (wrap-text ctx "VIRUSCRAFT II" 0 200 1500 100)		
 	   (set! ctx.font "normal 30pt Dosis")
-	   (wrap-text ctx "Are you happy for us to store your player info (scores and level reached so far) on your browser and on our server for the leaderboard? This does not include any personally identifiable information." 0 340 1200 60)
+	   (wrap-text ctx "Are you happy for us to store your player info (scores and level reached so far) on your browser and on our server for the leaderboard? This does not include any personally identifiable information." 0 300 1200 60)
 	   (set! ctx.font "normal 30pt Dosis")
 	   )
 	 

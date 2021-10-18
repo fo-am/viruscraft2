@@ -85,13 +85,15 @@
 		(set! scores-why (scores-analysis stage)))
   scores-why)
 
+(define (choose-or l alt) (if (null? l) alt (choose l)))
+
 (define (scores-analysis stage)
   (if (scores-survived)
 	  ;; the player won
 	  (string-append
 	   (choose
 		(list "Well done! " "You rock! " "Excellent! "))	   
-	   (choose
+	   (choose-or
 		(append
 		 (if (< (scores-final-hosts) 2) (list "You only just made it!")
 			 (if (< (scores-final-hosts) 6)
@@ -113,13 +115,14 @@
 				  "You did well to survive with so much virus around."
 				  "You managed to keep ahead of the virus evolution."
 				  "This virus is no match for your hosts."
-				  "You are becoming an expert in immunity.") '())))))
+				  "You are becoming an expert in immunity.") '())))
+		"Can you keep it up?"))
 	  
 	  ;; game over
 	  (string-append
 	   (choose
 		(list "Bad luck. " "Thats a shame. " "Better luck next time! "))
-	   (choose
+	   (choose-or
 		(append		 
 		 (if (< (scores-mutations) 1)
 			 (list "Use the buttons at the bottom to mutate your host.")
@@ -142,5 +145,6 @@
 		 (if (> (scores-max-viruses) 25)
 			 (list "Its easier if you can manage to keep the number of viruses down to a minimum."
 				   "Try changing the host's shapes so none of them match the virus."
-				   "Try mutating until none of your host shapes match the virus shapes.") '()))))))
+				   "Try mutating until none of your host shapes match the virus shapes.") '()))
+		"Try mutating until none of your host shapes match the virus shapes."))))
 
