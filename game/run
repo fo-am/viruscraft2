@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-./vc2-server.scm 8894
+./vc2-server.scm 8889

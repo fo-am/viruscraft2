@@ -101,7 +101,7 @@
 (define (hiscores-select_ db)
   (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
                      join player_name as n on g.player_id=n.player_id        
-                     where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
+                     where n.player_name !='???' and g.time_stamp > (select datetime('now', '-365 day'))
                      order by g.stage desc, g.level desc, g.duration desc limit 10")))
     (if (null? r) '() (cdr r))))
 
@@ -109,7 +109,7 @@
 (define (hiscores-select db)
   (let ((r (select db "select n.player_name, g.stage, g.level, g.duration from game as g
                      join player_name as n on g.player_id=n.player_id        
-                     where n.player_name !='???' and g.time_stamp > (select datetime('now', '-7 day'))
+                     where n.player_name !='???' and g.time_stamp > (select datetime('now', '-365 day'))
                      order by g.score desc limit 10")))
     (if (null? r) '() (cdr r))))
 
@@ -119,7 +119,7 @@
                        join player_name as n on g.player_id=n.player_id 
                        where n.player_name !='???' and 
                        g.score > (select score from game where id = ?) and 
-                       g.time_stamp > (select datetime('now', '-7 day'))" game-id)))
+                       g.time_stamp > (select datetime('now', '-365 day'))" game-id)))
     (if (null? s)
 	1
 	(+ (vector-ref (cadr s) 0) 1))))

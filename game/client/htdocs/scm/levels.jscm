@@ -17,12 +17,12 @@
 
 (define (generate-level-params level)
   (level-params
-   (list-ref (list (/ (param "world-level-time") 2)
-				   (/ (param "world-level-time") 3)
-				   (/ (param "world-level-time") 4)
-				   (/ (param "world-level-time") 6)
-				   (/ (param "world-level-time") 8))
-			 (- level 1))
+   (list-ref (list (/ (param "world-level-time") 3) ;; 2 
+		   (/ (param "world-level-time") 4) ;; 3
+		   (/ (param "world-level-time") 5) ;; 4
+		   (/ (param "world-level-time") 7) ;; 6
+		   (/ (param "world-level-time") 9)) ;; 8
+	     (- level 1))
    (list-ref (list 1 2 3 8 8) (- level 1))))
 
 (define (level-params model-update-rate min-viruses)
