@@ -249,7 +249,8 @@
    (lambda (state c) c)
    (game-modify-timeout
 	(lambda ()
-	  (close-sensor-socket)
+	  (when installation-mode
+			(close-sensor-socket))
 	  (when (not ditto.load_resource_static)	
 			(set! window.location "/")))
 	(game-modify-data
@@ -444,7 +445,8 @@
    (lambda (state c) c)
    (game-modify-timeout
 	(lambda ()
-	  (close-sensor-socket)
+	  (when installation-mode
+			(close-sensor-socket))
 	  (when (not ditto.load_resource_static)	
 			(set! window.location "/")))
 	(game-modify-data
