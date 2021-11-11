@@ -1049,6 +1049,7 @@
 (document.addEventListener
  "visibilitychange"
  (lambda ()
-   (close-sensor-socket)
+   (when installation-mode
+		 (close-sensor-socket))
    (when document.hidden 
 		 (set! window.location "/"))) #f)
