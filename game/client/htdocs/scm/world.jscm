@@ -402,6 +402,14 @@
 		 (v2sub pos (vec2 (/ screen-width 2) (/ screen-height 2)))))
 	(v2mul (v2normalise centre-vec) -0.5)))
 
+(define (world-final-level? w)
+  (and (eq? (world-level w) (param "world-num-levels"))
+	   (eq? (world-stage w) (- (length stage-types) 1))))
+
+(define (world-penultimate-level? w)
+  (and (eq? (world-level w) (- (param "world-num-levels") 1))
+	   (eq? (world-stage w) (- (length stage-types) 1))))
+
 (define (world-update-state w time delta)
   (let ((state (world-state w)))
 	(when (not (eq? state "state-running"))
@@ -417,7 +425,9 @@
 		(world-modify-level-time		
 		 (world-modify-state w "state-game-over")
 		 0)) 
-	   ((> (world-level-time w) (param "world-level-time"))
+	   ((and (> (world-level-time w) (param "world-level-time"))
+			 ;; don't exit the final level!!
+			 (not (world-final-level? w)))
 		(update-scores-duration! (world-level-time w)) 
 		(update-scores-survived! #t)
 		(update-scores-final-hosts! (length (world-hosts w)))
@@ -640,8 +650,10 @@
 
   (set! ctx.font "normal 30pt Dosis")
   (when (eq? (world-state w) "state-running")
-		(ctx.fillText (string-append "TIME: " (trunc (- (param "world-level-time") (world-level-time w)))) 30 60)
-;;		(ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
+		(ctx.fillText (string-append "TIME: " (if (world-final-level? w)
+												  "???"
+												  (trunc (- (param "world-level-time") (world-level-time w))))) 30 60)
+		;;		(ctx.fillText (string-append "POINTS: " (trunc (scores-total))) 30 110)
 		(ctx.fillText (string-append "LIVES: " (+ (world-lives w) 1)) 30 110)
 		(when
 		 installation-mode
@@ -692,10 +704,14 @@
 		   (get-scores-analysis (world-stage w))))))
 
   (when (eq? (world-state w) "state-level-complete")
-		(render-explanation
-		 (string-append "LEVEL " (world-level w) " COMPLETE!")
-		 (get-scores-analysis (world-stage w))))
-
+		(if (world-penultimate-level? w)
+			(render-explanation
+			 (string-append "LEVEL " (world-level w) " COMPLETE!")
+			 "The final level has no end time! - how long can you last?")
+			(render-explanation
+			 (string-append "LEVEL " (world-level w) " COMPLETE!")
+			 (get-scores-analysis (world-stage w)))))
+		
   (when (eq? (world-state w) "state-stage-complete")		
 		(render-explanation
 		 (string-append "STAGE " (+ (world-stage w) 2) " UNLOCKED!")
@@ -713,6 +729,7 @@
 		 (get-scores-analysis (world-stage w))))
   
   (when (and
+		 (not (world-final-level? w))
 		 (eq? (world-state w) "state-running")
 		 (> (world-level-time w) (- (param "world-level-time") 5)))
 		(let ((secs
